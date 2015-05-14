@@ -11,12 +11,12 @@ Depends: flex, GNU bison, make, BDW collector (tree structures are hard to manag
 
 For the collector:
 
-wget http://hboehm.info/gc/gc_source/gc-7.2f.tar.gz
+`wget http://hboehm.info/gc/gc_source/gc-7.2f.tar.gz
 tar xvf gc-7.2
 cd gc-7.2
 ./configure --prefix=/usr/local/ --enable-threads=posix --enable-thread-local-alloc --enable-parallel-mark \
   --enable-cplusplus
-make; make check; sudo make install
+make; make check; sudo make install`
 
 Use your package management system to obtain flex and bison. For Ubuntu this is:
 
