@@ -17,9 +17,6 @@ extern "C" int yywrap() { return 1; }
 %%
 
 [ \t\r]                   ;
-[a-zA-Z$_][a-zA-Z0-9$_]*  SAVE_TOKEN; return TIDENTIFIER;
-[0-9]*\.[0-9]+            SAVE_TOKEN; return TFLOAT;
-[0-9]+                    SAVE_TOKEN; return TINT;
 "="                       return TOKEN(TSET);
 "=="                      return TOKEN(TEQUAL);
 "!="                      return TOKEN(TNEQUAL);
@@ -31,11 +28,24 @@ extern "C" int yywrap() { return 1; }
 ")"                       return TOKEN(TRPAREN);
 "{"                       return TOKEN(TLBRACE);
 "}"                       return TOKEN(TRBRACE);
+"["                       return TOKEN(TLSBRACE);
+"]"                       return TOKEN(TRSBRACE);
 "."                       return TOKEN(TDOT);
 "+"                       return TOKEN(TPLUS);
 "-"                       return TOKEN(TDASH);
 "*"                       return TOKEN(TSTAR);
 "/"                       return TOKEN(TSLASH);
+";"                       return TOKEN(TSCOLON);
+"if"                      return TOKEN(TIF);
+"while"                   return TOKEN(TWHILE);
+"return"		  return TOKEN(TRETURN);
+"int"                     return TOKEN(TINT);
+"float"                   return TOKEN(TFLOAT);
+"void"                    return TOKEN(TVOID);
+"struct"                  return TOKEN(TSTRUCT);
+[0-9]*\.[0-9]+            SAVE_TOKEN; return TFLOATLIT;
+[0-9]+                    SAVE_TOKEN; return TINTLIT;
+[a-zA-Z$_][a-zA-Z0-9$_]*  SAVE_TOKEN; return TIDENTIFIER;
 .                         printf("Unknown token encountered in lexer\n"); yyterminate();
 
 %%
