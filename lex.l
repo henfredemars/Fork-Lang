@@ -2,9 +2,12 @@
 
 //Includes
 #include <string>
+#include "gc.h"
+#include "gc_alloc.h"
 
-//Token.string is the value lexed
-#define SAVE_TOKEN yylval.string = new std::string(yytext, yyleng)
+//You must specify the allocator gc_alloc to STL containers to get GC memory
+
+#define SAVE_TOKEN yylval.string = (char *)GC_MALLOC(yyleng+1); memcpy(yylval.string,yytext,yyleng);
 
 //TOKEN macro sets token. Recall that yylval is a union type declared in the parser
 #define TOKEN(t) (yylval.token = t)
