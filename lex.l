@@ -11,7 +11,7 @@
 #define SAVE_TOKEN yylval.string = (char *)GC_MALLOC(yyleng+1); memcpy(yylval.string,yytext,yyleng);
 
 //TOKEN macro sets token. Recall that yylval is a union type declared in the parser
-#define TOKEN(t) (yylval.token = t)
+#define TOKEN(t) (yylval.token = (int64_t)t)
 
 //Only process a single input file
 extern "C" int yywrap() { return 1; }
@@ -42,8 +42,8 @@ extern "C" int yywrap() { return 1; }
 ";"                       return TOKEN(TSCOLON);
 "if"                      return TOKEN(TIF);
 "while"                   return TOKEN(TWHILE);
-"return"		  return TOKEN(TRETURN);
-"int"                     return TOKEN(TINT);
+"return"                  return TOKEN(TRETURN);
+"int"                     return TOKEN(TRETURN);
 "float"                   return TOKEN(TFLOAT);
 "void"                    return TOKEN(TVOID);
 "struct"                  return TOKEN(TSTRUCT);
