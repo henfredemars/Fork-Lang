@@ -1,8 +1,10 @@
 
-//Declarations of the AST objects
+//Declarations of the AST objects, should model the language
 
 #include <cstdint>
 #include <vector>
+#include <string.h>
+#include <stdio.h>
 #include <llvm/Value.h>
 #include "gc.h"
 #include "gc_alloc.h"
