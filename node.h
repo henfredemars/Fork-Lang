@@ -86,14 +86,14 @@ public:
 //  strictly speaking, a Block is a collection of statements
 class Block : public Expression {
 public:
-	vector<Statement*> statements;
+	vector<Statement*,gc_alloc> statements;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
 class FunctionCall : public Expression {
 public:
 	Identifier* ident;
-	vector<Expression*> args;
+	vector<Expression*,gc_alloc> args;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -116,7 +116,7 @@ class FunctionDefinition : public Statement {
 public:
 	Keyword* type;
 	Identifier* ident;
-	vector<VariableDefinition*> args;
+	vector<VariableDefinition*,gc_alloc> args;
 	Block* block;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
