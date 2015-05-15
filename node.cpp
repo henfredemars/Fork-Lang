@@ -39,12 +39,11 @@ Assignment::Assignment(Identifier* left, Expression* right) {
 	this->right = right;
 }
 
-Block::Block(vector<Statement*> statements) {
+Block::Block(vector<Statement*, gc_alloc> statements) {
 	this->statements = statements;
-
 }
 
-FunctionCall::FunctionCall(Identifier* ident, vector<Expression*> args) {
+FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_alloc> args) {
 	this->ident = ident;
 	this->args = args;
 }
@@ -61,7 +60,8 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->exp = exp;
 }
 
-FunctionDefenition::FunctionDefenition(Keyword* type, Identifier* ident, vector<VariableDefinition*> args, Block* block) {
+FunctionDefenition::FunctionDefenition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_alloc> args,
+	 Block* block) {
 	this->type = type;
 	this->ident = ident;
 	this->args = args;

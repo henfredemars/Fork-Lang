@@ -38,7 +38,7 @@
 %type <nullaryOp> nullaryOp
 %type <binaryOp> binaryOp
 %type <assignment> assignment
-%type <block> block statements
+%type <block> block statements program
 %type <functionCall> functionCall
 %type <keyword> keyword
 %type <variableDef> variableDef
@@ -52,11 +52,13 @@
 
 %%
 
-program : stmts { program = $1; }
+program : statements { program = $1; }
         ;
         
-        //Working below this line
-statements : statement { $$ = new Block(); $$->statements.push_back($<statement>1); }
+statements : statement { 
+                vector<Statement*,gc_alloc> statements();
+
+$$ = new Block(); $$->statements.push_back($<statement>1); }
       | statements statement { $1->statements.push_back($<statement>2); }
       ;
 
