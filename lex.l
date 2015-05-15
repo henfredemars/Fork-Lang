@@ -2,6 +2,7 @@
 
 //Includes
 #include <string>
+#include <stdio.h>
 #include "gc.h"
 #include "gc_alloc.h"
 
