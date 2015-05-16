@@ -33,8 +33,15 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
-class Expression : public Node { };
-class Statement : public Node { };
+class Expression : public Node {
+public:
+	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
+
+class Statement : public Node {
+public:
+	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
 
 class Integer : public Expression {
 public:
@@ -121,3 +128,9 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+//Completed expressions and blocks become statements through this type
+class ExpressionStatement : public Statement {
+public:
+	Expression* exp;
+	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
