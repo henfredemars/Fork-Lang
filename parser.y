@@ -21,6 +21,7 @@
     FunctionCall* functionCall;
     Keyword* keyword;
     VariableDefinition* variableDef;
+    vector<VariableDefinition*,gc_alloc> variableVec;
     FunctionDefinition* functionDef;
     char* string;
     int64_t token;
@@ -40,9 +41,10 @@
 %type <assignment> assignment
 %type <block> block statements program
 %type <functionCall> functionCall
-%type <keyword> keyword
+%type <keyword> type_keyword
 %type <variableDef> variableDef
 %type <functionDef> functionDef
+%type <variableVec> functionArgs
 
 //Operators -- add detail here for handling long expressions
 %left TPLUS TDASH
@@ -77,7 +79,46 @@ variableDec : keyword ident TENDL { $$ = new VariableDefinition($1,$2,NULL);
 
 functionDec : keyword ident TLPAREN functionArgs TRPAREN block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
+             } |
+             keyword ident TLPAREN functionArgs TRPAREN statement block {
+              $$ = new FunctionDefinition($1,$2,$4,$6);
+             } |
+             keyword ident TLPAREN functionArgs TRPAREN statements block {
+              $$ = new FunctionDefinition($1,$2,$4,$6);
              } ;
+
+keyword : TINT {
+              char[] name = "int";
+              $$ = new Keyword(name);
+              } |
+              TFLOAT {
+              char[] name = "float";
+              $$ = new Keyword(name);
+              } |
+              TIF {
+              char[] name = "if";
+              $$ = new Keyword(name);
+              } |
+              TWHILE {
+              char[] name = "while";
+              $$ = new Keyword(name);
+              } |
+              TRETURN {
+              char[] name = "return";
+              $$ = new Keyword(name);
+              } |
+              TSTRUCT {
+              char[] name = "struct";
+              $$ = new Keyword(name);
+              } |
+              TVOID {
+              char[] name = "void";
+              $$ = new Keyword(name);
+              } ;
+
+ident : TIDENTIFIER { $$ = new Identifier($1); }
+        ;
+
 
 
 %%
