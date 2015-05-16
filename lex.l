@@ -21,6 +21,7 @@ extern "C" int yywrap() { return 1; }
 %%
 
 [ \t\r]                   ;
+"\n"                      return TOKEN(TENDL);
 "="                       return TOKEN(TSET);
 "=="                      return TOKEN(TEQUAL);
 "!="                      return TOKEN(TNEQUAL);
@@ -43,7 +44,7 @@ extern "C" int yywrap() { return 1; }
 "if"                      return TOKEN(TIF);
 "while"                   return TOKEN(TWHILE);
 "return"                  return TOKEN(TRETURN);
-"int"                     return TOKEN(TRETURN);
+"int"                     return TOKEN(TINT);
 "float"                   return TOKEN(TFLOAT);
 "void"                    return TOKEN(TVOID);
 "struct"                  return TOKEN(TSTRUCT);

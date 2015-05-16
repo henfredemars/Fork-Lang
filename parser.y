@@ -29,12 +29,12 @@
 %token <string> TIDENTIFIER TINTLIT TFLOATLIT
 %token <token> TSET TEQUAL TNEQUAL TLT TLTE TGT TGTE
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE
-%token <token> TLSBRACE TRSBRACE TDOT
+%token <token> TLSBRACE TRSBRACE TDOT TENDL
 %token <token> TPLUS TDASH TSTAR TSLASH
 %token <token> TINT TFLOAT TVOID TSTRUCT
 
 %type <exp> exp
-%type <statement> statement
+%type <statement> statement variableDec functionDec
 %type <nullaryOp> nullaryOp
 %type <binaryOp> binaryOp
 %type <assignment> assignment
@@ -59,17 +59,25 @@ statements : statement {
                 vector<Statement*,gc_alloc> statements();
                 $$ = new Block(statements);
                 $$->statements.push_back($1);
-             }
+             } |
              statements statement {
                 $1->statements.push_back($2);
-             }
-             ;
+             } ;
 
-$$ = new Block(); $$->statements.push_back($<statement>1); }
-      | statements statement { $1->statements.push_back($<statement>2); }
-      ;
+statement : variableDec | functionDec | TENDL { $$ = new Statement(); 
+             } |
+             exp {
+                $$ = new ExpressionStatement(exp);
+             } ;
 
-statement :
-     ;
+variableDec : keyword ident TENDL { $$ = new VariableDefinition($1,$2,NULL);
+             } |
+             keyword ident TSET exp TENDL { $$ = new VariableDefinition($1,$2,$4);
+             } ;
+
+functionDec : keyword ident TLPAREN functionArgs TRPAREN block {
+              $$ = new FunctionDefinition($1,$2,$4,$6);
+             } ;
+
 
 %%

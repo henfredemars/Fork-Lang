@@ -60,10 +60,14 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->exp = exp;
 }
 
-FunctionDefenition::FunctionDefenition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_alloc> args,
+FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_alloc> args,
 	 Block* block) {
 	this->type = type;
 	this->ident = ident;
 	this->args = args;
 	this->block = block;
+}
+
+ExpressionStatement::ExpressionStatement(Expression* exp) {
+	this->exp = exp;
 }
