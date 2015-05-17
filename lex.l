@@ -8,7 +8,7 @@
 
 //You must specify the allocator gc_alloc to STL containers to get GC memory
 
-#define SAVE_TOKEN yylval.string = (char *)GC_MALLOC(yyleng+1); memcpy(yylval.string,yytext,yyleng);
+#define SAVE_TOKEN do { yylval.string = (char *)GC_MALLOC(yyleng+1); memcpy(yylval.string,yytext,yyleng); } while (0)
 
 //TOKEN macro sets token. Recall that yylval is a union type declared in the parser
 #define TOKEN(t) (yylval.token = (int64_t)t)
