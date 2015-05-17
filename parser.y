@@ -71,7 +71,7 @@
 %%
 
 //A program is a collection of statements in a block
-program : statements { program = $1; }
+program : statements { program = $1; program->describe(); }
         ;
 
 //Statements can be collected together to form blocks
@@ -79,6 +79,7 @@ statements : statement {
                 vector<Statement*,gc_alloc> statements();
                 $$ = new Block(statements);
                 $$->statements.push_back($1);
+                $$->describe();
              } |
              statements statement {
                 $1->statements.push_back($2);
@@ -89,57 +90,70 @@ statement : variableDec | functionDec | TENDL { $$ = new Statement();
              } |
              exp {
                 $$ = new ExpressionStatement(exp);
+                $$->describe();
              } ;
 
-block : TLBRACE statements TRBRACE { $$ = $2; }
-              | TLBRACE TRBRACE { $$ = new Block(); }
+block : TLBRACE statements TRBRACE { $$ = $2; $$->describe(); }
+              | TLBRACE TRBRACE { $$ = new Block(); $$->describe(); }
               ;
 
 //A variable declaration is made of a keyword, identifier, and possibly an expression
 variableDec : keyword ident TENDL { $$ = new VariableDefinition($1,$2,NULL);
+                $$->describe();
              } |
              keyword ident TSET exp TENDL { $$ = new VariableDefinition($1,$2,$4);
+                $$->describe();
              } ;
 
 //A function definition is made of a keyword, identifier, arguments, and a function body block
 functionDec : keyword ident TLPAREN functionArgs TRPAREN block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
+              $$->describe();
              } |
              keyword ident TLPAREN functionArgs TRPAREN statement block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
+              $$->describe();
              } |
              keyword ident TLPAREN functionArgs TRPAREN statements block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
+              $$->describe();
              } ;
 
 //Langauge keywords listed here
 keyword : TINT {
               char[] name = "int";
               $$ = new Keyword(name);
+              $$->describe();
               } |
               TFLOAT {
               char[] name = "float";
               $$ = new Keyword(name);
+              $$->describe();
               } |
               TIF {
               char[] name = "if";
               $$ = new Keyword(name);
+              $$->describe();
               } |
               TWHILE {
               char[] name = "while";
               $$ = new Keyword(name);
+              $$->describe();
               } |
               TRETURN {
               char[] name = "return";
               $$ = new Keyword(name);
+              $$->describe();
               } |
               TSTRUCT {
               char[] name = "struct";
               $$ = new Keyword(name);
+              $$->describe();
               } |
               TVOID {
               char[] name = "void";
               $$ = new Keyword(name);
+              $$->describe();
               } ;
 
 //Arguments in a function definition
@@ -156,23 +170,23 @@ callArgs : /* empty */ { $$ = vector<Expression*,gc_alloc>(); }
               ;
 
 //An identifier comes from the corresponding token string
-ident : TIDENTIFIER { $$ = new Identifier($1); }
+ident : TIDENTIFIER { $$ = new Identifier($1); $$->describe(); }
         ;
 
 //An expression is pretty much any (valid) mixture of operators
-exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); }
-            | TDASH exp { $$ = new UnaryOperator($1,$2); }
-            | exp TSTAR { $$ = new UnaryOperator($2,$1); }
-            | nullaryOperatorToken { $$ = new NullaryOperator($1); }
+exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); $$->describe(); }
+            | TDASH exp { $$ = new UnaryOperator($1,$2); $$->describe(); }
+            | exp TSTAR { $$ = new UnaryOperator($2,$1); $$->describe(); }
+            | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); }
             | numeric { $$ = $1; }
             | ident { $$ = $1; }
             | TLPAREN exp TRPAREN { $$ = 2; } //Consume pairs of parentheses
-            | ident TEQUAL exp { $$ = new Assignment($1,$3); }
-            | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); }
+            | ident TEQUAL exp { $$ = new Assignment($1,$3); $$->describe(); }
+            | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); $$->describe(); }
             ;
 
-numeric : TINTLIT { $$ = new Integer($1); }
-            | TFLOATLIT { $$ = new Float($1); }
+numeric : TINTLIT { $$ = new Integer($1); $$->describe(); }
+            | TFLOATLIT { $$ = new Float($1); $$->describe(); }
             ;
 
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH | TPLUS | TSTAR | TSLASH;
