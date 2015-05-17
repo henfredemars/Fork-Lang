@@ -1,5 +1,5 @@
 
-//TODO: Reference types, structures, check compliance, includes
+//TODO: Control flow, reference types, structures, consider arrays, check compliance, includes
 
 
 //Prelude
