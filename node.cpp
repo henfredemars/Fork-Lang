@@ -43,6 +43,10 @@ Block::Block(vector<Statement*, gc_alloc> statements) {
 	this->statements = statements;
 }
 
+Block::Block() {
+	this->statements = NULL;
+}
+
 FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_alloc> args) {
 	this->ident = ident;
 	this->args = args;

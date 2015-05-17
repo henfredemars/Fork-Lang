@@ -7,6 +7,7 @@
 #include <stdio.h>
 //#include <llvm/Value.h>
 #include "gc.h"
+#include "gc_cpp.h"
 #include "gc_alloc.h"
 
 using namespace std;
@@ -28,7 +29,7 @@ class Keyword;
 class VariableDefinition;
 class FunctionDefinition;
 
-class Node {
+class Node : public gc {
 public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -93,6 +94,8 @@ public:
 //  strictly speaking, a Block is a collection of statements
 class Block : public Expression {
 public:
+	Block();
+	Block(vector<Statement*,gc_alloc> statements);
 	vector<Statement*,gc_alloc> statements;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
