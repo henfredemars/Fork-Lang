@@ -1,3 +1,7 @@
+
+//TODO: Reference types, structures, check compliance, includes
+
+
 //Prelude
 
 %{
@@ -25,6 +29,7 @@
     Keyword* keyword;
     VariableDefinition* variableDef;
     vector<VariableDefinition*,gc_alloc> variableVec;
+    vector<Expression*,gc_alloc> expressionVec;
     FunctionDefinition* functionDef;
     char* string;
     int64_t token;
@@ -42,15 +47,17 @@
 %type <identifier> ident
 %type <exp> exp numeric
 %type <statement> statement variableDec functionDec
-%type <nullaryOp> nullaryOp
-%type <binaryOp> binaryOp
 %type <assignment> assignment
 %type <block> block statements program
 %type <functionCall> functionCall
-%type <keyword> type_keyword
+%type <keyword> keyword
 %type <variableDef> variableDef
 %type <functionDef> functionDef
 %type <variableVec> functionArgs
+%type <expressionVec> callArgs
+%type <token> binaryOperatorToken
+%type <token> unaryOperatorToken
+%type <token> nullaryOperatorToken
 
 //Operators and their precedence
 %left TPLUS TDASH
@@ -83,6 +90,10 @@ statement : variableDec | functionDec | TENDL { $$ = new Statement();
              exp {
                 $$ = new ExpressionStatement(exp);
              } ;
+
+block : TLBRACE statements TRBRACE { $$ = $2; }
+              | TLBRACE TRBRACE { $$ = new Block(); }
+              ;
 
 //A variable declaration is made of a keyword, identifier, and possibly an expression
 variableDec : keyword ident TENDL { $$ = new VariableDefinition($1,$2,NULL);
@@ -131,11 +142,18 @@ keyword : TINT {
               $$ = new Keyword(name);
               } ;
 
+//Arguments in a function definition
 functionArgs : /* empty */ { 
-                $$ = new vector<VariableDefinition*,gc_alloc>(); }
-                | variableDec { $$ = new vector<VariableDefinition*,gc_alloc>(); $$->push_back($1); }
-                | functionArgs TCOMMA variableDec { $1->push_back($3); }
+                $$ = vector<VariableDefinition*,gc_alloc>(); }
+                | variableDec { $$ = vector<VariableDefinition*,gc_alloc>(); $$.push_back($1); }
+                | functionArgs TCOMMA variableDec { $1.push_back($3); }
                 ;
+
+//Arguments of a particular function call at the call site
+callArgs : /* empty */ { $$ = vector<Expression*,gc_alloc>(); }
+              | exp { $$ = vector<Expression*,gc_alloc>(); $$.push_back($1); }
+              | callArgs TCOMMA exp { $1.push_back($3); }
+              ;
 
 //An identifier comes from the corresponding token string
 ident : TIDENTIFIER { $$ = new Identifier($1); }
@@ -143,6 +161,9 @@ ident : TIDENTIFIER { $$ = new Identifier($1); }
 
 //An expression is pretty much any (valid) mixture of operators
 exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); }
+            | TDASH exp { $$ = new UnaryOperator($1,$2); }
+            | exp TSTAR { $$ = new UnaryOperator($2,$1); }
+            | nullaryOperatorToken { $$ = new NullaryOperator($1); }
             | numeric { $$ = $1; }
             | ident { $$ = $1; }
             | TLPAREN exp TRPAREN { $$ = 2; } //Consume pairs of parentheses
@@ -150,6 +171,14 @@ exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); }
             | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); }
             ;
 
+numeric : TINTLIT { $$ = new Integer($1); }
+            | TFLOATLIT { $$ = new Float($1); }
+            ;
 
+binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH | TPLUS | TSTAR | TSLASH;
+
+unaryOperatorToken : TSTAR | TDASH;
+
+nullaryOperatorToken : TSCOLON;
 
 %%
