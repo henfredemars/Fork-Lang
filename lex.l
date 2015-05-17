@@ -41,6 +41,7 @@ extern "C" int yywrap() { return 1; }
 "*"                       return TOKEN(TSTAR);
 "/"                       return TOKEN(TSLASH);
 ";"                       return TOKEN(TSCOLON);
+","                       return TOKEN(TCOMMA);
 "if"                      return TOKEN(TIF);
 "while"                   return TOKEN(TWHILE);
 "return"                  return TOKEN(TRETURN);
