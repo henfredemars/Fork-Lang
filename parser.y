@@ -41,25 +41,23 @@
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE
 %token <token> TLSBRACE TRSBRACE TDOT TENDL
 %token <token> TPLUS TDASH TSTAR TSLASH TCOMMA
-%token <token> TINT TFLOAT TVOID TSTRUCT
+%token <token> TINT TFLOAT TVOID TSTRUCT TIF
+%token <token> TWHILE TRETURN TSCOLON
 
 //Types of grammar targets
 %type <identifier> ident
 %type <exp> exp numeric
 %type <statement> statement variableDec functionDec
-%type <assignment> assignment
 %type <block> block statements program
-%type <functionCall> functionCall
 %type <keyword> keyword
-%type <variableDef> variableDef
-%type <functionDef> functionDef
 %type <variableVec> functionArgs
 %type <expressionVec> callArgs
 %type <token> binaryOperatorToken
-%type <token> unaryOperatorToken
+//%type <token> unaryOperatorToken
 %type <token> nullaryOperatorToken
 
-//Operators and their precedence
+//Operators precedence
+%left TEQUAL TNEQUAL TLT TLTE TGT TGTE
 %left TPLUS TDASH
 %left TSTAR TSLASH
 
@@ -176,7 +174,6 @@ ident : TIDENTIFIER { $$ = new Identifier($1); $$->describe(); }
 //An expression is pretty much any (valid) mixture of operators
 exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | TDASH exp { $$ = new UnaryOperator($1,$2); $$->describe(); }
-            | exp TSTAR { $$ = new UnaryOperator($2,$1); $$->describe(); }
             | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); }
             | numeric { $$ = $1; }
             | ident { $$ = $1; }
@@ -191,7 +188,7 @@ numeric : TINTLIT { $$ = new Integer($1); $$->describe(); }
 
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH | TPLUS | TSTAR | TSLASH;
 
-unaryOperatorToken : TSTAR | TDASH;
+//unaryOperatorToken : TSTAR | TDASH;
 
 nullaryOperatorToken : TSCOLON;
 
