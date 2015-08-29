@@ -17,8 +17,7 @@ tar xvf gc-7.2
 
 cd gc-7.2
 
-./configure --prefix=/usr/local/ --enable-threads=posix --enable-thread-local-alloc --enable-parallel-mark \
-  --enable-cplusplus
+./configure --prefix=/usr/local/ --enable-threads=posix --enable-thread-local-alloc --enable-parallel-mark --enable-cplusplus
   
 make; make check; sudo make install
 
@@ -27,3 +26,12 @@ Use your package management system to obtain flex and bison. For Ubuntu this is:
 sudo apt-get install aptitude;
 sudo aptitude update;
 sudo aptitude install flex bison build-essential;
+
+add path fix file 
+touch /usr/local/include/gc_allocator.h
+echo "#include <gc/gc_allocator.h>" > /usr/local/include/gc_allocator.h
+In order to test:
+
+bison -d -o parser.cpp parser.y
+lex -o lex.cpp lex.l
+g++ -std=c++11 -o parser parser.cpp lex.cpp main.cpp

@@ -48,7 +48,7 @@ virtual void UnaryOperator::describe() {
 	printf("Found Unary Operator\n");
 }
 
-BinaryOperator::BinaryOperator(int64_t op, Expression* left, Expression* right) {
+BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) {
 	this->op = op;
 	this->left = left;
 	this->right = right;
@@ -67,7 +67,7 @@ virtual void Assignment::describe() {
 	printf("Found Assignment: %s\n",left->name);
 }
 
-Block::Block(vector<Statement*, gc_alloc> statements) {
+Block::Block(vector<Statement*, gc_allocator<Statement*>>* statements) {
 	this->statements = statements;
 }
 
@@ -79,7 +79,7 @@ Block::Block() {
 	this->statements = NULL;
 }
 
-FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_alloc> args) {
+FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args) {
 	this->ident = ident;
 	this->args = args;
 }
@@ -108,7 +108,7 @@ virtual void VariableDefinition::describe() {
 	printf("Found Variable Declaration: %s\n",type->name);
 }
 
-FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_alloc> args,
+FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	 Block* block) {
 	this->type = type;
 	this->ident = ident;
