@@ -3,8 +3,10 @@
 //Includes
 #include <string>
 #include <stdio.h>
+#include "node.h"
+#include "parser.hpp"
 #include "gc.h"
-#include "gc_alloc.h"
+#include "gc_allocator.h"
 
 //You must specify the allocator gc_alloc to STL containers to get GC memory
 

@@ -8,7 +8,7 @@
 //#include <llvm/Value.h>
 #include "gc.h"
 #include "gc_cpp.h"
-#include "gc_alloc.h"
+#include "gc_allocator.h"
 
 using namespace std;
 
@@ -50,6 +50,7 @@ public:
 class Integer : public Expression {
 public:
 	int64_t value;
+	Integer(int64_t value);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -57,6 +58,7 @@ public:
 class Float : public Expression {
 public:
 	double value;
+	Float(double value);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -64,6 +66,7 @@ public:
 class Identifier : public Expression {
 public:
 	char* name;
+	Identifier(char* name);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -71,6 +74,7 @@ public:
 class NullaryOperator : public Expression {
 public:
 	int64_t op;
+	NullaryOperator(int64_t op);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -79,6 +83,7 @@ class UnaryOperator : public Expression {
 public:
 	int64_t op;
 	Expression* exp;
+	UnaryOperator(int64_t op, Expression* exp);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -88,6 +93,7 @@ public:
 	int64_t op;
 	Expression* left;
 	Expression* right;
+	BinaryOperator(Expression* left, int64_t op, Expression* right);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -96,6 +102,7 @@ class Assignment : public Expression {
 public:
 	Identifier* left;
 	Expression* right;
+	Assignment(Identifier* left, Expression* right);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -105,8 +112,8 @@ public:
 class Block : public Expression {
 public:
 	Block();
-	Block(vector<Statement*,gc_alloc> statements);
-	vector<Statement*,gc_alloc> statements;
+	Block(vector<Statement*,gc_allocator<Statement*>>* statements);
+	vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -114,7 +121,8 @@ public:
 class FunctionCall : public Expression {
 public:
 	Identifier* ident;
-	vector<Expression*,gc_alloc> args;
+	vector<Expression*,gc_allocator<Expression*>>* args;
+	FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -123,6 +131,7 @@ public:
 class Keyword : public Node {
 public:
 	char* name;
+	Keyword(char* name);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -132,6 +141,7 @@ public:
 	Keyword* type;
 	Identifier* ident;
 	Expression* exp;
+	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -140,8 +150,10 @@ class FunctionDefinition : public Statement {
 public:
 	Keyword* type;
 	Identifier* ident;
-	vector<VariableDefinition*,gc_alloc> args;
+	vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args;
 	Block* block;
+	FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
+	 Block* block);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
@@ -150,6 +162,7 @@ public:
 class ExpressionStatement : public Statement {
 public:
 	Expression* exp;
+	ExpressionStatement(Expression* exp);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
