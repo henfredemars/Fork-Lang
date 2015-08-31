@@ -30,8 +30,12 @@ sudo aptitude install flex bison build-essential;
 add path fix file 
 touch /usr/local/include/gc_allocator.h
 echo "#include <gc/gc_allocator.h>" > /usr/local/include/gc_allocator.h
-In order to test:
 
-bison -d -o parser.cpp parser.y
-lex -o lex.cpp lex.l
-g++ -std=c++11 -o parser parser.cpp lex.cpp main.cpp
+In order to test:
+make
+
+In order to store error logs:
+
+make log
+
+logs are stored in fork_log
