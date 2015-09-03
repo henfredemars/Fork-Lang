@@ -4,30 +4,32 @@
 
 #include "node.h"
 
+//check if virtual voids are implement
+
 Integer::Integer(int64_t value) {
 	this->value = value;
 }
 
-virtual void Integer::describe() {
-	printf("Found Integer: %i\n",value);
+void Integer::describe() {
+	printf("Found Integer: %i\n", (int)value);
 }
 
 Float::Float(double value) {
 	this->value = value;
 }
 
-virtual void Float::describe() {
-	printf("Found Float: %f\n",value);
+void Float::describe() {
+	printf("Found Float: %f\n", value);
 }
 
 Identifier::Identifier(char* name) {
 	size_t length = strlen(name);
 	this->name = (char*)GC_MALLOC(length+1);
-	memcopy(this->name,name,length);
+	memcpy(this->name,name,length);
 	//It's good practice to keep our own copy
 }
 
-virtual void Identifier::describe() {
+void Identifier::describe() {
 	printf("Found Identifier: %s\n",name);
 }
 
@@ -35,7 +37,7 @@ NullaryOperator::NullaryOperator(int64_t op) {
 	this->op = op;
 }
 
-virtual void NullaryOperator::describe() {
+void NullaryOperator::describe() {
 	printf("Found Nullary Operator\n");
 }
 
@@ -44,7 +46,7 @@ UnaryOperator::UnaryOperator(int64_t op, Expression* exp) {
 	this->exp = exp;
 }
 
-virtual void UnaryOperator::describe() {
+void UnaryOperator::describe() {
 	printf("Found Unary Operator\n");
 }
 
@@ -54,7 +56,7 @@ BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) 
 	this->right = right;
 }
 
-virtual void BinaryOperator::describe() {
+void BinaryOperator::describe() {
 	printf("Found Binary Operator\n");
 }
 
@@ -63,7 +65,7 @@ Assignment::Assignment(Identifier* left, Expression* right) {
 	this->right = right;
 }
 
-virtual void Assignment::describe() {
+void Assignment::describe() {
 	printf("Found Assignment: %s\n",left->name);
 }
 
@@ -71,7 +73,7 @@ Block::Block(vector<Statement*, gc_allocator<Statement*>>* statements) {
 	this->statements = statements;
 }
 
-virtual void Block::describe() {
+void Block::describe() {
 	printf("Found Block\n");
 }
 
@@ -84,17 +86,17 @@ FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<E
 	this->args = args;
 }
 
-virtual void FunctionCall::describe() {
+void FunctionCall::describe() {
 	printf("Found Function Call: %s\n",ident->name);
 }
 
 Keyword::Keyword(char* name) {
 	size_t length = strlen(name);
 	this->name = (char*)GC_MALLOC(length+1);
-	memcopy(this->name,name,length);
+	memcpy(this->name,name,length);
 }
 
-virtual void Keyword::describe() {
+void Keyword::describe() {
 	printf("Found Keyword: %s\n",name);
 }
 
@@ -104,7 +106,7 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->exp = exp;
 }
 
-virtual void VariableDefinition::describe() {
+void VariableDefinition::describe() {
 	printf("Found Variable Declaration: %s\n",type->name);
 }
 
@@ -116,7 +118,7 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<
 	this->block = block;
 }
 
-virtual void FunctionDefinition::describe() {
+void FunctionDefinition::describe() {
 	printf("Found Function Definition: %s\n",ident->name);
 }
 
@@ -124,6 +126,6 @@ ExpressionStatement::ExpressionStatement(Expression* exp) {
 	this->exp = exp;
 }
 
-virtual void ExpressionStatement::describe() {
+void ExpressionStatement::describe() {
 	printf("Expression(s) converted into statements.\n");
 }
