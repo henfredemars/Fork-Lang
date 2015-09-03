@@ -1,14 +1,14 @@
 // Node definition and implementation for C++ binary tree benchmark program
-//   Be careful not to compile with optimizations or do_work could get optimized away
+//   Do not compile with optimizations or do_work may be optimized away
 
 #include <random>
-#include <unistd.h>
+#include <math.h>
 #include "gc.h"
 #include "gc_cpp.h"
 #include "util.cpp"
 
 #define NULL 0
-#define WORK_COST_MS 100
+#define WORK_COST 10000
 
 class Node : public gc {
   private:
@@ -65,7 +65,9 @@ void Node::populate(void) {
 
 // Do computationally expensive work at each node
 void Node::do_work(void) {
-  usleep(WORK_COST_MS);
+  for (int i = 0; i < WORK_COST; i++) {
+    pow(M_PI,M_PI);
+  }
   (this->leftchild) ? (this->leftchild->do_work()) : (null_function());
   (this->rightchild) ? (this->rightchild->do_work()) : (null_function());
 }
