@@ -39,6 +39,18 @@ void Node::populate(void) {
   (this->rightchild) ? (this->rightchild->populate()) : (null_function());
 }
 
+// Compute the size of the tree
+int Node::size(void) const {
+  int count = 1;
+  if (this->leftchild) {
+    count += this->leftchild->size();
+  }
+  if (this->rightchild) {
+    count += this->rightchild->size();
+  }
+  return count;
+}
+
 // Do computationally expensive work at each node
 void Node::do_work(void) {
   for (int i = 0; i < WORK_COST; i++) {

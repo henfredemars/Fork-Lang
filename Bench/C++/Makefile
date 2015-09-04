@@ -13,4 +13,4 @@ util.o: util.cpp
 	g++ -std=c++11 -c util.cpp -o util.o
 
 clean:
-	rm -f *.o
+	rm -f *.o; rm -f CTest
