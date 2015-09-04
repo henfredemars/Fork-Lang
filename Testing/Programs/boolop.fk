@@ -10,4 +10,5 @@ void main() {
 	if (a) {
 		a = 17;
 	}
+	return;
 }
