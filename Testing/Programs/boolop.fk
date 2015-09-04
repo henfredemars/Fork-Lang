@@ -1,0 +1,13 @@
+void main() {
+	if(0) {
+		3 + 5;
+	}
+	int a;
+	a = 7;
+	while (a) {
+		a = a - 1
+	}
+	if (a) {
+		a = 17;
+	}
+}
