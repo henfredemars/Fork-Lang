@@ -1,1 +1,6 @@
-//This is an e
+void main() {
+	5 + 3;
+	4 - 2 + 10;
+	6 * (4 / 2);
+	return;
+}

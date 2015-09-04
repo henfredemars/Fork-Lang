@@ -1,0 +1,7 @@
+void function() {
+	return;
+}
+void main() {
+	function();
+	return;
+}

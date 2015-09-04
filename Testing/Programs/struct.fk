@@ -1,0 +1,13 @@
+struct classy {
+	int a;
+	int b;
+	float c;
+}
+
+void main() {
+	classy b;
+	b.a = 5;
+	b.b = 7
+	b.c = 4.0;
+	return;
+}
