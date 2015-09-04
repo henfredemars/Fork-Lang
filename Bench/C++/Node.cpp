@@ -1,30 +1,6 @@
-// Node definition and implementation for C++ binary tree benchmark program
-//   Do not compile with optimizations or do_work may be optimized away
+// Node implementation file
 
-#include <random>
-#include <math.h>
-#include "gc.h"
-#include "gc_cpp.h"
-#include "util.cpp"
-
-#define NULL 0
-#define WORK_COST 10000
-
-class Node : public gc {
-  private:
-    static std::uniform_real_distribution<double> generator(0, 1);
-    static std::mt19937_64 rng;
-    double value;
-    Node* leftchild;
-    Node* rightchild;
-  public:
-    Node(void);
-    void populate(void);
-    void do_work(void);
-    static Node* build_tree_of_size(int size);
-    void insert_into_tree(Node* new_node);
-};
-
+#include "Node.h"
 
 // Class constructor
 Node::Node(void) {
@@ -37,7 +13,7 @@ Node::Node(void) {
 void Node::insert_into_tree(Node* new_node) {
   if (this->leftchild) {
     if (this->rightchild) { //Both children exist
-      if (this->generator(rng) < 0.5) {
+      if (Node::generator->operator()(*rng) < 0.5) {
         this->leftchild->insert_into_tree(new_node);
       } else {
         this->rightchild->insert_into_tree(new_node);
@@ -48,7 +24,7 @@ void Node::insert_into_tree(Node* new_node) {
   } else if (this->rightchild) { //Right but no left
     this->leftchild = new_node;
   } else { //No children, choose randomly
-    if (this->generator(rng) < 0.5) {
+    if (Node::generator->operator()(*rng) < 0.5) {
       this->leftchild = new_node;
     } else {
       this->rightchild = new_node;
@@ -58,7 +34,7 @@ void Node::insert_into_tree(Node* new_node) {
 
 // Populate the tree from here down with random values
 void Node::populate(void) {
-  this->value = this->generator(rng);
+  this->value = Node::generator->operator()(*rng);
   (this->leftchild) ? (this->leftchild->populate()) : (null_function());
   (this->rightchild) ? (this->rightchild->populate()) : (null_function());
 }
@@ -66,14 +42,14 @@ void Node::populate(void) {
 // Do computationally expensive work at each node
 void Node::do_work(void) {
   for (int i = 0; i < WORK_COST; i++) {
-    pow(M_PI,M_PI);
+    this->value = pow(this->value,M_PI);
   }
   (this->leftchild) ? (this->leftchild->do_work()) : (null_function());
   (this->rightchild) ? (this->rightchild->do_work()) : (null_function());
 }
 
-// Build tree to contain 'size' Nodes
-Node* build_tree_of_size(int size) {
+// Build tree evenly to contain 'size' Nodes
+Node* Node::build_tree_of_size(int size) {
   if (size < 1) return NULL;
   int actual_size = 1;
   Node* root = new Node();
@@ -84,4 +60,7 @@ Node* build_tree_of_size(int size) {
   return root;
 }
 
+// Initialize static members
+std::uniform_real_distribution<double>* Node::generator = new std::uniform_real_distribution<double>();
+std::mt19937_64* Node::rng = new std::mt19937_64();
 
