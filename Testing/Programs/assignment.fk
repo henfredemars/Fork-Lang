@@ -1,0 +1,7 @@
+//This is an assignment
+
+void main() {
+  int a;
+  a = 5;
+}
+
