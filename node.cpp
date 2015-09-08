@@ -4,7 +4,18 @@
 
 #include "node.h"
 
-//check if virtual voids are implement
+
+void Node::describe() {
+	printf("Found generic node object with no fields\n");
+}
+
+void Expression::describe() {
+	printf("Found generic Expression object with no fields\n");
+}
+
+void Statement::describe() {
+	printf("Found generic statement object with no fields\n");
+}
 
 Integer::Integer(int64_t value) {
 	this->value = value;
@@ -57,7 +68,7 @@ BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) 
 }
 
 void BinaryOperator::describe() {
-	printf("Found Binary Operator\n");
+	printf("Found Binary Operator %d\n",(int)this->op);
 }
 
 Assignment::Assignment(Identifier* left, Expression* right) {
