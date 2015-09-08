@@ -19,10 +19,10 @@ node.o: node.h node.cpp
 	g++ -std=c++11 -c node.cpp -o node.o 
 
 main.o: main.cpp
-	g++ -std=c++11 -lgc -c main.cpp -o main.o
+	g++ -std=c++11 -c main.cpp -o main.o
 
 log: parser.o lex.o main.o parser.hpp
 	g++ -std=c++11 -o parser parser.o lex.o node.o main.o -lgc > fork_log 2>&1
 
 clean:
-	rm -f lex.cpp parser.cpp *.o fork_log
+	rm -f lex.cpp parser.cpp *.o fork_log parser
