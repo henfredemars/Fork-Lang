@@ -31,6 +31,9 @@ extern "C" int yywrap() { return 1; }
 "<="                      return TOKEN(TLTE);
 ">"                       return TOKEN(TGT);
 ">="                      return TOKEN(TGTE);
+"||"                      return TOKEN(TLOR);
+"&&"                      return TOKEN(TLAND);
+"!"                       return TOKEN(TLNOT);
 "("                       return TOKEN(TLPAREN);
 ")"                       return TOKEN(TRPAREN);
 "{"                       return TOKEN(TLBRACE);
