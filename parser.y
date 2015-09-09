@@ -1,5 +1,5 @@
 
-//TODO: Control flow, reference types, structures, consider arrays, check compliance, includes
+//TODO: Control flow, reference types, structures, consider arrays, check compliance, includes fcall
 
 
 //Prelude
@@ -43,6 +43,7 @@
 %token <token> TPLUS TDASH TSTAR TSLASH TCOMMA
 %token <token> TINT TFLOAT TVOID TSTRUCT TIF
 %token <token> TWHILE TRETURN TSCOLON
+%token <token> TLAND TLOR TLNOT UMINUS EMPTYFUNARGS
 
 //Types of grammar targets
 %type <identifier> ident
@@ -53,13 +54,17 @@
 %type <variableVec> functionArgs
 %type <expressionVec> callArgs
 %type <token> binaryOperatorToken
-//%type <token> unaryOperatorToken
+%type <token> unaryOperatorToken
 %type <token> nullaryOperatorToken
 
 //Operators precedence
-%left TEQUAL TNEQUAL TLT TLTE TGT TGTE
+%precedence TCOMMIT TENDL EMTPYFUNARGS
+%left TEQUAL TNEQUAL TLT TLTE TGT TGTE TLAND TLOR TLNOT
 %left TPLUS TDASH
 %left TSTAR TSLASH
+%right UMINUS
+%precedence TIDENTIFIER
+
 
 //The target is a program
 %start program
@@ -84,8 +89,8 @@ statements : statement {
              } ;
 
 //A statement is a variable declaration, function declaration, empty, or an expression-statement
-statement : variableDec | functionDec | TENDL { $$ = new Statement(); 
-             } |
+statement : variableDec | functionDec | TENDL {$$ = new Statement();}
+             |
              exp {
                 $$ = new ExpressionStatement($1);
                 $$->describe();
@@ -156,13 +161,15 @@ keyword : TINT {
 
 //Arguments in a function definition
 functionArgs : /* empty */ { 
-                $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); }
-                | variableDec { $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); $$->push_back((VariableDefinition*)$1); } //VariableDec always a VariableDefinition*, although definied as a statement
+                $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); } %prec EMPTYFUNARGS
+                | variableDec { $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
+                  $$->push_back((VariableDefinition*)$1); } 
+                  //VariableDec always a VariableDefinition*, although definied as a statement
                 | functionArgs TCOMMA variableDec { $1->push_back((VariableDefinition*)$3); }
                 ;
 
 //Arguments of a particular function call at the call site
-callArgs : /* empty */ { $$ = new vector<Expression*,gc_allocator<Expression*>>(); }
+callArgs : /* empty */ { $$ = new vector<Expression*,gc_allocator<Expression*>>(); } %prec EMPTYFUNARGS
               | exp { $$ = new vector<Expression*,gc_allocator<Expression*>>(); $$->push_back($1); }
               | callArgs TCOMMA exp { $1->push_back($3); }
               ;
@@ -173,8 +180,8 @@ ident : TIDENTIFIER { $$ = new Identifier($1); $$->describe(); }
 
 //An expression is pretty much any (valid) mixture of operators
 exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); $$->describe(); }
-            | TDASH exp { $$ = new UnaryOperator($1,$2); $$->describe(); }
-            | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); }
+            | unaryOperatorToken exp { $$ = new UnaryOperator($1,$2); $$->describe(); } %prec UMINUS
+            | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); } %prec TCOMMIT
             | numeric { $$ = $1; }
             | ident { $$ = $1; }
             | TLPAREN exp TRPAREN { $$ = $2; } //Consume pairs of parentheses
@@ -186,9 +193,11 @@ numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
             | TFLOATLIT { $$ = new Float(atof($1)); $$->describe(); }
             ;
 
-binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH | TPLUS | TSTAR | TSLASH;
+binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH 
+			| TPLUS | TSTAR | TSLASH
+			TLOR | TLAND | TLNOT;
 
-//unaryOperatorToken : TSTAR | TDASH;
+unaryOperatorToken : TSTAR | TDASH | TLNOT;
 
 nullaryOperatorToken : TSCOLON;
 

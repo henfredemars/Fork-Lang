@@ -75,7 +75,14 @@ extern int yydebug;
     TIF = 285,
     TWHILE = 286,
     TRETURN = 287,
-    TSCOLON = 288
+    TSCOLON = 288,
+    TLAND = 289,
+    TLOR = 290,
+    TLNOT = 291,
+    UMINUS = 292,
+    EMPTYFUNARGS = 293,
+    TCOMMIT = 294,
+    EMTPYFUNARGS = 295
   };
 #endif
 
@@ -106,7 +113,7 @@ union YYSTYPE
     char* string;
     int64_t token;
 
-#line 110 "parser.hpp" /* yacc.c:1909  */
+#line 117 "parser.hpp" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
