@@ -10,6 +10,8 @@
 #include "gc_cpp.h"
 #include "gc_allocator.h"
 
+#define GC_DEBUG
+
 using namespace std;
 
 //Things defined here

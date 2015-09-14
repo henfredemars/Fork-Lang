@@ -5,3 +5,6 @@ void main() {
 	function();
 	return;
 }
+
+main();
+

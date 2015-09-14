@@ -1,4 +1,7 @@
 void main() {
 	6 + 4
 	7 * 5;
+	return;
 }
+
+main();

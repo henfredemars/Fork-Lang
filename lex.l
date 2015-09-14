@@ -7,6 +7,7 @@
 #include "parser.hpp"
 #include "gc.h"
 #include "gc_allocator.h"
+#include "yy_overrides.h"
 
 //You must specify the allocator gc_alloc to STL containers to get GC memory
 
@@ -19,6 +20,10 @@
 extern "C" int yywrap() { return 1; }
 
 %}
+
+%option noyyalloc
+%option noyyrealloc
+%option noyyfree
 
 %%
 

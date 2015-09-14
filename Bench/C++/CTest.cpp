@@ -7,7 +7,7 @@
 
 int main(void) {
   //Allow BDW subsystem to initialize
-  GC_init();
+  GC_INIT();
 
   //Create binary tree
   Node* root = Node::build_tree_of_size(1000);
@@ -18,7 +18,7 @@ int main(void) {
   root->do_work();
 
   //Print Completion Message
-  char* tcmp_buf = (char*)GC_malloc(200);
+  char* tcmp_buf = (char*)GC_MALLOC_ATOMIC(200);
   std::string tcmsg = "Tasks have been completed.\n";
   memcpy(tcmp_buf,tcmsg.c_str(),tcmsg.length());
   snprintf(tcmp_buf+tcmsg.length(),200-tcmsg.length(),"Tree had size: %d\n",root->size());
