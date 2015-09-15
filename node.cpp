@@ -140,3 +140,16 @@ ExpressionStatement::ExpressionStatement(Expression* exp) {
 void ExpressionStatement::describe() {
 	printf("Expression(s) converted into statements.\n");
 }
+
+ReturnStatement::ReturnStatement(Expression* exp) {
+	this->exp = exp;
+}
+
+void ReturnStatement::describe() {
+	if (exp) {
+	  printf("Found return statement with expression.\n");
+	} else {
+	  printf("Found return statement, statement returns void.\n");
+	}
+}
+

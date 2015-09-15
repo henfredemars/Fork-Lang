@@ -4,10 +4,12 @@
 
 extern Block *program;
 extern int yyparse();
+extern int yydebug;
 extern FILE* yyin;
 
 int main(int argc, char **argv) {
 	GC_INIT();
+	yydebug = 1;
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");
 		if(yyin) {
