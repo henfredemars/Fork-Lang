@@ -32,6 +32,7 @@ class Keyword;
 class VariableDefinition;
 class FunctionDefinition;
 class ReturnStatement;
+class AssignStatement;
 
 class Node : public gc {
 public:
@@ -178,5 +179,14 @@ public:
 	ReturnStatement(Expression* exp);
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
+
+//C-like assignment of a variable
+class AssignStatement : public Statement {
+public:
+	Expression* valxp;
+	Expression* target;
+	AssignStatement(Expression* target,Expression* valxp);
+	virtual void describe();
 };
 

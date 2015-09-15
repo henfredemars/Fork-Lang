@@ -153,3 +153,12 @@ void ReturnStatement::describe() {
 	}
 }
 
+AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
+	this->target = target;
+	this->valxp = valxp;
+}
+
+void AssignStatement::describe() {
+	printf("Found assignment statement.\n");
+}
+

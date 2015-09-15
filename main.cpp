@@ -2,10 +2,11 @@
 #include "node.h"
 #include "stdio.h"
 
-extern Block *program;
 extern int yyparse();
 extern int yydebug;
 extern FILE* yyin;
+
+Node* ast_root = NULL;
 
 int main(int argc, char **argv) {
 	GC_INIT();

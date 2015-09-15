@@ -10,6 +10,7 @@
 
     extern int yylex();
     extern int yydebug;
+    extern Node* ast_root;
     void yyerror(const char *s) { printf("Error in parser: %s\n", s); }
 %}
 
@@ -67,7 +68,7 @@
 %precedence TIDENTIFIER
 
 
-//The target is a program
+//Start symbol
 %start program
 
 
@@ -76,6 +77,7 @@
 
 //A program is a collection of statements in a block
 program : statements { program = $1; program->describe();
+		       ast_root = program;
 	  	       printf("Parser: start symbol\n");}
         ;
 
@@ -95,9 +97,13 @@ statements : statement {
              } ;
 
 //A statement is a variable declaration, function declaration, empty, or an expression-statement
-statement : variableDec TENDL {$$=$1;printf("Parser: variableDec becomes statement\n");} 
+statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes statement\n");} 
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
              |
+	     exp TSET exp {
+		$$ = new AssignStatement($1,$3);
+		$$->describe();
+	     } |
              exp TENDL {
                 $$ = new ExpressionStatement($1);
                 $$->describe();
@@ -110,14 +116,6 @@ statement : variableDec TENDL {$$=$1;printf("Parser: variableDec becomes stateme
 		$$ = new ReturnStatement($2);
 		$$->describe();
              } |
-	 //    TRETURN TSCOLON TENDL {
-         //       $$ = new ReturnStatement(NULL);
-         //       $$->describe();
-         //    } |
-         //    TRETURN exp TSCOLON TENDL {
-         //       $$ = new ReturnStatement($2);
-         //       $$->describe();
-         //    } |
              exp { //Dont require a TENDL to consume
                 $$ = new ExpressionStatement($1);
                 $$->describe();
@@ -129,10 +127,6 @@ statement : variableDec TENDL {$$=$1;printf("Parser: variableDec becomes stateme
              TRETURN exp {
                 $$ = new ReturnStatement($2);
                 $$->describe();
-       //      } |
-       //      TRETURN TSCOLON {
-       //         $$ = new ReturnStatement(NULL);
-       //         $$->describe();
              } |
              TRETURN exp TSCOLON {
                 $$ = new ReturnStatement($2);
@@ -155,10 +149,10 @@ block : TLBRACE statements TRBRACE { $$ = $2; $$->describe();
               ;
 
 //A variable declaration is made of a keyword, identifier, and possibly an expression
-variableDec : keyword ident TENDL { $$ = new VariableDefinition($1,$2,NULL);
+variableDec : keyword ident { $$ = new VariableDefinition($1,$2,NULL);
                 $$->describe();
              } |
-             keyword ident TSET exp TENDL { $$ = new VariableDefinition($1,$2,$4);
+             keyword ident TSET exp { $$ = new VariableDefinition($1,$2,$4);
                 $$->describe();
              } ;
 

@@ -31,7 +31,8 @@ def main():
     f_out.close()
   #Call parser on temp_files
   for file in temp_files:
-    os.system("valgrind ./parser {}".format(file))
+    print("Please ignore GC_INIT() uninitialized memory.")
+    os.system("valgrind --vgdb=no ./parser {}".format(file))
   #Postprocessing
   for file in temp_files:
     os.remove(file)
