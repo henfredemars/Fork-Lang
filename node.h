@@ -10,7 +10,8 @@
 #include "gc_cpp.h"
 #include "gc_allocator.h"
 
-#define GC_DEBUG
+#define GC_DEBUG 1
+#define YYDEBUG 1
 
 using namespace std;
 
@@ -30,6 +31,7 @@ class FunctionCall;
 class Keyword;
 class VariableDefinition;
 class FunctionDefinition;
+class ReturnStatement;
 
 class Node : public gc {
 public:
@@ -168,3 +170,13 @@ public:
 	virtual void describe();
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
+
+//C-like return statement AST object
+class ReturnStatement : public Statement {
+public:
+	Expression* exp;
+	ReturnStatement(Expression* exp);
+	virtual void describe();
+	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
+

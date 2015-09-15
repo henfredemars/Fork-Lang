@@ -9,6 +9,7 @@
     Block *program;
 
     extern int yylex();
+    extern int yydebug;
     void yyerror(const char *s) { printf("Error in parser: %s\n", s); }
 %}
 
@@ -74,30 +75,83 @@
 %%
 
 //A program is a collection of statements in a block
-program : statements { program = $1; program->describe(); }
+program : statements { program = $1; program->describe();
+	  	       printf("Parser: start symbol\n");}
         ;
 
 //Statements can be collected together to form blocks
 statements : statement { 
                 vector<Statement*,gc_allocator<Statement*>>* statements;
+		statements = new vector<Statement*,gc_allocator<Statement*>>();
                 $$ = new Block(statements);
+                printf("Push marker 1\n");
                 $$->statements->push_back($1);
                 $$->describe();
              } |
              statements statement {
                 $1->statements->push_back($2);
+		printf("Parser: add statement to block\n");
+		$$=$1;
              } ;
 
 //A statement is a variable declaration, function declaration, empty, or an expression-statement
-statement : variableDec | functionDec | TENDL {$$ = new Statement();}
+statement : variableDec TENDL {$$=$1;printf("Parser: variableDec becomes statement\n");} 
+	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
              |
-             exp {
+             exp TENDL {
                 $$ = new ExpressionStatement($1);
+                $$->describe();
+             } |
+	     TRETURN TENDL {
+		$$ = new ReturnStatement(NULL);
+		$$->describe();
+	     } |
+	     TRETURN exp TENDL {
+		$$ = new ReturnStatement($2);
+		$$->describe();
+             } |
+	     TRETURN TSCOLON TENDL {
+                $$ = new ReturnStatement(NULL);
+                $$->describe();
+             } |
+             TRETURN exp TSCOLON TENDL {
+                $$ = new ReturnStatement($2);
+                $$->describe();
+             } |
+             exp { //Dont require a TENDL to consume
+                $$ = new ExpressionStatement($1);
+                $$->describe();
+             } |
+             TRETURN {
+                $$ = new ReturnStatement(NULL);
+                $$->describe();
+             } |
+             TRETURN exp {
+                $$ = new ReturnStatement($2);
+                $$->describe();
+             } |
+             TRETURN TSCOLON {
+                $$ = new ReturnStatement(NULL);
+                $$->describe();
+             } |
+             TRETURN exp TSCOLON {
+                $$ = new ReturnStatement($2);
                 $$->describe();
              } ;
 
-block : TLBRACE statements TRBRACE { $$ = $2; $$->describe(); }
+
+
+block : TLBRACE statements TRBRACE { $$ = $2; $$->describe();
+		printf("Parser: statements become block\n"); } |
+        TLBRACE TENDL statements TRBRACE { $$ = $3; $$->describe();
+                printf("Parser: statements become block\n"); } |
+        TLBRACE statements TENDL TRBRACE { $$ = $2; $$->describe();
+                printf("Parser: statements become block\n"); } |
+        TLBRACE TENDL statements TENDL TRBRACE { $$ = $3; $$->describe();
+                printf("Parser: statements become block\n"); }
+
               | TLBRACE TRBRACE { $$ = new Block(); $$->describe(); }
+	      | TLBRACE TENDL TRBRACE { $$ = new Block(); $$->describe(); }
               ;
 
 //A variable declaration is made of a keyword, identifier, and possibly an expression
@@ -113,11 +167,11 @@ functionDec : keyword ident TLPAREN functionArgs TRPAREN block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
               $$->describe();
              }/* |
-             keyword ident TLPAREN functionArgs TRPAREN statement block {
+             keyword ident TLPAREN functionArgs TRPAREN block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
               $$->describe();
              } |
-             keyword ident TLPAREN functionArgs TRPAREN statements block {
+             keyword ident TLPAREN functionArgs TRPAREN TENDL block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
               $$->describe();
              }*/ ;
@@ -143,11 +197,6 @@ keyword : TINT {
               $$ = new Keyword(name);
               $$->describe();
               } |
-              TRETURN {
-              char name[] = "return";
-              $$ = new Keyword(name);
-              $$->describe();
-              } |
               TSTRUCT {
               char name[] = "struct";
               $$ = new Keyword(name);
@@ -161,17 +210,23 @@ keyword : TINT {
 
 //Arguments in a function definition
 functionArgs : /* empty */ { 
-                $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); } %prec EMPTYFUNARGS
+                $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+		  printf("Parser: functionArgs, empty in function definition\n");} %prec EMPTYFUNARGS
                 | variableDec { $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
-                  $$->push_back((VariableDefinition*)$1); } 
-                  //VariableDec always a VariableDefinition*, although definied as a statement
-                | functionArgs TCOMMA variableDec { $1->push_back((VariableDefinition*)$3); }
+                  $$->push_back((VariableDefinition*)$1); 
+		  printf("Parser: functionArgs, one argument in function definition\n");} 
+                  //VariableDec always a VariableDefinition*, although defined as a statement
+                | functionArgs TCOMMA variableDec { $1->push_back((VariableDefinition*)$3);
+		  printf("Parser: additional function argument found in function definition\n");}
                 ;
 
 //Arguments of a particular function call at the call site
-callArgs : /* empty */ { $$ = new vector<Expression*,gc_allocator<Expression*>>(); } %prec EMPTYFUNARGS
-              | exp { $$ = new vector<Expression*,gc_allocator<Expression*>>(); $$->push_back($1); }
-              | callArgs TCOMMA exp { $1->push_back($3); }
+callArgs : /* empty */ { $$ = new vector<Expression*,gc_allocator<Expression*>>(); 
+		printf("Parser: new callArgs, empty\n");} %prec EMPTYFUNARGS
+              | exp { $$ = new vector<Expression*,gc_allocator<Expression*>>(); $$->push_back($1);
+		printf("Parser: new callArgs, one argument expression\n");}
+              | callArgs TCOMMA exp { $1->push_back($3); 
+		printf("Parser: callArgs additional argument found\n");}
               ;
 
 //An identifier comes from the corresponding token string
