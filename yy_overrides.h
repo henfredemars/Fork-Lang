@@ -3,7 +3,8 @@
 
 void* yyalloc(size_t bytes) {
   //Tell collector to look inside the allocation for pointers
-  //  but do not handle collection of the memory itself
+  //  but do not handle collection of the memory itself because
+  //  we dont want to assume flex-bison never obscures pointers
   return GC_MALLOC_UNCOLLECTABLE(bytes);
 }
 

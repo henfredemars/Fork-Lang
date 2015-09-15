@@ -59,7 +59,7 @@
 %type <token> nullaryOperatorToken
 
 //Operators precedence
-%precedence TCOMMIT TENDL EMTPYFUNARGS
+%precedence TCOMMIT TENDL EMTPYFUNARGS TSCOLON
 %left TEQUAL TNEQUAL TLT TLTE TGT TGTE TLAND TLOR TLNOT
 %left TPLUS TDASH
 %left TSTAR TSLASH
@@ -110,14 +110,14 @@ statement : variableDec TENDL {$$=$1;printf("Parser: variableDec becomes stateme
 		$$ = new ReturnStatement($2);
 		$$->describe();
              } |
-	     TRETURN TSCOLON TENDL {
-                $$ = new ReturnStatement(NULL);
-                $$->describe();
-             } |
-             TRETURN exp TSCOLON TENDL {
-                $$ = new ReturnStatement($2);
-                $$->describe();
-             } |
+	 //    TRETURN TSCOLON TENDL {
+         //       $$ = new ReturnStatement(NULL);
+         //       $$->describe();
+         //    } |
+         //    TRETURN exp TSCOLON TENDL {
+         //       $$ = new ReturnStatement($2);
+         //       $$->describe();
+         //    } |
              exp { //Dont require a TENDL to consume
                 $$ = new ExpressionStatement($1);
                 $$->describe();
@@ -129,10 +129,10 @@ statement : variableDec TENDL {$$=$1;printf("Parser: variableDec becomes stateme
              TRETURN exp {
                 $$ = new ReturnStatement($2);
                 $$->describe();
-             } |
-             TRETURN TSCOLON {
-                $$ = new ReturnStatement(NULL);
-                $$->describe();
+       //      } |
+       //      TRETURN TSCOLON {
+       //         $$ = new ReturnStatement(NULL);
+       //         $$->describe();
              } |
              TRETURN exp TSCOLON {
                 $$ = new ReturnStatement($2);
