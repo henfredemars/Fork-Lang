@@ -30,7 +30,9 @@ class Block;
 class FunctionCall;
 class Keyword;
 class VariableDefinition;
+class StructureDefinition;
 class FunctionDefinition;
+class StructureDeclaration;
 class ReturnStatement;
 class AssignStatement;
 
@@ -151,6 +153,14 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+class StructureDefinition : public Statement {
+public:
+	Identifier* ident;
+	Block* block;
+	StructureDefinition(Identifier* ident,Block* block);
+	virtual void describe();
+};
+
 class FunctionDefinition : public Statement {
 public:
 	Keyword* type;
@@ -187,6 +197,15 @@ public:
 	Expression* valxp;
 	Expression* target;
 	AssignStatement(Expression* target,Expression* valxp);
+	virtual void describe();
+};
+
+//C-like declaration (not definition) of a structure
+class StructureDeclaration : public Statement {
+public:
+	Identifier* type;
+	Identifier* ident;
+	StructureDeclaration(Identifier* type,Identifier* ident);
 	virtual void describe();
 };
 

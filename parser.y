@@ -19,20 +19,11 @@
     Node* node;
     Expression* exp;
     Statement* statement;
-    Integer* integer;
-    Float* flote; //name unimportant, float
     Identifier* identifier;
-    NullaryOperator* nullaryOp;
-    UnaryOperator* unaryOp;
-    BinaryOperator* binaryOp;
-    Assignment* assignment;
     Block* block;
-    FunctionCall* functionCall;
     Keyword* keyword;
-    VariableDefinition* variableDef;
     vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* variableVec;
     vector<Expression*,gc_allocator<Expression*>>* expressionVec;
-    FunctionDefinition* functionDef;
     char* string;
     int64_t token;
 }
@@ -50,9 +41,9 @@
 //Types of grammar targets
 %type <identifier> ident
 %type <exp> exp numeric
-%type <statement> statement variableDec functionDec
+%type <statement> statement variableDec functionDec structDec
 %type <block> block statements program
-%type <keyword> keyword
+%type <keyword> var_keyword struct_keyword
 %type <variableVec> functionArgs
 %type <expressionVec> callArgs
 %type <token> binaryOperatorToken
@@ -86,7 +77,6 @@ statements : statement {
                 vector<Statement*,gc_allocator<Statement*>>* statements;
 		statements = new vector<Statement*,gc_allocator<Statement*>>();
                 $$ = new Block(statements);
-                printf("Push marker 1\n");
                 $$->statements->push_back($1);
                 $$->describe();
              } |
@@ -99,11 +89,16 @@ statements : statement {
 //A statement is a variable declaration, function declaration, empty, or an expression-statement
 statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes statement\n");} 
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
-             |
+             | structDec TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
+	     |
 	     exp TSET exp {
 		$$ = new AssignStatement($1,$3);
 		$$->describe();
 	     } |
+	     exp TSET exp TENDL {
+                $$ = new AssignStatement($1,$3);
+                $$->describe();
+             } |
              exp TENDL {
                 $$ = new ExpressionStatement($1);
                 $$->describe();
@@ -148,30 +143,39 @@ block : TLBRACE statements TRBRACE { $$ = $2; $$->describe();
 	      | TLBRACE TENDL TRBRACE { $$ = new Block(); $$->describe(); }
               ;
 
-//A variable declaration is made of a keyword, identifier, and possibly an expression
-variableDec : keyword ident { $$ = new VariableDefinition($1,$2,NULL);
+//A variable declaration is made of a var_keyword, identifier, and possibly an expression
+variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,NULL);
                 $$->describe();
              } |
-             keyword ident TSET exp { $$ = new VariableDefinition($1,$2,$4);
+	     ident ident { $$ = new StructureDeclaration($1,$2);
+                $$->describe(); //Assume ident ident is a structure dec
+             } |
+             var_keyword ident TSET exp { $$ = new VariableDefinition($1,$2,$4);
                 $$->describe();
              } ;
 
-//A function definition is made of a keyword, identifier, arguments, and a function body block
-functionDec : keyword ident TLPAREN functionArgs TRPAREN block {
+//Definition of a structure
+structDec : struct_keyword ident block {
+	      $$ = new StructureDefinition($2,$3);
+	      $$->describe();
+	    } ;
+
+//A function definition is made of a var_keyword, identifier, arguments, and a function body block
+functionDec : var_keyword ident TLPAREN functionArgs TRPAREN block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
               $$->describe();
              }/* |
-             keyword ident TLPAREN functionArgs TRPAREN block {
+             var_keyword ident TLPAREN functionArgs TRPAREN block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
               $$->describe();
              } |
-             keyword ident TLPAREN functionArgs TRPAREN TENDL block {
+             var_keyword ident TLPAREN functionArgs TRPAREN TENDL block {
               $$ = new FunctionDefinition($1,$2,$4,$6);
               $$->describe();
              }*/ ;
 
-//Langauge keywords listed here
-keyword : TINT {
+//Langauge var_keywords listed here
+var_keyword : TINT {
               char name[] = "int";
               $$ = new Keyword(name);
               $$->describe();
@@ -181,26 +185,19 @@ keyword : TINT {
               $$ = new Keyword(name);
               $$->describe();
               } |
-              TIF {
-              char name[] = "if";
-              $$ = new Keyword(name);
-              $$->describe();
-              } |
-              TWHILE {
-              char name[] = "while";
-              $$ = new Keyword(name);
-              $$->describe();
-              } |
-              TSTRUCT {
-              char name[] = "struct";
-              $$ = new Keyword(name);
-              $$->describe();
-              } |
               TVOID {
               char name[] = "void";
               $$ = new Keyword(name);
               $$->describe();
               } ;
+
+//Struct keyword
+struct_keyword : TSTRUCT {
+                 char name[] = "struct";
+                 $$ = new Keyword(name);
+                 $$->describe(); }
+		 ;
+
 
 //Arguments in a function definition
 functionArgs : /* empty */ { 
@@ -234,7 +231,7 @@ exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); $$->descr
             | numeric { $$ = $1; }
             | ident { $$ = $1; }
             | TLPAREN exp TRPAREN { $$ = $2; } //Consume pairs of parentheses
-            | ident TEQUAL exp { $$ = new Assignment($1,$3); $$->describe(); }
+            | ident TEQUAL exp { $$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); $$->describe(); }
             ;
 
@@ -243,7 +240,7 @@ numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
             ;
 
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH 
-			| TPLUS | TSTAR | TSLASH
+			| TPLUS | TSTAR | TSLASH | TDOT |
 			TLOR | TLAND | TLNOT;
 
 unaryOperatorToken : TSTAR | TDASH | TLNOT;

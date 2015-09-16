@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
 		if(yyin) {
 			yyparse();
 			fclose(yyin);
+			yyin = NULL;
 		}
 		else {
 			std::cout << "Error, failed to open file: " << argv[1] << "\n";
