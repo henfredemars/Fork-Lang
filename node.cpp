@@ -22,7 +22,7 @@ Integer::Integer(int64_t value) {
 }
 
 void Integer::describe() {
-	printf("Found Integer: %i\n", (int)value);
+	printf("Found Literal Integer: %i\n", (int)value);
 }
 
 Float::Float(double value) {
@@ -118,7 +118,8 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 }
 
 void VariableDefinition::describe() {
-	printf("Found Variable Declaration: %s\n",type->name);
+	printf("Found Variable Declaration: type='%s' identifier='%s'\n",type->name,
+		ident->name);
 }
 
 FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
@@ -138,7 +139,7 @@ ExpressionStatement::ExpressionStatement(Expression* exp) {
 }
 
 void ExpressionStatement::describe() {
-	printf("Expression(s) converted into statements.\n");
+	printf("Expression(s) converted into statements\n");
 }
 
 ReturnStatement::ReturnStatement(Expression* exp) {
@@ -147,9 +148,9 @@ ReturnStatement::ReturnStatement(Expression* exp) {
 
 void ReturnStatement::describe() {
 	if (exp) {
-	  printf("Found return statement with expression.\n");
+	  printf("Found return statement with expression\n");
 	} else {
-	  printf("Found return statement, statement returns void.\n");
+	  printf("Found return statement, statement returns void\n");
 	}
 }
 
@@ -159,6 +160,25 @@ AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
 }
 
 void AssignStatement::describe() {
-	printf("Found assignment statement.\n");
+	printf("Found Assignment Statement\n");
+}
+
+StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
+	this->ident = ident;
+	this->block = block;
+}
+
+void StructureDefinition::describe() {
+	printf("Found Structure Definition: %s\n",ident->name);
+}
+
+StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
+	this->type = type;
+	this->ident = ident;
+}
+
+void StructureDeclaration::describe() {
+	printf("Found Structure Declaration: type='%s' identifier='%s'\n",
+		type->name,ident->name);
 }
 
