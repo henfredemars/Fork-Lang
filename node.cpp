@@ -6,15 +6,16 @@
 
 
 void Node::describe() {
-	printf("Found generic node object with no fields\n");
+	printf("---Found generic node object with no fields.");
+	printf("---This SHOULD BE AN ERROR.");
 }
 
 void Expression::describe() {
-	printf("Found generic Expression object with no fields\n");
+	printf("---Found generic Expression object with no fields\n");
 }
 
 void Statement::describe() {
-	printf("Found generic statement object with no fields\n");
+	printf("---Found generic statement object with no fields\n");
 }
 
 Integer::Integer(int64_t value) {
@@ -22,7 +23,7 @@ Integer::Integer(int64_t value) {
 }
 
 void Integer::describe() {
-	printf("Found Literal Integer: %i\n", (int)value);
+	printf("---Found Literal Integer: %i\n", (int)value);
 }
 
 Float::Float(double value) {
@@ -30,18 +31,18 @@ Float::Float(double value) {
 }
 
 void Float::describe() {
-	printf("Found Float: %f\n", value);
+	printf("---Found Float: %f\n", value);
 }
 
 Identifier::Identifier(char* name) {
 	size_t length = strlen(name);
-	this->name = (char*)GC_MALLOC(length+1);
+	this->name = (char*)GC_MALLOC_ATOMIC(length+1);
 	memcpy(this->name,name,length);
-	//It's good practice to keep our own copy
+	//Its good practice to keep our own copy
 }
 
 void Identifier::describe() {
-	printf("Found Identifier: %s\n",name);
+	printf("---Found Identifier: %s\n",name);
 }
 
 NullaryOperator::NullaryOperator(int64_t op) {
@@ -49,7 +50,7 @@ NullaryOperator::NullaryOperator(int64_t op) {
 }
 
 void NullaryOperator::describe() {
-	printf("Found Nullary Operator\n");
+	printf("---Found Nullary Operator\n");
 }
 
 UnaryOperator::UnaryOperator(int64_t op, Expression* exp) {
@@ -58,7 +59,7 @@ UnaryOperator::UnaryOperator(int64_t op, Expression* exp) {
 }
 
 void UnaryOperator::describe() {
-	printf("Found Unary Operator\n");
+	printf("---Found Unary Operator\n");
 }
 
 BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) {
@@ -68,7 +69,7 @@ BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) 
 }
 
 void BinaryOperator::describe() {
-	printf("Found Binary Operator %d\n",(int)this->op);
+	printf("---Found Binary Operator %d\n",(int)this->op);
 }
 
 Assignment::Assignment(Identifier* left, Expression* right) {
@@ -77,7 +78,7 @@ Assignment::Assignment(Identifier* left, Expression* right) {
 }
 
 void Assignment::describe() {
-	printf("Found Assignment: %s\n",left->name);
+	printf("---Found Assignment: %s\n",left->name);
 }
 
 Block::Block(vector<Statement*, gc_allocator<Statement*>>* statements) {
@@ -85,7 +86,7 @@ Block::Block(vector<Statement*, gc_allocator<Statement*>>* statements) {
 }
 
 void Block::describe() {
-	printf("Found Block\n");
+	printf("---Found Block\n");
 }
 
 Block::Block() {
@@ -98,17 +99,17 @@ FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<E
 }
 
 void FunctionCall::describe() {
-	printf("Found Function Call: %s\n",ident->name);
+	printf("---Found Function Call: %s\n",ident->name);
 }
 
 Keyword::Keyword(char* name) {
 	size_t length = strlen(name);
-	this->name = (char*)GC_MALLOC(length+1);
+	this->name = (char*)GC_MALLOC_ATOMIC(length+1);
 	memcpy(this->name,name,length);
 }
 
 void Keyword::describe() {
-	printf("Found Keyword: %s\n",name);
+	printf("---Found Keyword: %s\n",name);
 }
 
 VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Expression* exp) {
@@ -118,11 +119,12 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 }
 
 void VariableDefinition::describe() {
-	printf("Found Variable Declaration: type='%s' identifier='%s'\n",type->name,
-		ident->name);
+	printf("---Found Variable Declaration: type='%s' identifier='%s'\n",
+		type->name,ident->name);
 }
 
-FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
+FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
+	 vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	 Block* block) {
 	this->type = type;
 	this->ident = ident;
@@ -131,7 +133,7 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident, vector<
 }
 
 void FunctionDefinition::describe() {
-	printf("Found Function Definition: %s\n",ident->name);
+	printf("---Found Function Definition: %s\n",ident->name);
 }
 
 ExpressionStatement::ExpressionStatement(Expression* exp) {
@@ -139,7 +141,7 @@ ExpressionStatement::ExpressionStatement(Expression* exp) {
 }
 
 void ExpressionStatement::describe() {
-	printf("Expression(s) converted into statements\n");
+	printf("---Expression(s) converted into statements\n");
 }
 
 ReturnStatement::ReturnStatement(Expression* exp) {
@@ -148,9 +150,9 @@ ReturnStatement::ReturnStatement(Expression* exp) {
 
 void ReturnStatement::describe() {
 	if (exp) {
-	  printf("Found return statement with expression\n");
+	  printf("---Found return statement with expression\n");
 	} else {
-	  printf("Found return statement, statement returns void\n");
+	  printf("---Found return statement, statement returns void\n");
 	}
 }
 
@@ -160,7 +162,7 @@ AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
 }
 
 void AssignStatement::describe() {
-	printf("Found Assignment Statement\n");
+	printf("---Found Assignment Statement\n");
 }
 
 StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
@@ -169,7 +171,7 @@ StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 }
 
 void StructureDefinition::describe() {
-	printf("Found Structure Definition: %s\n",ident->name);
+	printf("---Found Structure Definition: %s\n",ident->name);
 }
 
 StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
@@ -178,7 +180,7 @@ StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
 }
 
 void StructureDeclaration::describe() {
-	printf("Found Structure Declaration: type='%s' identifier='%s'\n",
+	printf("---Found Structure Declaration: type='%s' identifier='%s'\n",
 		type->name,ident->name);
 }
 
