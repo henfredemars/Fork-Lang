@@ -1,4 +1,4 @@
-int function() {
+float function() {
 	return 6.0 * 3.0;
 }
 void main() {
