@@ -5,16 +5,16 @@
 #include "node.h"
 
 
-void Node::describe() {
+void Node::describe() const {
 	printf("---Found generic node object with no fields.");
 	printf("---This SHOULD BE AN ERROR.");
 }
 
-void Expression::describe() {
+void Expression::describe() const {
 	printf("---Found generic Expression object with no fields\n");
 }
 
-void Statement::describe() {
+void Statement::describe() const {
 	printf("---Found generic statement object with no fields\n");
 }
 
@@ -22,7 +22,7 @@ Integer::Integer(int64_t value) {
 	this->value = value;
 }
 
-void Integer::describe() {
+void Integer::describe() const {
 	printf("---Found Literal Integer: %i\n", (int)value);
 }
 
@@ -30,7 +30,7 @@ Float::Float(double value) {
 	this->value = value;
 }
 
-void Float::describe() {
+void Float::describe() const {
 	printf("---Found Float: %f\n", value);
 }
 
@@ -41,7 +41,7 @@ Identifier::Identifier(char* name) {
 	//Its good practice to keep our own copy
 }
 
-void Identifier::describe() {
+void Identifier::describe() const {
 	printf("---Found Identifier: %s\n",name);
 }
 
@@ -49,7 +49,7 @@ NullaryOperator::NullaryOperator(int64_t op) {
 	this->op = op;
 }
 
-void NullaryOperator::describe() {
+void NullaryOperator::describe() const {
 	printf("---Found Nullary Operator\n");
 }
 
@@ -58,7 +58,7 @@ UnaryOperator::UnaryOperator(int64_t op, Expression* exp) {
 	this->exp = exp;
 }
 
-void UnaryOperator::describe() {
+void UnaryOperator::describe() const {
 	printf("---Found Unary Operator\n");
 }
 
@@ -68,7 +68,7 @@ BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) 
 	this->right = right;
 }
 
-void BinaryOperator::describe() {
+void BinaryOperator::describe() const {
 	printf("---Found Binary Operator %d\n",(int)this->op);
 }
 
@@ -77,7 +77,7 @@ Assignment::Assignment(Identifier* left, Expression* right) {
 	this->right = right;
 }
 
-void Assignment::describe() {
+void Assignment::describe() const {
 	printf("---Found Assignment: %s\n",left->name);
 }
 
@@ -85,7 +85,7 @@ Block::Block(vector<Statement*, gc_allocator<Statement*>>* statements) {
 	this->statements = statements;
 }
 
-void Block::describe() {
+void Block::describe() const {
 	printf("---Found Block\n");
 }
 
@@ -98,7 +98,7 @@ FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<E
 	this->args = args;
 }
 
-void FunctionCall::describe() {
+void FunctionCall::describe() const {
 	printf("---Found Function Call: %s\n",ident->name);
 }
 
@@ -108,7 +108,7 @@ Keyword::Keyword(char* name) {
 	memcpy(this->name,name,length);
 }
 
-void Keyword::describe() {
+void Keyword::describe() const {
 	printf("---Found Keyword: %s\n",name);
 }
 
@@ -118,7 +118,7 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->exp = exp;
 }
 
-void VariableDefinition::describe() {
+void VariableDefinition::describe() const {
 	printf("---Found Variable Declaration: type='%s' identifier='%s'\n",
 		type->name,ident->name);
 }
@@ -132,7 +132,7 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
 	this->block = block;
 }
 
-void FunctionDefinition::describe() {
+void FunctionDefinition::describe() const {
 	printf("---Found Function Definition: %s\n",ident->name);
 }
 
@@ -140,7 +140,7 @@ ExpressionStatement::ExpressionStatement(Expression* exp) {
 	this->exp = exp;
 }
 
-void ExpressionStatement::describe() {
+void ExpressionStatement::describe() const {
 	printf("---Expression(s) converted into statements\n");
 }
 
@@ -148,7 +148,7 @@ ReturnStatement::ReturnStatement(Expression* exp) {
 	this->exp = exp;
 }
 
-void ReturnStatement::describe() {
+void ReturnStatement::describe() const {
 	if (exp) {
 	  printf("---Found return statement with expression\n");
 	} else {
@@ -161,7 +161,7 @@ AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
 	this->valxp = valxp;
 }
 
-void AssignStatement::describe() {
+void AssignStatement::describe() const {
 	printf("---Found Assignment Statement\n");
 }
 
@@ -170,7 +170,7 @@ StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 	this->block = block;
 }
 
-void StructureDefinition::describe() {
+void StructureDefinition::describe() const {
 	printf("---Found Structure Definition: %s\n",ident->name);
 }
 
@@ -179,8 +179,17 @@ StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
 	this->ident = ident;
 }
 
-void StructureDeclaration::describe() {
+void StructureDeclaration::describe() const {
 	printf("---Found Structure Declaration: type='%s' identifier='%s'\n",
 		type->name,ident->name);
+}
+
+IfStatement::IfStatement(Expression* exp,Block* block) {
+	this->exp = exp;
+	this->block = block;
+}
+
+void IfStatement::describe() const {
+	printf("---Found If Statement\n");
 }
 

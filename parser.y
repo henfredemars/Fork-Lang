@@ -42,6 +42,7 @@
 %type <identifier> ident
 %type <exp> exp numeric
 %type <statement> statement variableDec functionDec structDec
+%type <statement> if_statement
 %type <block> block statements program
 %type <keyword> var_keyword struct_keyword
 %type <variableVec> functionArgs
@@ -90,6 +91,7 @@ statements : statement {
 statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes statement\n");} 
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
              | structDec TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
+	     | if_statement TENDL {$$=$1;}
 	     |
 	     exp TSET exp {
 		$$ = new AssignStatement($1,$3);
@@ -128,7 +130,10 @@ statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes
                 $$->describe();
              } ;
 
-
+if_statement : TIF TLPAREN exp TRPAREN block {
+		$$ = new IfStatement($3,$5);
+		$$->describe();
+	       } ;
 
 block : TLBRACE statements TRBRACE { $$ = $2; $$->describe();
 		printf("Parser: statements become block\n"); } |
