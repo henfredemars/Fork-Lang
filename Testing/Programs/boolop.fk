@@ -3,8 +3,8 @@ void main() {
 		3 + 5;
 	}
 	int a;
-	a = 7;
-	while (a) {
+	a = 1;
+	if (a) {
 		a = a - 1
 	}
 	if (a) {
