@@ -35,8 +35,8 @@ void Float::describe() const {
 }
 
 Identifier::Identifier(char* name) {
-	size_t length = strlen(name);
-	this->name = (char*)GC_MALLOC_ATOMIC(length+1);
+	size_t length = strlen(name)+1;
+	this->name = (char*)GC_MALLOC_ATOMIC(length);
 	memcpy(this->name,name,length);
 	//Its good practice to keep our own copy
 }
@@ -103,8 +103,8 @@ void FunctionCall::describe() const {
 }
 
 Keyword::Keyword(char* name) {
-	size_t length = strlen(name);
-	this->name = (char*)GC_MALLOC_ATOMIC(length+1);
+	size_t length = strlen(name)+1;
+	this->name = (char*)GC_MALLOC_ATOMIC(length);
 	memcpy(this->name,name,length);
 }
 
