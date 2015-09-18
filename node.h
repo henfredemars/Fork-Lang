@@ -35,22 +35,23 @@ class FunctionDefinition;
 class StructureDeclaration;
 class ReturnStatement;
 class AssignStatement;
+class IfStatement;
 
 class Node : public gc {
 public:
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
 class Expression : public Node {
 public:
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
 class Statement : public Node {
 public:
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -58,7 +59,7 @@ class Integer : public Expression {
 public:
 	int64_t value;
 	Integer(int64_t value);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -66,7 +67,7 @@ class Float : public Expression {
 public:
 	double value;
 	Float(double value);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -74,7 +75,7 @@ class Identifier : public Expression {
 public:
 	char* name;
 	Identifier(char* name);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -82,7 +83,7 @@ class NullaryOperator : public Expression {
 public:
 	int64_t op;
 	NullaryOperator(int64_t op);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -91,7 +92,7 @@ public:
 	int64_t op;
 	Expression* exp;
 	UnaryOperator(int64_t op, Expression* exp);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -101,7 +102,7 @@ public:
 	Expression* left;
 	Expression* right;
 	BinaryOperator(Expression* left, int64_t op, Expression* right);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -110,7 +111,7 @@ public:
 	Identifier* left;
 	Expression* right;
 	Assignment(Identifier* left, Expression* right);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -121,7 +122,7 @@ public:
 	Block();
 	Block(vector<Statement*,gc_allocator<Statement*>>* statements);
 	vector<Statement*,gc_allocator<Statement*>>* statements;
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -130,7 +131,7 @@ public:
 	Identifier* ident;
 	vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -139,7 +140,7 @@ class Keyword : public Node {
 public:
 	char* name;
 	Keyword(char* name);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -149,7 +150,7 @@ public:
 	Identifier* ident;
 	Expression* exp;
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -158,7 +159,7 @@ public:
 	Identifier* ident;
 	Block* block;
 	StructureDefinition(Identifier* ident,Block* block);
-	virtual void describe();
+	virtual void describe() const;
 };
 
 class FunctionDefinition : public Statement {
@@ -169,7 +170,7 @@ public:
 	Block* block;
 	FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	 Block* block);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -178,7 +179,7 @@ class ExpressionStatement : public Statement {
 public:
 	Expression* exp;
 	ExpressionStatement(Expression* exp);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -187,7 +188,7 @@ class ReturnStatement : public Statement {
 public:
 	Expression* exp;
 	ReturnStatement(Expression* exp);
-	virtual void describe();
+	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
@@ -197,7 +198,7 @@ public:
 	Expression* valxp;
 	Expression* target;
 	AssignStatement(Expression* target,Expression* valxp);
-	virtual void describe();
+	virtual void describe() const;
 };
 
 //C-like declaration (not definition) of a structure
@@ -206,6 +207,15 @@ public:
 	Identifier* type;
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident);
-	virtual void describe();
+	virtual void describe() const;
+};
+
+//C-like if statement, without else clause
+class IfStatement : public Statement {
+public:
+	Expression* exp;
+	Block* block;
+	IfStatement(Expression* exp,Block* block);
+	virtual void describe() const;
 };
 
