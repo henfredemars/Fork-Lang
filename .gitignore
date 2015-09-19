@@ -27,6 +27,4 @@
 *.out
 *.app
 
-# No changes in our libraries
-llvm/
-gc/
+llvm/build
