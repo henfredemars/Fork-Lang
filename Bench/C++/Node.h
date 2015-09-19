@@ -8,8 +8,8 @@
 
 #include <random>
 #include <math.h>
-#include "gc.h"
-#include "gc_cpp.h"
+#include "../../gc/include/gc.h"
+#include "../../gc/include/gc_cpp.h"
 #include "util.h"
 
 #define WORK_COST 100000
