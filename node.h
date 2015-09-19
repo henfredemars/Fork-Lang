@@ -6,9 +6,9 @@
 #include <string.h>
 #include <stdio.h>
 //#include <llvm/Value.h>
-#include "gc.h"
-#include "gc_cpp.h"
-#include "gc_allocator.h"
+#include "./gc/include/gc.h"
+#include "./gc/include/gc_cpp.h"
+#include "./gc/include/gc_allocator.h"
 
 #define GC_DEBUG 1
 #define YYDEBUG 1

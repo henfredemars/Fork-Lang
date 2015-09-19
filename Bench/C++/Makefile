@@ -1,7 +1,7 @@
 all: CTest
 
 CTest: CTest.o Node.o util.o
-	g++ -std=c++11 -o CTest CTest.o Node.o util.o -lgc
+	g++ -std=c++11 -o CTest CTest.o Node.o util.o -L../../gc/.libs -lgc
 
 CTest.o: CTest.cpp
 	g++ -std=c++11 -c CTest.cpp -o CTest.o

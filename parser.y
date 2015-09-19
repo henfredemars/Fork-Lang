@@ -10,8 +10,11 @@
 
     extern int yylex();
     extern int yydebug;
+    extern int yylineno;
     extern Node* ast_root;
-    void yyerror(const char *s) { printf("Error in parser: %s\n", s); }
+    void yyerror(const char *s) { 
+	printf("Error in parser near line %d: %s\n", yylineno, s);
+    }
 %}
 
 //Union of semantic types
