@@ -28,3 +28,10 @@
 *.app
 
 llvm/build
+gc/.libs
+parser.hpp
+parser.cpp
+lex.cpp
+.gc_built_marker
+.llvm_built_marker
+
