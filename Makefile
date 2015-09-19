@@ -35,7 +35,7 @@ log: parser.o lex.o main.o parser.hpp
 
 clean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
-	rm -f parser.tab.c .llvm_built_marker;
+	rm -f parser.tab.c .llvm_built_marker .gc_built_marker;
 	make -C ./gc clean
 	make -C ./Bench/C++ clean
 	make -C ./llvm/build clean

@@ -587,14 +587,14 @@ s,@LLVM_CROSS_COMPILING@,|#_!!_#|0,g
 s,@BUILD_CC@,|#_!!_#|,g
 s,@BUILD_EXEEXT@,|#_!!_#|,g
 s,@BUILD_CXX@,|#_!!_#|,g
-s,@CVSBUILD@,|#_!!_#|CVSBUILD=1,g
+s,@CVSBUILD@,|#_!!_#|,g
 s,@ENABLE_LIBCPP@,|#_!!_#|0,g
 s,@ENABLE_CXX1Y@,|#_!!_#|0,g
 s,@ENABLE_SPLIT_DWARF@,|#_!!_#|0,g
 s,@ENABLE_CLANG_ARCMT@,|#_!!_#|1,g
 s,@CLANG_PLUGIN_SUPPORT@,|#_!!_#|1,g
 s,@ENABLE_CLANG_STATIC_ANALYZER@,|#_!!_#|1,g
-s,@ENABLE_OPTIMIZED@,|#_!!_#|,g
+s,@ENABLE_OPTIMIZED@,|#_!!_#|ENABLE_OPTIMIZED=1,g
 s,@ENABLE_PROFILING@,|#_!!_#|,g
 s,@DISABLE_ASSERTIONS@,|#_!!_#|,g
 s,@ENABLE_WERROR@,|#_!!_#|0,g
@@ -712,7 +712,7 @@ s,@LLVM_ETCDIR@,|#_!!_#|/usr/local/etc/llvm,g
 s,@LLVM_INCLUDEDIR@,|#_!!_#|/usr/local/include,g
 s,@LLVM_INFODIR@,|#_!!_#|/usr/local/info,g
 s,@LLVM_MANDIR@,|#_!!_#|/usr/local/man,g
-s,@LLVM_CONFIGTIME@,|#_!!_#|Fri Sep 18 23:44:10 EDT 2015,g
+s,@LLVM_CONFIGTIME@,|#_!!_#|Sat Sep 19 01:50:46 EDT 2015,g
 s,@BINDINGS_TO_BUILD@,|#_!!_#|,g
 s,@HAVE_OCAMLOPT@,|#_!!_#|,g
 s,@HAVE_OCAML_OUNIT@,|#_!!_#|,g
@@ -1121,7 +1121,7 @@ s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_ETCDIR\)[	 (].*,\1define\2 "/usr/local/etc/llvm" 
 s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_INCLUDEDIR\)[	 (].*,\1define\2 "/usr/local/include" ,
 s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_INFODIR\)[	 (].*,\1define\2 "/usr/local/info" ,
 s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_MANDIR\)[	 (].*,\1define\2 "/usr/local/man" ,
-s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_CONFIGTIME\)[	 (].*,\1define\2 "Fri Sep 18 23:44:10 EDT 2015" ,
+s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_CONFIGTIME\)[	 (].*,\1define\2 "Sat Sep 19 01:50:46 EDT 2015" ,
 s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_HOST_TRIPLE\)[	 (].*,\1define\2 "i686-pc-linux-gnu" ,
 s,^\([	 #]*\)[^	 ]*\([	 ]*LLVM_DEFAULT_TARGET_TRIPLE\)[	 (].*,\1define\2 "i686-pc-linux-gnu" ,
 s/ $//
