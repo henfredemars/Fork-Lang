@@ -28,7 +28,7 @@ CTest: .gc_built_marker
 	make -C ./Bench/C++
 
 .llvm_built_marker:
-	touch .llvm_built_marker;cd ./llvm/build;../configure --enable-jit --enable-targets=x86,x86_64;make;
+	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-targets=x86,x86_64;make;
 
 log: parser.o lex.o main.o parser.hpp
 	g++ -std=c++11 -o parser parser.o lex.o node.o main.o -lgc > fork_log 2>&1
