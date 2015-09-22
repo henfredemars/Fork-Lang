@@ -28,18 +28,17 @@
     vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* variableVec;
     vector<Expression*,gc_allocator<Expression*>>* expressionVec;
     char* string;
-    int64_t token;
+    int token;
 }
 
 //Tokens
-%token <string> TIDENTIFIER TINTLIT TFLOATLIT
-%token <token> TSET TEQUAL TNEQUAL TLT TLTE TGT TGTE
-%token <token> TLPAREN TRPAREN TLBRACE TRBRACE
-%token <token> TLSBRACE TRSBRACE TDOT TENDL
-%token <token> TPLUS TDASH TSTAR TSLASH TCOMMA
+%token <string> TIDENTIFIER TINTLIT TFLOATLIT TEQUAL 
+%token <string> TNEQUAL TLT TLTE TGT TGTE TLOR TLNOT
+%token <string> TPLUS TDASH TSTAR TSLASH TLAND TDOT TSCOLON
+%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET
+%token <token> TLSBRACE TRSBRACE TENDL TCOMMA
 %token <token> TINT TFLOAT TVOID TSTRUCT TIF
-%token <token> TWHILE TRETURN TSCOLON
-%token <token> TLAND TLOR TLNOT UMINUS EMPTYFUNARGS
+%token <token> TWHILE TRETURN UMINUS EMPTYFUNARGS
 
 //Types of grammar targets
 %type <identifier> ident
@@ -50,9 +49,9 @@
 %type <keyword> var_keyword struct_keyword
 %type <variableVec> functionArgs
 %type <expressionVec> callArgs
-%type <token> binaryOperatorToken
-%type <token> unaryOperatorToken
-%type <token> nullaryOperatorToken
+%type <string> binaryOperatorToken
+%type <string> unaryOperatorToken
+%type <string> nullaryOperatorToken
 
 //Operators precedence
 %precedence TCOMMIT TENDL EMTPYFUNARGS TSCOLON
@@ -249,7 +248,7 @@ numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
 
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH 
 			| TPLUS | TSTAR | TSLASH | TDOT |
-			TLOR | TLAND | TLNOT;
+			TLOR | TLAND;
 
 unaryOperatorToken : TSTAR | TDASH | TLNOT;
 

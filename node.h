@@ -4,22 +4,16 @@
 #include <cstdint>
 #include <vector>
 #include <string.h>
-#include <stdio.h>
+#include <cstdio>
 #include "./gc/include/gc.h"
 #include "./gc/include/gc_cpp.h"
 #include "./gc/include/gc_allocator.h"
-
 #include "codeGenVisitor.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
-#include <cctype>
-#include <cstdio>
-#include <map>
-#include <string>
-#include <vector>
+#include "llvm/include/llvm/ADT/STLExtras.h"
+#include "llvm/include/llvm/IR/IRBuilder.h"
+#include "llvm/include/llvm/IR/LLVMContext.h"
+#include "llvm/include/llvm/IR/Module.h"
+#include "llvm/include/llvm/IR/Verifier.h"
 
 #define GC_DEBUG 1
 #define YYDEBUG 1
@@ -100,8 +94,8 @@ public:
 /*=============================NullaryOperator==============================*/
 class NullaryOperator : public Expression {
 public:
-	int64_t op;
-	NullaryOperator(int64_t op);
+	char* op;
+	NullaryOperator(char* op);
 	virtual void describe() const;
 	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
 };
@@ -109,9 +103,9 @@ public:
 /*==============================UnaryOperator===============================*/
 class UnaryOperator : public Expression {
 public:
-	int64_t op;
+	char* op;
 	Expression* exp;
-	UnaryOperator(int64_t op, Expression* exp);
+	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
 	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
 };
@@ -119,10 +113,10 @@ public:
 /*==============================BinaryOperator==============================*/
 class BinaryOperator : public Expression {
 public:
-	int64_t op;
+	char* op;
 	Expression* left;
 	Expression* right;
-	BinaryOperator(Expression* left, int64_t op, Expression* right);
+	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
 	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
 };
