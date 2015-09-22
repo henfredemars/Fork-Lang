@@ -71,8 +71,10 @@ llvm::Value* Identifier::acceptCodeGenVisitor(CodeGenVisitor c) {
 }
 
 /*=============================NullaryOperator==============================*/
-NullaryOperator::NullaryOperator(int64_t op) {
-	this->op = op;
+NullaryOperator::NullaryOperator(char* op) {
+	size_t length = strlen(op)+1;
+        this->op = (char*)GC_MALLOC_ATOMIC(length);
+        memcpy(this->op,op,length);
 }
 
 void NullaryOperator::describe() const {
@@ -84,8 +86,10 @@ llvm::Value* NullaryOperator::acceptCodeGenVisitor(CodeGenVisitor c) {
 }
 
 /*==============================UnaryOperator===============================*/
-UnaryOperator::UnaryOperator(int64_t op, Expression* exp) {
-	this->op = op;
+UnaryOperator::UnaryOperator(char* op, Expression* exp) {
+        size_t length = strlen(op)+1;
+        this->op = (char*)GC_MALLOC_ATOMIC(length);
+        memcpy(this->op,op,length);
 	this->exp = exp;
 }
 
@@ -98,14 +102,16 @@ llvm::Value* UnaryOperator::acceptCodeGenVisitor(CodeGenVisitor c) {
 }
 
 /*==============================BinaryOperator==============================*/
-BinaryOperator::BinaryOperator(Expression* left, int64_t op, Expression* right) {
-	this->op = op;
+BinaryOperator::BinaryOperator(Expression* left, char* op, Expression* right) {
+	size_t length = strlen(op)+1;
+        this->op = (char*)GC_MALLOC_ATOMIC(length);
+        memcpy(this->op,op,length);
 	this->left = left;
 	this->right = right;
 }
 
 void BinaryOperator::describe() const {
-	printf("---Found Binary Operator %d\n",(int)this->op);
+	printf("---Found Binary Operator %s\n",this->op);
 }
 
 llvm::Value* BinaryOperator::acceptCodeGenVisitor(CodeGenVisitor c) {

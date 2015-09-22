@@ -11,10 +11,10 @@
 
 //You must specify the allocator gc_alloc to STL containers to get GC memory
 
-#define SAVE_TOKEN do { yylval.string = (char *)GC_MALLOC(yyleng+1); memcpy(yylval.string,yytext,yyleng); } while (0)
+#define SAVE_TOKEN do { yylval.string = (char *)GC_MALLOC_ATOMIC(yyleng+1); memcpy(yylval.string,yytext,yyleng); } while (0)
 
 //TOKEN macro sets token. Recall that yylval is a union type declared in the parser
-#define TOKEN(t) (yylval.token = (int64_t)t)
+#define TOKEN(t) (yylval.token = t)
 
 //Only process a single input file
 extern "C" int yywrap() { return 1; }
@@ -31,14 +31,14 @@ extern "C" int yywrap() { return 1; }
 [ \t\r]                   ;
 "\n"                      return TOKEN(TENDL);
 "="                       return TOKEN(TSET);
-"=="                      return TOKEN(TEQUAL);
-"!="                      return TOKEN(TNEQUAL);
-"<"                       return TOKEN(TLT);
-"<="                      return TOKEN(TLTE);
-">"                       return TOKEN(TGT);
-">="                      return TOKEN(TGTE);
-"||"                      return TOKEN(TLOR);
-"&&"                      return TOKEN(TLAND);
+"=="                      SAVE_TOKEN; return TEQUAL;
+"!="                      SAVE_TOKEN; return TNEQUAL;
+"<"                       SAVE_TOKEN; return TLT;
+"<="                      SAVE_TOKEN; return TLTE;
+">"                       SAVE_TOKEN; return TGT;
+">="                      SAVE_TOKEN; return TGTE;
+"||"                      SAVE_TOKEN; return TLOR;
+"&&"                      SAVE_TOKEN; return TLAND;
 "!"                       return TOKEN(TLNOT);
 "("                       return TOKEN(TLPAREN);
 ")"                       return TOKEN(TRPAREN);
@@ -46,11 +46,11 @@ extern "C" int yywrap() { return 1; }
 "}"                       return TOKEN(TRBRACE);
 "["                       return TOKEN(TLSBRACE);
 "]"                       return TOKEN(TRSBRACE);
-"."                       return TOKEN(TDOT);
-"+"                       return TOKEN(TPLUS);
-"-"                       return TOKEN(TDASH);
-"*"                       return TOKEN(TSTAR);
-"/"                       return TOKEN(TSLASH);
+"."                       SAVE_TOKEN; return TDOT;
+"+"                       SAVE_TOKEN; return TPLUS;
+"-"                       SAVE_TOKEN; return TDASH;
+"*"                       SAVE_TOKEN; return TSTAR;
+"/"                       SAVE_TOKEN; return TSLASH;
 ";"                       return TOKEN(TSCOLON);
 ","                       return TOKEN(TCOMMA);
 "if"                      return TOKEN(TIF);

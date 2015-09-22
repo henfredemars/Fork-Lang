@@ -7,16 +7,16 @@ parser.cpp: parser.y
 	bison -d -o parser.cpp parser.y
 
 parser.o: parser.cpp
-	g++ -std=c++11 -c parser.cpp -o parser.o 
+	g++ -std=c++11 -c parser.cpp -o parser.o -I./llvm/include -I./llvm/build/include
 
 lex.cpp: lex.l
 	lex -o lex.cpp lex.l
 
 lex.o: lex.cpp
-	g++ -std=c++11 -c lex.cpp -o lex.o
+	g++ -std=c++11 -c lex.cpp -o lex.o -I./llvm/include -I./llvm/build/include
 
 node.o: node.h node.cpp
-	g++ -std=c++11 -c node.cpp -o node.o 
+	g++ -std=c++11 -c node.cpp -o node.o -I./llvm/include -I./llvm/build/include
 
 main.o: main.cpp
 	g++ -std=c++11 -c main.cpp -o main.o
