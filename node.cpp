@@ -15,9 +15,17 @@ void Expression::describe() const {
 	printf("---Found generic Expression object with no fields\n");
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitExpression(this);
+}
+
 /*================================Statement=================================*/
 void Statement::describe() const {
 	printf("---Found generic statement object with no fields\n");
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitStatement(this);
 }
 
 /*=================================Integer==================================*/
@@ -29,6 +37,10 @@ void Integer::describe() const {
 	printf("---Found Literal Integer: %i\n", (int)value);
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitInteger(this);
+}
+
 /*==================================Float===================================*/
 Float::Float(double value) {
 	this->value = value;
@@ -36,6 +48,10 @@ Float::Float(double value) {
 
 void Float::describe() const {
 	printf("---Found Float: %f\n", value);
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitFloat(this);
 }
 
 /*================================Identifier================================*/
@@ -50,6 +66,10 @@ void Identifier::describe() const {
 	printf("---Found Identifier: %s\n",name);
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitIdentifier(this);
+}
+
 /*=============================NullaryOperator==============================*/
 NullaryOperator::NullaryOperator(int64_t op) {
 	this->op = op;
@@ -57,6 +77,10 @@ NullaryOperator::NullaryOperator(int64_t op) {
 
 void NullaryOperator::describe() const {
 	printf("---Found Nullary Operator\n");
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitNullaryOperator(this);
 }
 
 /*==============================UnaryOperator===============================*/
@@ -67,6 +91,10 @@ UnaryOperator::UnaryOperator(int64_t op, Expression* exp) {
 
 void UnaryOperator::describe() const {
 	printf("---Found Unary Operator\n");
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitUnaryOperator(this);
 }
 
 /*==============================BinaryOperator==============================*/
@@ -80,6 +108,10 @@ void BinaryOperator::describe() const {
 	printf("---Found Binary Operator %d\n",(int)this->op);
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitBinaryOperator(this);
+}
+
 /*================================Assignment================================*/
 Assignment::Assignment(Identifier* left, Expression* right) {
 	this->left = left;
@@ -88,6 +120,10 @@ Assignment::Assignment(Identifier* left, Expression* right) {
 
 void Assignment::describe() const {
 	printf("---Found Assignment: %s\n",left->name);
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitAssignment(this);
 }
 
 /*==================================Block===================================*/
@@ -103,6 +139,10 @@ Block::Block() {
 	this->statements = NULL;
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitBlock(this);
+}
+
 /*===============================FunctionCall===============================*/
 FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args) {
 	this->ident = ident;
@@ -111,6 +151,10 @@ FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<E
 
 void FunctionCall::describe() const {
 	printf("---Found Function Call: %s\n",ident->name);
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitFunctionCall(this);
 }
 
 /*=================================Keyword==================================*/
@@ -122,6 +166,10 @@ Keyword::Keyword(char* name) {
 
 void Keyword::describe() const {
 	printf("---Found Keyword: %s\n",name);
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitKeyword(this);
 }
 
 /*============================VariableDefinition============================*/
@@ -136,6 +184,10 @@ void VariableDefinition::describe() const {
 		type->name,ident->name);
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitCodeGenVisitor(this);
+}
+
 /*===========================StructureDefinition============================*/
 StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 	this->ident = ident;
@@ -144,6 +196,10 @@ StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 
 void StructureDefinition::describe() const {
 	printf("---Found Structure Definition: %s\n",ident->name);
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitStructureDefinition(this);
 }
 
 
@@ -161,6 +217,10 @@ void FunctionDefinition::describe() const {
 	printf("---Found Function Definition: %s\n",ident->name);
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitFunctionDefinition(this);
+}
+
 /*==========================StructureDeclaration============================*/
 StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
 	this->type = type;
@@ -172,6 +232,10 @@ void StructureDeclaration::describe() const {
 		type->name,ident->name);
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitStructureDeclaration(this);
+}
+
 /*===========================ExpressionStatement============================*/
 ExpressionStatement::ExpressionStatement(Expression* exp) {
 	this->exp = exp;
@@ -179,6 +243,10 @@ ExpressionStatement::ExpressionStatement(Expression* exp) {
 
 void ExpressionStatement::describe() const {
 	printf("---Expression(s) converted into statements\n");
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitExpressionStatement(this);
 }
 
 /*=============================ReturnStatement==============================*/
@@ -194,6 +262,10 @@ void ReturnStatement::describe() const {
 	}
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitReturnStatement(this);
+}
+
 /*=============================AssignStatement==============================*/
 AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
 	this->target = target;
@@ -204,6 +276,10 @@ void AssignStatement::describe() const {
 	printf("---Found Assignment Statement\n");
 }
 
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitAssignStatement(this);
+}
+
 /*===============================IfStatement================================*/
 IfStatement::IfStatement(Expression* exp,Block* block) {
 	this->exp = exp;
@@ -212,4 +288,8 @@ IfStatement::IfStatement(Expression* exp,Block* block) {
 
 void IfStatement::describe() const {
 	printf("---Found If Statement\n");
+}
+
+Value* acceptCodeGenVisitor(CodeGenVisitor c) {
+	return visitIfStatement(this);
 }
