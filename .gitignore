@@ -41,3 +41,5 @@ gc/config.status
 gc/cord
 gc/libatomic_ops
 gc/libtool
+parser
+Bench/C++/CTest
