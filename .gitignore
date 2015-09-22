@@ -39,7 +39,8 @@ gc/Makefile
 gc/config.log
 gc/config.status
 gc/cord
-gc/libatomic_ops
+gc/libatomic_ops/libtool
+gc/libatomic_ops/m4
 gc/libtool
 parser
 Bench/C++/CTest
