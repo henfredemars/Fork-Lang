@@ -33,28 +33,33 @@ class VariableDefinition;
 class StructureDefinition;
 class FunctionDefinition;
 class StructureDeclaration;
+class ExpressionStatement;
 class ReturnStatement;
 class AssignStatement;
 class IfStatement;
 
+/*===================================Node===================================*/
 class Node : public gc {
 public:
 	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*================================Expression================================*/
 class Expression : public Node {
 public:
 	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*================================Statement=================================*/
 class Statement : public Node {
 public:
 	virtual void describe() const;
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*=================================Integer==================================*/
 class Integer : public Expression {
 public:
 	int64_t value;
@@ -63,6 +68,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*==================================Float===================================*/
 class Float : public Expression {
 public:
 	double value;
@@ -71,6 +77,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*================================Identifier================================*/
 class Identifier : public Expression {
 public:
 	char* name;
@@ -79,6 +86,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*=============================NullaryOperator==============================*/
 class NullaryOperator : public Expression {
 public:
 	int64_t op;
@@ -87,6 +95,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*==============================UnaryOperator===============================*/
 class UnaryOperator : public Expression {
 public:
 	int64_t op;
@@ -96,6 +105,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*==============================BinaryOperator==============================*/
 class BinaryOperator : public Expression {
 public:
 	int64_t op;
@@ -106,6 +116,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*================================Assignment================================*/
 class Assignment : public Expression {
 public:
 	Identifier* left;
@@ -115,6 +126,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*==================================Block===================================*/
 //Must be an Expression to be contained in other blocks, but
 //  strictly speaking, a Block is a collection of statements
 class Block : public Expression {
@@ -126,6 +138,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*===============================FunctionCall===============================*/
 class FunctionCall : public Expression {
 public:
 	Identifier* ident;
@@ -135,6 +148,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*=================================Keyword==================================*/
 //Keyword refers to the type of a declaration, not language keywords
 class Keyword : public Node {
 public:
@@ -144,6 +158,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*============================VariableDefinition============================*/
 class VariableDefinition : public Statement {
 public:
 	Keyword* type;
@@ -154,6 +169,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
+/*===========================StructureDefinition============================*/
 class StructureDefinition : public Statement {
 public:
 	Identifier* ident;
@@ -162,6 +178,7 @@ public:
 	virtual void describe() const;
 };
 
+/*============================FunctionDefinition============================*/
 class FunctionDefinition : public Statement {
 public:
 	Keyword* type;
@@ -174,33 +191,7 @@ public:
 	//virtual llvm::Value* codeGen(CodeGenContext* context);
 };
 
-//Completed expressions and blocks become statements through this type
-class ExpressionStatement : public Statement {
-public:
-	Expression* exp;
-	ExpressionStatement(Expression* exp);
-	virtual void describe() const;
-	//virtual llvm::Value* codeGen(CodeGenContext* context);
-};
-
-//C-like return statement AST object
-class ReturnStatement : public Statement {
-public:
-	Expression* exp;
-	ReturnStatement(Expression* exp);
-	virtual void describe() const;
-	//virtual llvm::Value* codeGen(CodeGenContext* context);
-};
-
-//C-like assignment of a variable
-class AssignStatement : public Statement {
-public:
-	Expression* valxp;
-	Expression* target;
-	AssignStatement(Expression* target,Expression* valxp);
-	virtual void describe() const;
-};
-
+/*==========================StructureDeclaration============================*/
 //C-like declaration (not definition) of a structure
 class StructureDeclaration : public Statement {
 public:
@@ -210,6 +201,37 @@ public:
 	virtual void describe() const;
 };
 
+/*===========================ExpressionStatement============================*/
+//Completed expressions and blocks become statements through this type
+class ExpressionStatement : public Statement {
+public:
+	Expression* exp;
+	ExpressionStatement(Expression* exp);
+	virtual void describe() const;
+	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
+
+/*=============================ReturnStatement==============================*/
+//C-like return statement AST object
+class ReturnStatement : public Statement {
+public:
+	Expression* exp;
+	ReturnStatement(Expression* exp);
+	virtual void describe() const;
+	//virtual llvm::Value* codeGen(CodeGenContext* context);
+};
+
+/*=============================AssignStatement==============================*/
+//C-like assignment of a variable
+class AssignStatement : public Statement {
+public:
+	Expression* valxp;
+	Expression* target;
+	AssignStatement(Expression* target,Expression* valxp);
+	virtual void describe() const;
+};
+
+/*===============================IfStatement================================*/
 //C-like if statement, without else clause
 class IfStatement : public Statement {
 public:
