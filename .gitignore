@@ -34,4 +34,10 @@ parser.cpp
 lex.cpp
 .gc_built_marker
 .llvm_built_marker
-
+gc/.deps
+gc/Makefile
+gc/config.log
+gc/config.status
+gc/cord
+gc/libatomic_ops
+gc/libtool
