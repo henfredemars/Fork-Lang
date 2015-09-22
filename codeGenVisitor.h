@@ -1,25 +1,25 @@
 class Visitor {
 public:
-	virtual Value* visitExpression();
-	virtual Value* visitStatement();
-	virtual Value* visitInteger();
-	virtual Value* visitFloat();
-	virtual Value* visitIdentifier();
-	virtual Value* visitNullaryOperator();
-	virtual Value* visitUnaryOperator();
-	virtual Value* visitBinaryOperator();
-	virtual Value* visitAssignment();
-	virtual Value* visitBlock();
-	virtual Value* visitFunctionCall();
-	virtual Value* visitKeyword();
-	virtual Value* visitVariableDefinition();
-	virtual Value* visitStructureDefinition();
-	virtual Value* visitFunctionDefinition();
-	virtual Value* visitStructureDeclaration();
-	virtual Value* visitExpressionStatement();
-	virtual Value* visitReturnStatement();
-	virtual Value* visitAssignStatement();
-	virtual Value* visitIfStatement();
+	virtual Value* visitExpression(Expression e);
+	virtual Value* visitStatement(Statement s);
+	virtual Value* visitInteger(Integer i);
+	virtual Value* visitFloat(Float f);
+	virtual Value* visitIdentifier(Identifier i);
+	virtual Value* visitNullaryOperator(NullaryOperator n);
+	virtual Value* visitUnaryOperator(UnaryOperator u);
+	virtual Value* visitBinaryOperator(BinaryOperator b);
+	virtual Value* visitAssignment(Assignment a);
+	virtual Value* visitBlock(Block b);
+	virtual Value* visitFunctionCall(FunctionCall f);
+	virtual Value* visitKeyword(Keyword k);
+	virtual Value* visitVariableDefinition(VariableDefinition v);
+	virtual Value* visitStructureDefinition(StructureDefinition s);
+	virtual Value* visitFunctionDefinition(FunctionDefinition f);
+	virtual Value* visitStructureDeclaration(StructureDeclaration s);
+	virtual Value* visitExpressionStatement(ExpressionStatement e);
+	virtual Value* visitReturnStatement(ReturnStatement r);
+	virtual Value* visitAssignStatement(AssignStatement a);
+	virtual Value* visitIfStatement(IfStatement i);
 };
 
 class CodeGenVisitor : public Visitor {
