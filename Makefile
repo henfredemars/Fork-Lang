@@ -1,6 +1,6 @@
 all: parser CTest
 
-parser: parser.o lex.o node.o main.o parser.hpp .gc_built_marker .llvm_built_marker
+parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o main.o parser.hpp
 	g++ -std=c++11 -o parser parser.o lex.o node.o main.o -L./gc/.libs -lgc
 
 parser.cpp: parser.y
