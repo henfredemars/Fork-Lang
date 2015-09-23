@@ -191,7 +191,7 @@ void VariableDefinition::describe() const {
 }
 
 llvm::Value* VariableDefinition::acceptCodeGenVisitor(CodeGenVisitor c) {
-	return c.visitCodeGenVisitor(this);
+	return c.visitVariableDefinition(this);
 }
 
 /*===========================StructureDefinition============================*/
