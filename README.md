@@ -2,40 +2,66 @@
 Compiler and Runtime development repo for the Fork Programming Language.
 
 Not to be confused with any extant language, Fork is an experimental langauge (under development) emphasizing 
-concurrency in the language grammar.
+concurrency in the language grammar to enable statement level parallelism.
 
 For more information, contact a contributor and inquire about a formal 
 specification. This will be migrated here in time.
 
 Depends: flex, GNU bison, make, BDW collector (tree structures are hard to manage correctly always)
 
-For the collector:
 
-wget http://hboehm.info/gc/gc_source/gc-7.2f.tar.gz
-
-tar xvf gc-7.2
-
-cd gc-7.2
-
-./configure --prefix=/usr/local/ --enable-threads=posix --enable-thread-local-alloc --enable-parallel-mark --enable-cplusplus
-  
-make; make check; sudo make install
+###Dependencies and Alternatives
 
 Use your package management system to obtain flex and bison. For Ubuntu this is:
 
-sudo apt-get install aptitude;
-sudo aptitude update;
-sudo aptitude install flex bison build-essential;
+	sudo apt-get install aptitude;
+	sudo aptitude update;
+	sudo aptitude install flex bison build-essential;
 
-add path fix file 
-touch /usr/local/include/gc_allocator.h
-echo "#include <gc/gc_allocator.h>" > /usr/local/include/gc_allocator.h
+bwd gc is included inside this repo, but if you desire to reinstall or update the version of bwd gc feel free to use/edit the following commands:
 
-In order to test:
-make
+	wget http://hboehm.info/gc/gc_source/gc-7.4.2.tar.gz
 
-In order to store error logs:
+	tar xvf gc-7.4.2
 
-make log
+	mv gc-7.4.2 gc
 
-logs are stored in fork_log
+	cd ./gc
+
+	git clone https://github.com/ivmai/libatomic_ops.git
+
+
+Building the compiler will take a long time your first build due to llvm compilation, do not use -j in make because you will most likely run out of memory
+
+###Building Fork
+
+To Build The Compiler(lexer, parser, code generator):
+
+	make
+
+To Build only BWD GC:
+
+	make .gc_built_marker
+
+To Build only LLVM:
+
+	make .llvm_built_marker
+
+In order to store error logs(stored in fork_log):
+
+	make log
+
+###After Building Fork
+
+At this point, Fork programs can be parsed into an AST representation with the following command:
+
+	./fc.py program.fk
+
+--CODE GENERATION TO BE IMPLEMENTED
+
+###Additional Information
+
+A test binary tree program is readily available in ./Bench/C++ and ./Bench/Fork to provide examples for statement parallelism.
+
+Test Documentation is available at ./Testing/Docs/ which tests programs in ./Testing/Programs.
+
