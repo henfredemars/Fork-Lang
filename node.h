@@ -2,18 +2,10 @@
 //Declarations of the AST objects, should model the language
 
 #include <cstdint>
-#include <vector>
-#include <string.h>
-#include <cstdio>
 #include "./gc/include/gc.h"
 #include "./gc/include/gc_cpp.h"
 #include "./gc/include/gc_allocator.h"
 #include "codeGenVisitor.h"
-#include "llvm/include/llvm/ADT/STLExtras.h"
-#include "llvm/include/llvm/IR/IRBuilder.h"
-#include "llvm/include/llvm/IR/LLVMContext.h"
-#include "llvm/include/llvm/IR/Module.h"
-#include "llvm/include/llvm/IR/Verifier.h"
 
 #define GC_DEBUG 1
 #define YYDEBUG 1
@@ -47,7 +39,6 @@ class IfStatement;
 class Node : public gc {
 public:
 	virtual void describe() const;
-	virtual llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
 };
 
 /*================================Expression================================*/
@@ -181,6 +172,7 @@ public:
 	Block* block;
 	StructureDefinition(Identifier* ident,Block* block);
 	virtual void describe() const;
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
 };
 
 /*============================FunctionDefinition============================*/
@@ -204,6 +196,7 @@ public:
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident);
 	virtual void describe() const;
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
 };
 
 /*===========================ExpressionStatement============================*/
