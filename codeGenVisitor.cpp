@@ -1,5 +1,14 @@
 #include "codeGenVisitor.h"
 
+static std::unique_ptr<llvm::Module> *TheModule;
+static llvm::IRBuilder<> Builder(llvm::getGlobalContext());
+static std::map<std::string, llvm::Value*> NamedValues;
+
+llvm::Value* CodeGenVisitor::ErrorV(const char *Str) {
+  fprintf(stderr, "Error: %s\n", Str);
+  return nullptr;
+}
+
 /*================================Expression================================*/
 llvm::Value* CodeGenVisitor::visitExpression(Expression* e) {
 	return nullptr;
@@ -12,17 +21,22 @@ llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	return nullptr;
+	return llvm::ConstantInt::get(llvm::getGlobalContext(), APInt(value));
 }
 
 /*==================================Float===================================*/
 llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
-	return nullptr;
+	return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(value));
 }
 
 /*================================Identifier================================*/
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
-	return nullptr;
+	// retrieve variable from the map
+	// still have to insert code for variable checking during usage
+  Value *V = NamedValues[Name];
+  if (!V)
+    ErrorV("Unknown variable name");
+  return V;
 }
 
 /*=============================NullaryOperator==============================*/
@@ -37,7 +51,21 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 
 /*==============================BinaryOperator==============================*/
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
-	return nullptr;
+	Value* L = left->acceptCodeGenVisitor(*this);
+ 	Value* R = right->acceptCodeGenVisitor(*this);
+	if (!L || !R)
+		return nullptr;
+	switch (op) {
+		case '+':
+		return Builder.CreateFAdd(L, R, "addtmp");
+		case '-':
+		return Builder.CreateFSub(L, R, "subtmp");
+		case '*':
+		return Builder.CreateFMul(L, R, "multmp");
+		// case '=': not implemented yet
+		default:
+		return ErrorV("invalid binary operator");
+	}
 }
 
 /*================================Assignment================================*/

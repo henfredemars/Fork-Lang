@@ -60,6 +60,8 @@ public:
 };
 
 class CodeGenVisitor : public Visitor {
+private:
+	llvm::Value* ErrorV(const char *Str);
 public:
 	llvm::Value* visitExpression(Expression* e);
 	llvm::Value* visitStatement(Statement* s);
