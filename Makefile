@@ -3,7 +3,7 @@ LLVM_INC := -I./llvm/include -I./llvm/build/include
 all: parser CTest
 
 parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp
-	g++ -std=c++11 -o parser parser.o lex.o node.o codeGenVisitor.o main.o -L./gc/.libs -lgc
+	g++ -std=c++11 -o parser parser.o lex.o node.o codeGenVisitor.o main.o ./gc/.libs/libgc.a -L./gc/.libs
 
 parser.cpp: parser.y
 	bison -d -o parser.cpp parser.y

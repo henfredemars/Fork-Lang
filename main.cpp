@@ -1,6 +1,7 @@
 #include <iostream>
-#include "node.h"
 #include "stdio.h"
+#include "node.h"
+#include "gc/include/gc.h"
 
 extern int yyparse();
 extern int yydebug;
