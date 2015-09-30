@@ -1,6 +1,5 @@
 
-//TODO: Control flow, reference types, structures, consider arrays, check compliance, includes fcall
-
+//TODO: reference types, Golgi apparatus
 
 //Prelude
 
