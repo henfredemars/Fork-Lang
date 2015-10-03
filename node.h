@@ -16,26 +16,26 @@
 using namespace std;
 
 //Things defined here
-//class Node;
-//class Expression;
-//class Statement;
-//class Integer;
-//class Float;
-//class Identifier;
-//class NullaryOperator;
-//class UnaryOperator;
-//class BinaryOperator;
-//class Block;
-//class FunctionCall;
-//class Keyword;
-//class VariableDefinition;
-//class StructureDefinition;
-//class FunctionDefinition;
-//class StructureDeclaration;
-//class ExpressionStatement;
-//class ReturnStatement;
-//class AssignStatement;
-//class IfStatement;
+class Node;
+class Expression;
+class Statement;
+class Integer;
+class Float;
+class Identifier;
+class NullaryOperator;
+class UnaryOperator;
+class BinaryOperator;
+class Block;
+class FunctionCall;
+class Keyword;
+class VariableDefinition;
+class StructureDefinition;
+class FunctionDefinition;
+class StructureDeclaration;
+class ExpressionStatement;
+class ReturnStatement;
+class AssignStatement;
+class IfStatement;
 
 /*===================================Node===================================*/
 class Node : public gc {
