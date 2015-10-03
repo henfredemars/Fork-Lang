@@ -1,6 +1,9 @@
 
 //Declarations of the AST objects, should model the language
 
+#ifndef __CLASS_1_H
+#define __CLASS_1_H
+
 #include <cstdint>
 #include "./gc/include/gc.h"
 #include "./gc/include/gc_cpp.h"
@@ -13,27 +16,26 @@
 using namespace std;
 
 //Things defined here
-class Node;
-class Expression;
-class Statement;
-class Integer;
-class Float;
-class Identifier;
-class NullaryOperator;
-class UnaryOperator;
-class BinaryOperator;
-class Assignment;
-class Block;
-class FunctionCall;
-class Keyword;
-class VariableDefinition;
-class StructureDefinition;
-class FunctionDefinition;
-class StructureDeclaration;
-class ExpressionStatement;
-class ReturnStatement;
-class AssignStatement;
-class IfStatement;
+//class Node;
+//class Expression;
+//class Statement;
+//class Integer;
+//class Float;
+//class Identifier;
+//class NullaryOperator;
+//class UnaryOperator;
+//class BinaryOperator;
+//class Block;
+//class FunctionCall;
+//class Keyword;
+//class VariableDefinition;
+//class StructureDefinition;
+//class FunctionDefinition;
+//class StructureDeclaration;
+//class ExpressionStatement;
+//class ReturnStatement;
+//class AssignStatement;
+//class IfStatement;
 
 /*===================================Node===================================*/
 class Node : public gc {
@@ -45,14 +47,14 @@ public:
 class Expression : public Node {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*================================Statement=================================*/
 class Statement : public Node {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*=================================Integer==================================*/
@@ -61,7 +63,7 @@ public:
 	int64_t value;
 	Integer(int64_t value);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*==================================Float===================================*/
@@ -70,7 +72,7 @@ public:
 	double value;
 	Float(double value);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*================================Identifier================================*/
@@ -79,7 +81,7 @@ public:
 	char* name;
 	Identifier(char* name);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*=============================NullaryOperator==============================*/
@@ -88,7 +90,7 @@ public:
 	char* op;
 	NullaryOperator(char* op);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*==============================UnaryOperator===============================*/
@@ -98,7 +100,7 @@ public:
 	Expression* exp;
 	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*==============================BinaryOperator==============================*/
@@ -109,17 +111,7 @@ public:
 	Expression* right;
 	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
-};
-
-/*================================Assignment================================*/
-class Assignment : public Expression {
-public:
-	Identifier* left;
-	Expression* right;
-	Assignment(Identifier* left, Expression* right);
-	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*==================================Block===================================*/
@@ -131,7 +123,7 @@ public:
 	Block(vector<Statement*,gc_allocator<Statement*>>* statements);
 	vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*===============================FunctionCall===============================*/
@@ -141,7 +133,7 @@ public:
 	vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*=================================Keyword==================================*/
@@ -151,7 +143,7 @@ public:
 	char* name;
 	Keyword(char* name);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*============================VariableDefinition============================*/
@@ -162,7 +154,7 @@ public:
 	Expression* exp;
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*===========================StructureDefinition============================*/
@@ -172,7 +164,7 @@ public:
 	Block* block;
 	StructureDefinition(Identifier* ident,Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*============================FunctionDefinition============================*/
@@ -185,7 +177,7 @@ public:
 	FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	 Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*==========================StructureDeclaration============================*/
@@ -196,7 +188,7 @@ public:
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*===========================ExpressionStatement============================*/
@@ -206,7 +198,7 @@ public:
 	Expression* exp;
 	ExpressionStatement(Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*=============================ReturnStatement==============================*/
@@ -216,7 +208,7 @@ public:
 	Expression* exp;
 	ReturnStatement(Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*=============================AssignStatement==============================*/
@@ -227,7 +219,7 @@ public:
 	Expression* target;
 	AssignStatement(Expression* target,Expression* valxp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 
 /*===============================IfStatement================================*/
@@ -238,5 +230,7 @@ public:
 	Block* block;
 	IfStatement(Expression* exp,Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor c);
+	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
+
+#endif

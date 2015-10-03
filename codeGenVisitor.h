@@ -1,4 +1,5 @@
-//codeGen visitor design pattern
+#ifndef __CODE_GEN_VISIT_H
+#define __CODE_GEN_VISIT_H
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/IRBuilder.h"
@@ -10,30 +11,9 @@
 #include <map>
 #include <string.h>
 #include <vector>
+#include "node.h"
 
-class Node;
-class Expression;
-class Statement;
-class Integer;
-class Float;
-class Identifier;
-class NullaryOperator;
-class UnaryOperator;
-class BinaryOperator;
-class Assignment;
-class Block;
-class FunctionCall;
-class Keyword;
-class VariableDefinition;
-class StructureDefinition;
-class FunctionDefinition;
-class StructureDeclaration;
-class ExpressionStatement;
-class ReturnStatement;
-class AssignStatement;
-class IfStatement;
-class Visitor;
-class CodeGenVisitor;
+//codeGen visitor design pattern
 
 class Visitor {
 public:
@@ -45,7 +25,6 @@ public:
 	virtual llvm::Value* visitNullaryOperator(NullaryOperator* n) =0;
 	virtual llvm::Value* visitUnaryOperator(UnaryOperator* u) =0;
 	virtual llvm::Value* visitBinaryOperator(BinaryOperator* b) =0;
-	virtual llvm::Value* visitAssignment(Assignment* a) =0;
 	virtual llvm::Value* visitBlock(Block* b) =0;
 	virtual llvm::Value* visitFunctionCall(FunctionCall* f) =0;
 	virtual llvm::Value* visitKeyword(Keyword* k) =0;
@@ -71,7 +50,6 @@ public:
 	llvm::Value* visitNullaryOperator(NullaryOperator* n);
 	llvm::Value* visitUnaryOperator(UnaryOperator* u);
 	llvm::Value* visitBinaryOperator(BinaryOperator* b);
-	llvm::Value* visitAssignment(Assignment* a);
 	llvm::Value* visitBlock(Block* b);
 	llvm::Value* visitFunctionCall(FunctionCall* f);
 	llvm::Value* visitKeyword(Keyword* k);
@@ -84,3 +62,5 @@ public:
 	llvm::Value* visitAssignStatement(AssignStatement* a);
 	llvm::Value* visitIfStatement(IfStatement* i);
 };
+
+#endif
