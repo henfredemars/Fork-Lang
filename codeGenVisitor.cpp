@@ -33,9 +33,9 @@ llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 	// retrieve variable from the map
 	// still have to insert code for variable checking during usage
-  Value *V = NamedValues[Name];
+  llvm::Value *V = NamedValues[i->name];
   if (!V)
-    ErrorV("Unknown variable name");
+    return ErrorV("Unknown variable name.");
   return V;
 }
 
@@ -51,30 +51,27 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 
 /*==============================BinaryOperator==============================*/
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
-	Value* L = left->acceptCodeGenVisitor(*this);
- 	Value* R = right->acceptCodeGenVisitor(*this);
+	llvm::Value* L = b->left->acceptCodeGenVisitor(*this);
+ 	llvm::Value* R = b->right->acceptCodeGenVisitor(*this);
 	if (!L || !R)
 		return nullptr;
-	switch (op) {
+	switch (b->op) {
 		case '+':
 		return Builder.CreateFAdd(L, R, "addtmp");
 		case '-':
 		return Builder.CreateFSub(L, R, "subtmp");
 		case '*':
 		return Builder.CreateFMul(L, R, "multmp");
-		// case '=': not implemented yet
+		case '/':
+		return Builder.CreateFDiv(L, R, "divtmp");
 		default:
-		return ErrorV("invalid binary operator");
+		return ErrorV("Invalid binary operator.");
 	}
-}
-
-/*================================Assignment================================*/
-llvm::Value* CodeGenVisitor::visitAssignment(Assignment* a) {
-	return nullptr;
 }
 
 /*==================================Block===================================*/
 llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
+	//iterate through vector
 	return nullptr;
 }
 
@@ -85,7 +82,7 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 
 /*=================================Keyword==================================*/
 llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
-	return nullptr;
+	return ErrorV("Attempt to generate code for dangling keyword.");
 }
 
 /*============================VariableDefinition============================*/
@@ -111,6 +108,7 @@ llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) 
 
 /*===========================ExpressionStatement============================*/
 llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
+	//evaluated but value discarded
 	return nullptr;
 }
 
@@ -121,6 +119,7 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
+	//separate from bin op
 	return nullptr;
 }
 
