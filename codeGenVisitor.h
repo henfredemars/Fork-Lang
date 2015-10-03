@@ -1,16 +1,6 @@
 #ifndef __CODE_GEN_VISIT_H
 #define __CODE_GEN_VISIT_H
 
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
-#include <cctype>
-#include <cstdio>
-#include <map>
-#include <string.h>
-#include <vector>
 #include "node.h"
 
 //codeGen visitor design pattern

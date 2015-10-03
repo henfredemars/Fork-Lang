@@ -1,9 +1,19 @@
 
 //Declarations of the AST objects, should model the language
 
-#ifndef __CLASS_1_H
-#define __CLASS_1_H
+#ifndef __NODE_H
+#define __NODE_H
 
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
+#include <cctype>
+#include <cstdio>
+#include <map>
+#include <string.h>
+#include <vector>
 #include <cstdint>
 #include "./gc/include/gc.h"
 #include "./gc/include/gc_cpp.h"
@@ -36,6 +46,8 @@ class ExpressionStatement;
 class ReturnStatement;
 class AssignStatement;
 class IfStatement;
+class Visitor;
+class CodeGenVisitor;
 
 /*===================================Node===================================*/
 class Node : public gc {
