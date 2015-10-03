@@ -4,6 +4,28 @@
 #include "node.h"
 
 //codeGen visitor design pattern
+class Node;
+class Expression;
+class Statement;
+class Integer;
+class Float;
+class Identifier;
+class NullaryOperator;
+class UnaryOperator;
+class BinaryOperator;
+class Block;
+class FunctionCall;
+class Keyword;
+class VariableDefinition;
+class StructureDefinition;
+class FunctionDefinition;
+class StructureDeclaration;
+class ExpressionStatement;
+class ReturnStatement;
+class AssignStatement;
+class IfStatement;
+class Visitor;
+class CodeGenVisitor;
 
 class Visitor {
 public:
