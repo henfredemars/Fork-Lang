@@ -16,15 +16,16 @@ Use your package management system to obtain flex and bison. For Ubuntu this is:
 
 	sudo apt-get install aptitude;
 	sudo aptitude update;
+	sudo aptitude upgrade;
 	sudo aptitude install flex bison build-essential;
 
 bwd gc is included inside this repo, but if you desire to reinstall or update the version of bwd gc feel free to use/edit the following commands:
 
-	wget http://hboehm.info/gc/gc_source/gc-7.4.2.tar.gz
+	wget http://hboehm.info/gc/gc_source/gc-some-later-version.tar.gz
 
-	tar xvf gc-7.4.2
+	tar xvf gc-some-later-version
 
-	mv gc-7.4.2 gc
+	mv gc-some-later-version gc
 
 	cd ./gc
 
@@ -61,7 +62,7 @@ At this point, Fork programs can be parsed into an AST representation with the f
 
 ###Additional Information
 
-A test binary tree program is readily available in ./Bench/C++ and ./Bench/Fork to provide examples for statement parallelism.
+A test binary tree program is available in ./Bench/C++ and ./Bench/Fork to provide examples for statement parallelism.
 
 Test Documentation is available at ./Testing/Docs/ which tests programs in ./Testing/Programs.
 
