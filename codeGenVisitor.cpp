@@ -21,12 +21,14 @@ llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	return llvm::ConstantInt::get(llvm::getGlobalContext(), APInt(value));
+	//return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(i->value));
+	return nullptr;
 }
 
 /*==================================Float===================================*/
 llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
-	return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(value));
+	//return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(f->value));
+	return nullptr;
 }
 
 /*================================Identifier================================*/
@@ -51,11 +53,11 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 
 /*==============================BinaryOperator==============================*/
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
-	llvm::Value* L = b->left->acceptCodeGenVisitor(*this);
- 	llvm::Value* R = b->right->acceptCodeGenVisitor(*this);
+	llvm::Value* L = b->left->acceptCodeGenVisitor(this);
+ 	llvm::Value* R = b->right->acceptCodeGenVisitor(this);
 	if (!L || !R)
 		return nullptr;
-	switch (b->op) {
+	switch (*b->op) {
 		case '+':
 		return Builder.CreateFAdd(L, R, "addtmp");
 		case '-':
