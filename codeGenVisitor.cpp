@@ -1,12 +1,18 @@
 #include "codeGenVisitor.h"
 
-static std::unique_ptr<llvm::Module> *TheModule;
-static llvm::IRBuilder<> Builder(llvm::getGlobalContext());
-static std::map<std::string, llvm::Value*> NamedValues;
+llvm::LLVMContext* CodeGenVisitor::getLLVMContext() {
+	return l;
+}
 
-llvm::Value* CodeGenVisitor::ErrorV(const char *Str) {
-  fprintf(stderr, "Error: %s\n", Str);
+llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
+  fprintf(stderr, "Error: %s\n", str);
   return nullptr;
+}
+
+llvm::IRBuilder<> Builder(*getLLVMContext());
+
+void CodeGenVisitor::initModule(std::string name) {
+	theModule = llvm::make_unique<llvm::Module>(name, *getLLVMContext());
 }
 
 /*================================Expression================================*/
@@ -35,7 +41,7 @@ llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 	// retrieve variable from the map
 	// still have to insert code for variable checking during usage
-  llvm::Value *V = NamedValues[i->name];
+  llvm::Value *V = namedValues[i->name];
   if (!V)
     return ErrorV("Unknown variable name.");
   return V;
