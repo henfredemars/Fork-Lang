@@ -2,6 +2,7 @@
 #define __CODE_GEN_VISIT_H
 
 #include "node.h"
+using namespace std;
 
 //codeGen visitor design pattern
 class Node;
@@ -26,6 +27,7 @@ class AssignStatement;
 class IfStatement;
 class Visitor;
 class CodeGenVisitor;
+
 
 class Visitor {
 public:
@@ -52,8 +54,14 @@ public:
 
 class CodeGenVisitor : public Visitor {
 private:
-	llvm::Value* ErrorV(const char *Str);
+	llvm::LLVMContext* l = new llvm::LLVMContext();
+	unique_ptr<llvm::Module> theModule;
+	map<std::string, llvm::Value*> namedValues;
+	llvm::Value* ErrorV(const char* str);
+	llvm::IRBuilder<> b;
 public:
+	llvm::LLVMContext* getLLVMContext();
+	void initModule(string name);
 	llvm::Value* visitExpression(Expression* e);
 	llvm::Value* visitStatement(Statement* s);
 	llvm::Value* visitInteger(Integer* i);

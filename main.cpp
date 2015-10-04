@@ -15,19 +15,22 @@ int main(int argc, char **argv) {
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");
 		if(yyin) {
-			yyparse();
+			yyparse(); //ast_root points to program
 			fclose(yyin);
 			yyin = NULL;
+			CodeGenVisitor c = CodeGenVisitor();
+			c.initModule("LLVM JIT start");
+			//((Block)ast_root)->accept(c);
 		}
 		else {
-			std::cout << "Error, failed to open file: " << argv[1] << "\n";
+			cout << "Error, failed to open file: " << argv[1] << "\n";
 		}
 	}
 	else if(argc > 2) {
-		std::cout << "Error, too many inputs.\n";
+		cout << "Error, too many inputs.\n";
 	}
 	else {
-		std::cout << "Error, need file input.\n";
+		cout << "Error, need file input.\n";
 	}
 	return 0;
 }
