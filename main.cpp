@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 			yyparse(); //ast_root points to program
 			fclose(yyin);
 			yyin = NULL;
-			CodeGenVisitor c = CodeGenVisitor();
+			CodeGenVisitor c;
 			c.initModule("LLVM JIT start");
 			//((Block)ast_root)->accept(c);
 		}

@@ -1,15 +1,16 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include
+LLVM_BIN := ./llvm/build/Debug+Asserts/bin/llvm-config
 
 all: parser CTest
 
 parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp
-	g++ -std=c++11 -o parser parser.o lex.o node.o codeGenVisitor.o main.o ./gc/.libs/libgc.a -L./gc/.libs -lpthread
+	g++ -std=c++11 -o parser parser.o lex.o node.o codeGenVisitor.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs`
 
 parser.cpp: parser.y
 	bison -d -o parser.cpp parser.y
 
 parser.o: parser.cpp
-	g++ -std=c++11 -c parser.cpp -o parser.o $(LLVM_INC)
+	g++ -std=c++11 -c parser.cpp -o parser.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 lex.cpp: lex.l
 	lex -o lex.cpp lex.l
@@ -24,7 +25,7 @@ codeGenVisitor.o: codeGenVisitor.h codeGenVisitor.cpp
 	g++ -std=c++11 -c codeGenVisitor.cpp -o codeGenVisitor.o $(LLVM_INC)
 
 main.o: main.cpp
-	g++ -std=c++11 -c main.cpp -o main.o $(LLVM_INC)
+	g++ -std=c++11 -c main.cpp -o main.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 .gc_built_marker:
 	touch .gc_built_marker;cd ./gc;./configure --prefix=/usr/local/ --enable-threads=posix --enable-parallel-mark --enable-cplusplus;make
