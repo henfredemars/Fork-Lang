@@ -1,5 +1,5 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include
-LLVM_BIN := ./llvm/build/Debug+Asserts/bin/llvm-config
+LLVM_BIN := ./llvm/build/*+Asserts/bin/llvm-config
 
 all: parser CTest
 
@@ -28,13 +28,13 @@ main.o: main.cpp
 	g++ -std=c++11 -c main.cpp -o main.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 .gc_built_marker:
-	touch .gc_built_marker;cd ./gc;./configure --prefix=/usr/local/ --enable-threads=posix --enable-parallel-mark --enable-cplusplus;make
+	touch .gc_built_marker;cd ./gc;./configure --prefix=/usr/local/ --enable-threads=posix --enable-parallel-mark --enable-cplusplus --enable-gc-assertions;make
 
 CTest: .gc_built_marker
 	make -C ./Bench/C++
 
 .llvm_built_marker:
-	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-debug --disable-optimized --enable-targets=x86,x86_64;make;
+	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-debug --enable-optimized --enable-targets=x86,x86_64;make;
 
 log: parser.o lex.o main.o parser.hpp
 	g++ -std=c++11 -o parser parser.o lex.o node.o main.o -lgc > fork_log 2>&1
@@ -44,5 +44,5 @@ clean:
 	rm -f parser.tab.c .llvm_built_marker .gc_built_marker;
 	make -C ./gc clean
 	make -C ./Bench/C++ clean
-	make -C ./llvm/build clean
+	rm -rf ./llvm/build
 
