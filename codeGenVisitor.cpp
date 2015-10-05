@@ -9,7 +9,7 @@ llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   return nullptr;
 }
 
-llvm::IRBuilder<> Builder(*getLLVMContext());
+llvm::IRBuilder<> Builder(llvm::getGlobalContext());
 
 void CodeGenVisitor::initModule(std::string name) {
 	theModule = llvm::make_unique<llvm::Module>(name, *getLLVMContext());

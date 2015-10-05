@@ -54,11 +54,10 @@ public:
 
 class CodeGenVisitor : public Visitor {
 private:
-	llvm::LLVMContext* l = new llvm::LLVMContext();
+	llvm::LLVMContext* l = &llvm::getGlobalContext();
 	unique_ptr<llvm::Module> theModule;
 	map<std::string, llvm::Value*> namedValues;
 	llvm::Value* ErrorV(const char* str);
-	llvm::IRBuilder<> b;
 public:
 	llvm::LLVMContext* getLLVMContext();
 	void initModule(string name);
