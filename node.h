@@ -4,6 +4,9 @@
 #ifndef __NODE_H
 #define __NODE_H
 
+#define GC_DEBUG 1
+#define YYDEBUG 1
+
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -19,9 +22,6 @@
 #include "./gc/include/gc_cpp.h"
 #include "./gc/include/gc_allocator.h"
 #include "codeGenVisitor.h"
-
-#define GC_DEBUG 1
-#define YYDEBUG 1
 
 using namespace std;
 

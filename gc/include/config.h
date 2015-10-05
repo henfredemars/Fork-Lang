@@ -29,7 +29,7 @@
 /* #undef GC_AIX_THREADS */
 
 /* Define to enable internal debug assertions. */
-/* #undef GC_ASSERTIONS */
+#define GC_ASSERTIONS 1
 
 /* Define to support Darwin pthreads. */
 /* #undef GC_DARWIN_THREADS */

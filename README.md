@@ -17,7 +17,7 @@ Use your package management system to obtain flex and bison. For Ubuntu this is:
 	sudo apt-get install aptitude;
 	sudo aptitude update;
 	sudo aptitude upgrade;
-	sudo aptitude install flex bison build-essential;
+	sudo aptitude install flex bison build-essential libtinfo-dev;
 
 bwd gc is included inside this repo, but if you desire to reinstall or update the version of bwd gc feel free to use/edit the following commands:
 
