@@ -4,6 +4,17 @@
 
 #include "node.h"
 
+//Symbol table
+std::map<std::string,IdentType> sym_table;
+
+//Copy identifier
+char* dup_char(char* name) {
+  size_t length = strlen(name)+1;
+  char* ident = (char*)GC_MALLOC_ATOMIC(length);
+  memcpy(ident,name,length);
+  return ident;
+}
+
 /*===================================Node===================================*/
 void Node::describe() const {
 	printf("---Found generic node object with no fields.");
@@ -56,14 +67,22 @@ llvm::Value* Float::acceptCodeGenVisitor(CodeGenVisitor* c) {
 
 /*================================Identifier================================*/
 Identifier::Identifier(char* name) {
-	size_t length = strlen(name)+1;
-	this->name = (char*)GC_MALLOC_ATOMIC(length);
-	memcpy(this->name,name,length);
-	//Its good practice to keep our own copy
+	this->name = dup_char(name);
 }
 
 void Identifier::describe() const {
 	printf("---Found Identifier: %s\n",name);
+}
+
+bool Identifier::assertDeclared() const {
+	if (sym_table.count(std::string(name)) == 0) {
+                yyerror("Identifier does not exist in symbol table");
+                return true;
+        } else if (sym_table.at(std::string(name)) != VARIABLE) {
+                yyerror("Identifier was not a variable");
+		return true;
+        }
+	return false;
 }
 
 llvm::Value* Identifier::acceptCodeGenVisitor(CodeGenVisitor* c) {
@@ -72,9 +91,8 @@ llvm::Value* Identifier::acceptCodeGenVisitor(CodeGenVisitor* c) {
 
 /*=============================NullaryOperator==============================*/
 NullaryOperator::NullaryOperator(char* op) {
-	size_t length = strlen(op)+1;
-        this->op = (char*)GC_MALLOC_ATOMIC(length);
-        memcpy(this->op,op,length);
+        printf("%s",op);
+	this->op = dup_char(op);
 }
 
 void NullaryOperator::describe() const {
@@ -87,9 +105,7 @@ llvm::Value* NullaryOperator::acceptCodeGenVisitor(CodeGenVisitor* c) {
 
 /*==============================UnaryOperator===============================*/
 UnaryOperator::UnaryOperator(char* op, Expression* exp) {
-        size_t length = strlen(op)+1;
-        this->op = (char*)GC_MALLOC_ATOMIC(length);
-        memcpy(this->op,op,length);
+	this->op = dup_char(op);
 	this->exp = exp;
 }
 
@@ -103,9 +119,7 @@ llvm::Value* UnaryOperator::acceptCodeGenVisitor(CodeGenVisitor* c) {
 
 /*==============================BinaryOperator==============================*/
 BinaryOperator::BinaryOperator(Expression* left, char* op, Expression* right) {
-	size_t length = strlen(op)+1;
-        this->op = (char*)GC_MALLOC_ATOMIC(length);
-        memcpy(this->op,op,length);
+        this->op = dup_char(op);
 	this->left = left;
 	this->right = right;
 }
@@ -139,6 +153,11 @@ llvm::Value* Block::acceptCodeGenVisitor(CodeGenVisitor* c) {
 FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args) {
 	this->ident = ident;
 	this->args = args;
+        if (sym_table.count(std::string(ident->name)) == 0) {
+		yyerror("Called function does not exist in symbol table");
+	} else if (sym_table.at(std::string(ident->name)) != FUNCTION) {
+		yyerror("Identifier was not a function");
+	}
 }
 
 void FunctionCall::describe() const {
@@ -151,9 +170,7 @@ llvm::Value* FunctionCall::acceptCodeGenVisitor(CodeGenVisitor* c) {
 
 /*=================================Keyword==================================*/
 Keyword::Keyword(char* name) {
-	size_t length = strlen(name)+1;
-	this->name = (char*)GC_MALLOC_ATOMIC(length);
-	memcpy(this->name,name,length);
+	this->name = dup_char(name);
 }
 
 void Keyword::describe() const {
@@ -169,6 +186,8 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->type = type;
 	this->ident = ident;
 	this->exp = exp;
+        sym_table.insert(std::pair<std::string,IdentType>(std::string(ident->name),
+				VARIABLE));
 }
 
 void VariableDefinition::describe() const {
@@ -184,6 +203,8 @@ llvm::Value* VariableDefinition::acceptCodeGenVisitor(CodeGenVisitor* c) {
 StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 	this->ident = ident;
 	this->block = block;
+        sym_table.insert(std::pair<std::string,IdentType>(std::string(ident->name),
+				STRUCTURE));
 }
 
 void StructureDefinition::describe() const {
@@ -203,6 +224,8 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
 	this->ident = ident;
 	this->args = args;
 	this->block = block;
+        sym_table.insert(std::pair<std::string,IdentType>(std::string(ident->name),
+				FUNCTION));
 }
 
 void FunctionDefinition::describe() const {
@@ -217,6 +240,12 @@ llvm::Value* FunctionDefinition::acceptCodeGenVisitor(CodeGenVisitor* c) {
 StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
 	this->type = type;
 	this->ident = ident;
+        if (sym_table.count(std::string(type->name)) == 0) {
+                yyerror("Structure definition does not exist in symbol table");
+        } else if (sym_table.at(std::string(type->name)) != STRUCTURE) {
+                yyerror("Type was not a declared structure type");
+        }
+
 }
 
 void StructureDeclaration::describe() const {
