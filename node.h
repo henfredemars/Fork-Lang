@@ -12,18 +12,21 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
+#include <map>
 #include <cctype>
 #include <cstdio>
-#include <map>
+#include <cassert>
 #include <string.h>
 #include <vector>
 #include <cstdint>
 #include "./gc/include/gc.h"
 #include "./gc/include/gc_cpp.h"
 #include "./gc/include/gc_allocator.h"
-#include "codeGenVisitor.h"
 
 using namespace std;
+
+//Externs
+extern void yyerror(const char *s);
 
 //Things defined here
 class Node;
@@ -48,6 +51,18 @@ class AssignStatement;
 class IfStatement;
 class Visitor;
 class CodeGenVisitor;
+
+//Symbol Table
+enum IdentType {
+  VARIABLE,
+  STRUCTURE,
+  FUNCTION
+};
+
+extern std::map<std::string,IdentType> sym_table;
+
+//CodeGen type declarations
+#include "codeGenVisitor.h"
 
 /*===================================Node===================================*/
 class Node : public gc {
@@ -93,6 +108,7 @@ public:
 	char* name;
 	Identifier(char* name);
 	virtual void describe() const;
+        bool assertDeclared() const;
 	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
 };
 

@@ -43,7 +43,7 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 	// still have to insert code for variable checking during usage
   llvm::Value *V = namedValues[i->name];
   if (!V)
-    return ErrorV("Unknown variable name.");
+    return ErrorV("Unknown variable name");
   return V;
 }
 
@@ -73,7 +73,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		case '/':
 		return Builder.CreateFDiv(L, R, "divtmp");
 		default:
-		return ErrorV("Invalid binary operator.");
+		return ErrorV("Invalid binary operator");
 	}
 }
 
@@ -90,7 +90,7 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 
 /*=================================Keyword==================================*/
 llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
-	return ErrorV("Attempt to generate code for dangling keyword.");
+	return ErrorV("Attempt to generate code for dangling keyword");
 }
 
 /*============================VariableDefinition============================*/
