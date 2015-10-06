@@ -7,13 +7,13 @@ parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor
 	g++ -std=c++11 -o parser parser.o lex.o node.o codeGenVisitor.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs`
 
 parser.cpp: parser.y
-	bison -d -o parser.cpp parser.y
+	touch parser.cpp; bison -d -o parser.cpp parser.y
 
 parser.o: parser.cpp
 	g++ -std=c++11 -c parser.cpp -o parser.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 lex.cpp: lex.l
-	lex -o lex.cpp lex.l
+	touch lex.cpp; lex -o lex.cpp lex.l
 
 lex.o: lex.cpp
 	g++ -std=c++11 -c lex.cpp -o lex.o $(LLVM_INC)
