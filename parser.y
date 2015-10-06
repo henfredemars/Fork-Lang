@@ -10,6 +10,7 @@
     extern int yylex();
     extern int yydebug;
     extern int yylineno;
+    extern SymbolTable sym_table;
     extern Node* ast_root;
     void yyerror(const char *s) { 
 	printf("Error in parser near line %d: %s\n", yylineno, s);
@@ -51,6 +52,7 @@
 %type <string> binaryOperatorToken
 %type <string> unaryOperatorToken
 %type <string> nullaryOperatorToken
+%type <token> leftBraceToken rightBraceToken
 
 //Operators precedence
 %precedence TCOMMIT TENDL EMTPYFUNARGS TSCOLON
@@ -136,17 +138,17 @@ if_statement : TIF TLPAREN exp TRPAREN block {
 		$$->describe();
 	       } ;
 
-block : TLBRACE statements TRBRACE { $$ = $2; $$->describe();
+block : leftBraceToken statements rightBraceToken { $$ = $2; $$->describe();
 		printf("Parser: statements become block\n"); } |
-        TLBRACE TENDL statements TRBRACE { $$ = $3; $$->describe();
+        leftBraceToken TENDL statements rightBraceToken { $$ = $3; $$->describe();
                 printf("Parser: statements become block\n"); } |
-        TLBRACE statements TENDL TRBRACE { $$ = $2; $$->describe();
+        leftBraceToken statements TENDL rightBraceToken { $$ = $2; $$->describe();
                 printf("Parser: statements become block\n"); } |
-        TLBRACE TENDL statements TENDL TRBRACE { $$ = $3; $$->describe();
+        leftBraceToken TENDL statements TENDL rightBraceToken { $$ = $3; $$->describe();
                 printf("Parser: statements become block\n"); }
 
-              | TLBRACE TRBRACE { $$ = new Block(); $$->describe(); }
-	      | TLBRACE TENDL TRBRACE { $$ = new Block(); $$->describe(); }
+              | leftBraceToken rightBraceToken { $$ = new Block(); $$->describe(); }
+	      | leftBraceToken TENDL rightBraceToken { $$ = new Block(); $$->describe(); }
               ;
 
 //A variable declaration is made of a var_keyword, identifier, and possibly an expression
@@ -248,6 +250,9 @@ numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH 
 			| TPLUS | TSTAR | TSLASH | TDOT |
 			TLOR | TLAND;
+
+leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
+rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
 unaryOperatorToken : TSTAR | TDASH | TLNOT;
 

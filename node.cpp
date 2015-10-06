@@ -5,7 +5,7 @@
 #include "node.h"
 
 //Symbol table
-std::map<std::string,IdentType> sym_table;
+SymbolTable sym_table;
 
 //Copy identifier
 char* dup_char(char* name) {
@@ -75,10 +75,10 @@ void Identifier::describe() const {
 }
 
 bool Identifier::assertDeclared() const {
-	if (sym_table.count(std::string(name)) == 0) {
+	if (!sym_table.check(name)) {
                 yyerror("Identifier does not exist in symbol table");
                 return true;
-        } else if (sym_table.at(std::string(name)) != VARIABLE) {
+        } else if (!sym_table.check(name,VARIABLE)) {
                 yyerror("Identifier was not a variable");
 		return true;
         }
@@ -153,9 +153,9 @@ llvm::Value* Block::acceptCodeGenVisitor(CodeGenVisitor* c) {
 FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args) {
 	this->ident = ident;
 	this->args = args;
-        if (sym_table.count(std::string(ident->name)) == 0) {
+        if (!sym_table.check(ident->name)) {
 		yyerror("Called function does not exist in symbol table");
-	} else if (sym_table.at(std::string(ident->name)) != FUNCTION) {
+	} else if (!sym_table.check(ident->name,FUNCTION)) {
 		yyerror("Identifier was not a function");
 	}
 }
@@ -186,8 +186,7 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->type = type;
 	this->ident = ident;
 	this->exp = exp;
-        sym_table.insert(std::pair<std::string,IdentType>(std::string(ident->name),
-				VARIABLE));
+        sym_table.insert(ident->name,VARIABLE);
 }
 
 void VariableDefinition::describe() const {
@@ -203,8 +202,7 @@ llvm::Value* VariableDefinition::acceptCodeGenVisitor(CodeGenVisitor* c) {
 StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 	this->ident = ident;
 	this->block = block;
-        sym_table.insert(std::pair<std::string,IdentType>(std::string(ident->name),
-				STRUCTURE));
+        sym_table.insert(ident->name,STRUCTURE);
 }
 
 void StructureDefinition::describe() const {
@@ -224,8 +222,7 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
 	this->ident = ident;
 	this->args = args;
 	this->block = block;
-        sym_table.insert(std::pair<std::string,IdentType>(std::string(ident->name),
-				FUNCTION));
+        sym_table.insert(ident->name,FUNCTION);
 }
 
 void FunctionDefinition::describe() const {
@@ -240,9 +237,9 @@ llvm::Value* FunctionDefinition::acceptCodeGenVisitor(CodeGenVisitor* c) {
 StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
 	this->type = type;
 	this->ident = ident;
-        if (sym_table.count(std::string(type->name)) == 0) {
+        if (!sym_table.check(type->name)) {
                 yyerror("Structure definition does not exist in symbol table");
-        } else if (sym_table.at(std::string(type->name)) != STRUCTURE) {
+        } else if (!sym_table.check(type->name,STRUCTURE)) {
                 yyerror("Type was not a declared structure type");
         }
 
@@ -314,3 +311,52 @@ void IfStatement::describe() const {
 llvm::Value* IfStatement::acceptCodeGenVisitor(CodeGenVisitor* c) {
 	return c->visitIfStatement(this);
 }
+
+/*===============================SymbolTable================================*/
+SymbolTable::SymbolTable() {
+	//Push global scope
+	this->push();
+}
+
+void SymbolTable::insert(char* ident,IdentType type) {
+	assert(frames.size());
+	map<std::string,IdentType>& lframe = frames.back();
+        if (this->check(ident))
+          yyerror("Identifier already exists");
+        lframe.insert(std::make_pair(std::string(ident),type));
+}
+
+bool SymbolTable::check(char* ident) {
+        assert(frames.size());
+        for (int i = 0; i<frames.size();i++) {
+          if (frames.at(i).count(std::string(ident))) {
+            printf("Found\n");
+	    return true;
+          }
+        }
+        return false;
+}
+
+bool SymbolTable::check(char* ident,IdentType type) {
+        assert(frames.size());
+        for (int i = 0; i<frames.size();i++) {
+          if (frames.at(i).count(std::string(ident))) {
+            if (frames.at(i).at(std::string(ident))==type) {
+              return true;
+            }
+          }
+        }
+        return false;
+}
+
+void SymbolTable::push() {
+	//Push new scope
+	this->frames.push_back(std::map<std::string,IdentType>());
+}
+
+void SymbolTable::pop() {
+	//Pop current scope
+	assert(frames.size());
+	frames.pop_back();
+}
+

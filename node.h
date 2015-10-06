@@ -51,6 +51,7 @@ class AssignStatement;
 class IfStatement;
 class Visitor;
 class CodeGenVisitor;
+class SymbolTable;
 
 //Symbol Table
 enum IdentType {
@@ -59,7 +60,7 @@ enum IdentType {
   FUNCTION
 };
 
-extern std::map<std::string,IdentType> sym_table;
+extern SymbolTable sym_table;
 
 //CodeGen type declarations
 #include "codeGenVisitor.h"
@@ -259,6 +260,20 @@ public:
 	IfStatement(Expression* exp,Block* block);
 	virtual void describe() const;
 	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+};
+
+/*===============================SymbolTable================================*/
+//Stack for identifier verification
+class SymbolTable : public gc {
+public:
+	SymbolTable();
+        void insert(char* ident,IdentType type);
+	bool check(char* ident,IdentType type);
+        bool check(char* ident);
+	void push();
+        void pop();
+private:
+	std::vector<std::map<std::string,IdentType>> frames;
 };
 
 #endif
