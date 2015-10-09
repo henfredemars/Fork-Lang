@@ -75,14 +75,14 @@ public:
 class Expression : public Node {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*================================Statement=================================*/
 class Statement : public Node {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*=================================Integer==================================*/
@@ -91,7 +91,7 @@ public:
 	int64_t value;
 	Integer(int64_t value);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*==================================Float===================================*/
@@ -100,7 +100,7 @@ public:
 	double value;
 	Float(double value);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*================================Identifier================================*/
@@ -110,7 +110,7 @@ public:
 	Identifier(char* name);
 	virtual void describe() const;
         bool assertDeclared() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*=============================NullaryOperator==============================*/
@@ -119,7 +119,7 @@ public:
 	char* op;
 	NullaryOperator(char* op);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*==============================UnaryOperator===============================*/
@@ -129,7 +129,7 @@ public:
 	Expression* exp;
 	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*==============================BinaryOperator==============================*/
@@ -140,7 +140,7 @@ public:
 	Expression* right;
 	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*==================================Block===================================*/
@@ -152,7 +152,7 @@ public:
 	Block(vector<Statement*,gc_allocator<Statement*>>* statements);
 	vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*===============================FunctionCall===============================*/
@@ -162,7 +162,7 @@ public:
 	vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*=================================Keyword==================================*/
@@ -172,7 +172,7 @@ public:
 	char* name;
 	Keyword(char* name);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*============================VariableDefinition============================*/
@@ -183,7 +183,7 @@ public:
 	Expression* exp;
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*===========================StructureDefinition============================*/
@@ -193,7 +193,7 @@ public:
 	Block* block;
 	StructureDefinition(Identifier* ident,Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*============================FunctionDefinition============================*/
@@ -206,7 +206,7 @@ public:
 	FunctionDefinition(Keyword* type, Identifier* ident, vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	 Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*==========================StructureDeclaration============================*/
@@ -217,7 +217,7 @@ public:
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*===========================ExpressionStatement============================*/
@@ -227,7 +227,7 @@ public:
 	Expression* exp;
 	ExpressionStatement(Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*=============================ReturnStatement==============================*/
@@ -237,7 +237,7 @@ public:
 	Expression* exp;
 	ReturnStatement(Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*=============================AssignStatement==============================*/
@@ -248,7 +248,7 @@ public:
 	Expression* target;
 	AssignStatement(Expression* target,Expression* valxp);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*===============================IfStatement================================*/
@@ -259,7 +259,7 @@ public:
 	Block* block;
 	IfStatement(Expression* exp,Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptCodeGenVisitor(CodeGenVisitor* c);
+	llvm::Value* acceptVisitor(Visitor* c);
 };
 
 /*===============================SymbolTable================================*/

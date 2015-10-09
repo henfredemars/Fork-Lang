@@ -27,18 +27,18 @@ llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(i->value, 64));
+	return llvm::ConstantInt::get(*getLLVMContext(), llvm::APInt(i->value, 64));
 }
 
 /*==================================Float===================================*/
 llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
-	return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(f->value));
+	return llvm::ConstantFP::get(*getLLVMContext(), llvm::APFloat(f->value));
 }
 
 /*================================Identifier================================*/
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 	// retrieve variable from the map
-	// still have to insert code for variable checking during usage
+	// TODO: insert code for variable checking during usage
   llvm::Value *V = namedValues[i->name];
   if (!V)
     return ErrorV("Unknown variable name");
@@ -49,18 +49,17 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 	if(*n->op == ';') {
 		//commit action
+		return nullptr;
 	}
-	else
-		return ErrorV("Invalid nullary operator");
-	return nullptr;
+	return ErrorV("Invalid nullary operator");
 }
 
 /*==============================UnaryOperator===============================*/
 llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
-	llvm::Value* expr = u->exp->acceptCodeGenVisitor(this);
+	llvm::Value* expr = u->exp->acceptVisitor(this);
 	switch(*u->op) {
 		case '-':
-		return Builder.CreateFMul(llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(-1, 64)), expr, "multmp");
+		return Builder.CreateFMul(llvm::ConstantInt::get(*getLLVMContext(), llvm::APInt(-1, 64)), expr, "multmp");
 		case '!':
 		case '*':
 		return ErrorV("Not yet specified unary operator");
@@ -71,8 +70,9 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 
 /*==============================BinaryOperator==============================*/
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
-	llvm::Value* left = b->left->acceptCodeGenVisitor(this);
- 	llvm::Value* right = b->right->acceptCodeGenVisitor(this);
+	llvm::Value* left = b->left->acceptVisitor(this);
+ 	llvm::Value* right = b->right->acceptVisitor(this);
+ 	//grab left and right as llvm values
 	if (!left || !right)
 		return ErrorV("Could not evaluate binary operator");
 	switch (*b->op) {
@@ -84,10 +84,15 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		return Builder.CreateFMul(left, right, "multmp");
 		case '/':
 		return Builder.CreateFDiv(left, right, "divtmp");
+		//case ">=":
+		//case "<=":
+		//case "!=":
+		//case "==":
 		case '>':
 		case '<':
 		case '.':
 		return ErrorV("Not yet specified binary operator");
+		//assignment operator is separate
 		default:
 		return ErrorV("Invalid binary operator");
 	}
