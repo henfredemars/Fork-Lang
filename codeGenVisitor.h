@@ -2,12 +2,26 @@
 #define __CODE_GEN_VISIT_H
 
 #include "node.h"
-using namespace std;
 
-//codeGen visitor design pattern
+//AST visitor
+
+enum Binops {
+	BOP_PLUS,
+	BOP_MINUS,
+	BOP_MULT,
+	BOP_DIV,
+	BOP_GTE,
+	BOP_LTE,
+	BOP_LT,
+	BOP_GT,
+	BOP_NEQ,
+	BOP_EQ,
+	BOP_DOT
+};
 
 class Visitor {
 public:
+	virtual llvm::Value* visitNode(Node* n) =0;
 	virtual llvm::Value* visitExpression(Expression* e) =0;
 	virtual llvm::Value* visitStatement(Statement* s) =0;
 	virtual llvm::Value* visitInteger(Integer* i) =0;
@@ -31,15 +45,17 @@ public:
 
 class CodeGenVisitor : public Visitor {
 private:
-	llvm::LLVMContext* l = &llvm::getGlobalContext();
-	unique_ptr<llvm::Module> theModule;
-	map<string, llvm::Value*> namedValues;
-	map<string,char> switchMap;
+	llvm::LLVMContext* context;
+	std::unique_ptr<llvm::IRBuilder<>> builder;
+	std::unique_ptr<llvm::Module> theModule;
+	std::map<std::string, llvm::Value*> namedValues;
+	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
 	llvm::Value* ErrorV(const char* str);
 public:
+	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
-	void initModule(string name);
+	llvm::Value* visitNode(Node* n);
 	llvm::Value* visitExpression(Expression* e);
 	llvm::Value* visitStatement(Statement* s);
 	llvm::Value* visitInteger(Integer* i);
