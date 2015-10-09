@@ -17,12 +17,12 @@ void CodeGenVisitor::initModule(std::string name) {
 
 /*================================Expression================================*/
 llvm::Value* CodeGenVisitor::visitExpression(Expression* e) {
-	return nullptr;
+	return ErrorV("Attempt to generate code for unspecified Expression");
 }
 
 /*================================Statement=================================*/
 llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
-	return nullptr;
+	return ErrorV("Attempt to generate code for unspecified Statement");
 }
 
 /*=================================Integer==================================*/
@@ -47,29 +47,47 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 
 /*=============================NullaryOperator==============================*/
 llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
+	if(*n->op == ';') {
+		//commit action
+	}
+	else
+		return ErrorV("Invalid nullary operator");
 	return nullptr;
 }
 
 /*==============================UnaryOperator===============================*/
 llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
-	return nullptr;
+	llvm::Value* expr = u->exp->acceptCodeGenVisitor(this);
+	switch(*u->op) {
+		case '-':
+		return Builder.CreateFMul(llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(-1, 64)), expr, "multmp");
+		case '!':
+		case '*':
+		return ErrorV("Not yet specified unary operator");
+		default:
+		return ErrorV("Invalid unary operator");
+	}
 }
 
 /*==============================BinaryOperator==============================*/
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
-	llvm::Value* L = b->left->acceptCodeGenVisitor(this);
- 	llvm::Value* R = b->right->acceptCodeGenVisitor(this);
-	if (!L || !R)
-		return nullptr;
+	llvm::Value* left = b->left->acceptCodeGenVisitor(this);
+ 	llvm::Value* right = b->right->acceptCodeGenVisitor(this);
+	if (!left || !right)
+		return ErrorV("Could not evaluate binary operator");
 	switch (*b->op) {
 		case '+':
-		return Builder.CreateFAdd(L, R, "addtmp");
+		return Builder.CreateFAdd(left, right, "addtmp");
 		case '-':
-		return Builder.CreateFSub(L, R, "subtmp");
+		return Builder.CreateFSub(left, right, "subtmp");
 		case '*':
-		return Builder.CreateFMul(L, R, "multmp");
+		return Builder.CreateFMul(left, right, "multmp");
 		case '/':
-		return Builder.CreateFDiv(L, R, "divtmp");
+		return Builder.CreateFDiv(left, right, "divtmp");
+		case '>':
+		case '<':
+		case '.':
+		return ErrorV("Not yet specified binary operator");
 		default:
 		return ErrorV("Invalid binary operator");
 	}
@@ -83,6 +101,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 
 /*===============================FunctionCall===============================*/
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
+	//grab function and evaluate with arguments
 	return nullptr;
 }
 
@@ -93,22 +112,24 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
+	//add identifier with a default value
 	return nullptr;
 }
 
 /*===========================StructureDefinition============================*/
 llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
-	return nullptr;
+	return ErrorV("Attempt to evaluate not yet implemented structure definition");
 }
 
 /*============================FunctionDefinition============================*/
 llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
+	//add function to be called
 	return nullptr;
 }
 
 /*==========================StructureDeclaration============================*/
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
-	return nullptr;
+	return ErrorV("Attempt to evaluate not yet implemented structure declaration");
 }
 
 
@@ -120,16 +141,17 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
+	//exit the current block
 	return nullptr;
 }
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	//separate from bin op
+	//map a value to an exisiting identifier
 	return nullptr;
 }
 
 /*===============================IfStatement================================*/
 llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
-	return nullptr;
+	return ErrorV("Attempt to evluate not yet implemented if statement");
 }
