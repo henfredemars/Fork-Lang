@@ -119,7 +119,7 @@ llvm::Value* UnaryOperator::acceptVisitor(Visitor* v) {
 
 /*==============================BinaryOperator==============================*/
 BinaryOperator::BinaryOperator(Expression* left, char* op, Expression* right) {
-        this->op = dup_char(op);
+    this->op = dup_char(op);
 	this->left = left;
 	this->right = right;
 }

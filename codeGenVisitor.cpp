@@ -1,7 +1,17 @@
 #include "codeGenVisitor.h"
 
-llvm::LLVMContext* CodeGenVisitor::getLLVMContext() {
-	return l;
+void CodeGenVisitor::populateSwitchMap() {
+	switchMap.insert( pair<string, char>("+", '+') );
+	switchMap.insert( pair<string, char>("-", '-') );
+	switchMap.insert( pair<string, char>("*", '*') );
+	switchMap.insert( pair<string, char>("/", '/') );
+	switchMap.insert( pair<string, char>(">=", 'g') );
+	switchMap.insert( pair<string, char>("<=", 'l') );
+	switchMap.insert( pair<string, char>("!=", '!') );
+	switchMap.insert( pair<string, char>("==", '=') );
+	switchMap.insert( pair<string, char>(">", '>') );
+	switchMap.insert( pair<string, char>("<", '<') );
+	switchMap.insert( pair<string, char>(".", '.') );
 }
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
@@ -11,7 +21,11 @@ llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
 
 llvm::IRBuilder<> Builder(llvm::getGlobalContext());
 
+llvm::LLVMContext* CodeGenVisitor::getLLVMContext() {
+	return l;
+}
 void CodeGenVisitor::initModule(std::string name) {
+	populateSwitchMap();
 	theModule = llvm::make_unique<llvm::Module>(name, *getLLVMContext());
 }
 
@@ -72,10 +86,11 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	llvm::Value* left = b->left->acceptVisitor(this);
  	llvm::Value* right = b->right->acceptVisitor(this);
- 	//grab left and right as llvm values
+ 	//grab left and right
 	if (!left || !right)
 		return ErrorV("Could not evaluate binary operator");
-	switch (*b->op) {
+	//use map for binary operators
+	switch (switchMap.find(b->op)->second) {
 		case '+':
 		return Builder.CreateFAdd(left, right, "addtmp");
 		case '-':
@@ -84,12 +99,12 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		return Builder.CreateFMul(left, right, "multmp");
 		case '/':
 		return Builder.CreateFDiv(left, right, "divtmp");
-		//case ">=":
-		//case "<=":
-		//case "!=":
-		//case "==":
-		case '>':
+		case '!':
+		case '=':
 		case '<':
+		case 'l':
+		case '>':
+		case 'g':
 		case '.':
 		return ErrorV("Not yet specified binary operator");
 		//assignment operator is separate

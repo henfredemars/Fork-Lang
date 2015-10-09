@@ -33,7 +33,9 @@ class CodeGenVisitor : public Visitor {
 private:
 	llvm::LLVMContext* l = &llvm::getGlobalContext();
 	unique_ptr<llvm::Module> theModule;
-	map<std::string, llvm::Value*> namedValues;
+	map<string, llvm::Value*> namedValues;
+	map<string,char> switchMap;
+	void populateSwitchMap();
 	llvm::Value* ErrorV(const char* str);
 public:
 	llvm::LLVMContext* getLLVMContext();
