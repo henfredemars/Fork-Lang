@@ -1,52 +1,54 @@
 #include "codeGenVisitor.h"
 
 void CodeGenVisitor::populateSwitchMap() {
-	switchMap.insert( pair<string, char>("+", '+') );
-	switchMap.insert( pair<string, char>("-", '-') );
-	switchMap.insert( pair<string, char>("*", '*') );
-	switchMap.insert( pair<string, char>("/", '/') );
-	switchMap.insert( pair<string, char>(">=", 'g') );
-	switchMap.insert( pair<string, char>("<=", 'l') );
-	switchMap.insert( pair<string, char>("!=", '!') );
-	switchMap.insert( pair<string, char>("==", '=') );
-	switchMap.insert( pair<string, char>(">", '>') );
-	switchMap.insert( pair<string, char>("<", '<') );
-	switchMap.insert( pair<string, char>(".", '.') );
-}
+	switchMap.insert( std::make_pair("+", BOP_PLUS) );
+	switchMap.insert( std::make_pair("-", BOP_MINUS) );
+	switchMap.insert( std::make_pair("*", BOP_MULT) );
+	switchMap.insert( std::make_pair("/", BOP_DIV) );
+	switchMap.insert( std::make_pair(">=", BOP_GTE) );
+	switchMap.insert( std::make_pair("<=", BOP_LTE) );
+	switchMap.insert( std::make_pair(">", BOP_GT) );
+	switchMap.insert( std::make_pair("<", BOP_LT) );
+	switchMap.insert( std::make_pair("!=", BOP_NEQ) );
+	switchMap.insert( std::make_pair("==", BOP_EQ) );
+	switchMap.insert( std::make_pair(".", BOP_DOT) );
+} 
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str);
   return nullptr;
 }
 
-llvm::IRBuilder<> Builder(llvm::getGlobalContext());
-
-llvm::LLVMContext* CodeGenVisitor::getLLVMContext() {
-	return l;
-}
-void CodeGenVisitor::initModule(std::string name) {
+CodeGenVisitor::CodeGenVisitor(std::string name) {
+	context = &llvm::getGlobalContext();
 	populateSwitchMap();
-	theModule = llvm::make_unique<llvm::Module>(name, *getLLVMContext());
+	theModule = llvm::make_unique<llvm::Module>(name, *context);
+	builder = llvm::make_unique<llvm::IRBuilder<>>(*context);
+}
+
+/*===================================Node===================================*/
+llvm::Value* CodeGenVisitor::visitNode(Node* n) {
+	return ErrorV("Attempt to generate code for generic Node");
 }
 
 /*================================Expression================================*/
 llvm::Value* CodeGenVisitor::visitExpression(Expression* e) {
-	return ErrorV("Attempt to generate code for unspecified Expression");
+	return ErrorV("Attempt to generate code for generic Expression");
 }
 
 /*================================Statement=================================*/
 llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
-	return ErrorV("Attempt to generate code for unspecified Statement");
+	return ErrorV("Attempt to generate code for generic Statement");
 }
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	return llvm::ConstantInt::get(*getLLVMContext(), llvm::APInt(i->value, 64));
+	return llvm::ConstantInt::get(*context, llvm::APInt(i->value, 64));
 }
 
 /*==================================Float===================================*/
 llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
-	return llvm::ConstantFP::get(*getLLVMContext(), llvm::APFloat(f->value));
+	return llvm::ConstantFP::get(*context, llvm::APFloat(f->value));
 }
 
 /*================================Identifier================================*/
@@ -73,7 +75,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
 	switch(*u->op) {
 		case '-':
-		return Builder.CreateFMul(llvm::ConstantInt::get(*getLLVMContext(), llvm::APInt(-1, 64)), expr, "multmp");
+		return builder->CreateFMul(llvm::ConstantInt::get(*context, llvm::APInt(-1, 64)), expr, "multmp");
 		case '!':
 		case '*':
 		return ErrorV("Not yet specified unary operator");
@@ -91,21 +93,21 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		return ErrorV("Could not evaluate binary operator");
 	//use map for binary operators
 	switch (switchMap.find(b->op)->second) {
-		case '+':
-		return Builder.CreateFAdd(left, right, "addtmp");
-		case '-':
-		return Builder.CreateFSub(left, right, "subtmp");
-		case '*':
-		return Builder.CreateFMul(left, right, "multmp");
-		case '/':
-		return Builder.CreateFDiv(left, right, "divtmp");
-		case '!':
-		case '=':
-		case '<':
-		case 'l':
-		case '>':
-		case 'g':
-		case '.':
+		case BOP_PLUS:
+		return builder->CreateFAdd(left, right, "addtmp");
+		case BOP_MINUS:
+		return builder->CreateFSub(left, right, "subtmp");
+		case BOP_MULT:
+		return builder->CreateFMul(left, right, "multmp");
+		case BOP_DIV:
+		return builder->CreateFDiv(left, right, "divtmp");
+		case BOP_NEQ:
+		case BOP_EQ:
+		case BOP_GTE:
+		case BOP_LTE:
+		case BOP_GT:
+		case BOP_LT:
+		case BOP_DOT:
 		return ErrorV("Not yet specified binary operator");
 		//assignment operator is separate
 		default:

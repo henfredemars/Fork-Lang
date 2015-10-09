@@ -21,6 +21,10 @@ void Node::describe() const {
 	printf("---This SHOULD BE AN ERROR.");
 }
 
+llvm::Value* Node::acceptVisitor(Visitor* v) {
+	return v->visitNode(this);
+}
+
 /*================================Expression================================*/
 void Expression::describe() const {
 	printf("---Found generic Expression object with no fields\n");
@@ -133,7 +137,7 @@ llvm::Value* BinaryOperator::acceptVisitor(Visitor* v) {
 }
 
 /*==================================Block===================================*/
-Block::Block(vector<Statement*, gc_allocator<Statement*>>* statements) {
+Block::Block(std::vector<Statement*, gc_allocator<Statement*>>* statements) {
 	this->statements = statements;
 }
 
@@ -150,7 +154,7 @@ llvm::Value* Block::acceptVisitor(Visitor* v) {
 }
 
 /*===============================FunctionCall===============================*/
-FunctionCall::FunctionCall(Identifier* ident, vector<Expression*, gc_allocator<Expression*>>* args) {
+FunctionCall::FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args) {
 	this->ident = ident;
 	this->args = args;
         if (!sym_table.check(ident->name)) {
@@ -216,8 +220,8 @@ llvm::Value* StructureDefinition::acceptVisitor(Visitor* v) {
 
 /*============================FunctionDefinition============================*/
 FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
-	 vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
-	 Block* block) {
+	std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
+	Block* block) {
 	this->type = type;
 	this->ident = ident;
 	this->args = args;
@@ -320,7 +324,7 @@ SymbolTable::SymbolTable() {
 
 void SymbolTable::insert(char* ident,IdentType type) {
 	assert(frames.size());
-	map<std::string,IdentType>& lframe = frames.back();
+	std::map<std::string,IdentType>& lframe = frames.back();
         if (this->check(ident))
           yyerror("Identifier already exists");
         lframe.insert(std::make_pair(std::string(ident),type));
