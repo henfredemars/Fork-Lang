@@ -27,14 +27,12 @@ llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	//return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(i->value));
-	return nullptr;
+	return llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(i->value, 64));
 }
 
 /*==================================Float===================================*/
 llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
-	//return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(f->value));
-	return nullptr;
+	return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(f->value));
 }
 
 /*================================Identifier================================*/
