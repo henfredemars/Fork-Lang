@@ -52,6 +52,7 @@ private:
 	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
 	llvm::Value* ErrorV(const char* str);
+	llvm::Function* generateFunction(FunctionDefinition* f);
 public:
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
