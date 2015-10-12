@@ -128,7 +128,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		case BOP_LT:
 		case BOP_DOT:
 		return ErrorV("Attempt to generate code for not yet implemented binary operator");
-		//assignment operator is separate
+		//assignment op separate
 		default:
 		return ErrorV("Invalid binary operator");
 	}
@@ -171,16 +171,15 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
-	//add identifier with a default value
 	std::string type = v->type->name; //int float or void
 	llvm::Value* val = nullptr;
 	if(type == "int") {
-		int64_t i = 0;
+		int64_t i = 0; //TODO: Figure out why variable necessary
 		val = llvm::ConstantInt::get(*context, llvm::APInt(i, 64));
 	}
 	else if(type == "float")
 		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-	if(val != nullptr)
+	if(!val) //add default value variable to map
 		namedValues.insert(std::make_pair(v->ident->name, val));
 	return val;
 }
@@ -191,23 +190,25 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 }
 
 /*============================FunctionDefinition============================*/
-llvm::Function* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
+llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	llvm::Function* func = theModule->getFunction(f->ident->name);
 	if(!func)
 		func = generateFunction(f); //create function object with type|ident|args
 	if(!func) //generateFunction returned nullptr
 		return nullptr;
 	if(!func->empty())
-		return (llvm::Function*) ErrorV("Function is already defined");
+		return ErrorV("Function is already defined");
 	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
 	for (auto &arg : func->args())
 		namedValues[arg.getName()] = &arg;
-	if(!f->block->acceptVisitor(this))
-		func->eraseFromParent();//erase if nullptr returned
-	//TODO:nullptr return happens if return;
-	return func; 
+	if(llvm::Value* retVal = f->block->acceptVisitor(this)) {//TODO:nullptr return happens when using return;
+		func->dump();//Function IR dump
+		return retVal;
+	}
+	func->eraseFromParent();//erase if nullptr returned
+	return nullptr; 
 }
 
 /*==========================StructureDeclaration============================*/
@@ -224,14 +225,15 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	llvm::Value* returnVal = r->exp->acceptVisitor(this);
-	if(returnVal)
+	if(returnVal) {
 		builder->CreateRet(returnVal); //builder returns value
+	}
 	return returnVal;
 }
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	//map a value to an exisiting identifier
+	//TODO: map a value to an exisiting identifier
 	//look for identifier
 	//map target to value
 	return nullptr;
