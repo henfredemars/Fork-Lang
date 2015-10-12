@@ -39,6 +39,7 @@ gc/Makefile
 gc/config.log
 gc/config.status
 gc/libatomic_ops/.deps
+gc/libtool
 gc/cord/.deps
 parser
 Bench/C++/CTest
