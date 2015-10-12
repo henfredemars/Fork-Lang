@@ -35,7 +35,7 @@ public:
 	virtual llvm::Value* visitKeyword(Keyword* k) =0;
 	virtual llvm::Value* visitVariableDefinition(VariableDefinition* v) =0;
 	virtual llvm::Value* visitStructureDefinition(StructureDefinition* s) =0;
-	virtual llvm::Value* visitFunctionDefinition(FunctionDefinition* f) =0;
+	virtual llvm::Function* visitFunctionDefinition(FunctionDefinition* f) =0;
 	virtual llvm::Value* visitStructureDeclaration(StructureDeclaration* s) =0;
 	virtual llvm::Value* visitExpressionStatement(ExpressionStatement* e) =0;
 	virtual llvm::Value* visitReturnStatement(ReturnStatement* r) =0;
@@ -70,7 +70,7 @@ public:
 	llvm::Value* visitKeyword(Keyword* k);
 	llvm::Value* visitVariableDefinition(VariableDefinition* v);
 	llvm::Value* visitStructureDefinition(StructureDefinition* s);
-	llvm::Value* visitFunctionDefinition(FunctionDefinition* f);
+	llvm::Function* visitFunctionDefinition(FunctionDefinition* f);
 	llvm::Value* visitStructureDeclaration(StructureDeclaration* s);
 	llvm::Value* visitExpressionStatement(ExpressionStatement* e);
 	llvm::Value* visitReturnStatement(ReturnStatement* r);
