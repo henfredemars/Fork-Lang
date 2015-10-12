@@ -1,17 +1,17 @@
 #include "codeGenVisitor.h"
 
 void CodeGenVisitor::populateSwitchMap() {
-	switchMap.insert( std::make_pair("+", BOP_PLUS) );
-	switchMap.insert( std::make_pair("-", BOP_MINUS) );
-	switchMap.insert( std::make_pair("*", BOP_MULT) );
-	switchMap.insert( std::make_pair("/", BOP_DIV) );
-	switchMap.insert( std::make_pair(">=", BOP_GTE) );
-	switchMap.insert( std::make_pair("<=", BOP_LTE) );
-	switchMap.insert( std::make_pair(">", BOP_GT) );
-	switchMap.insert( std::make_pair("<", BOP_LT) );
-	switchMap.insert( std::make_pair("!=", BOP_NEQ) );
-	switchMap.insert( std::make_pair("==", BOP_EQ) );
-	switchMap.insert( std::make_pair(".", BOP_DOT) );
+	switchMap.insert(std::make_pair("+", BOP_PLUS));
+	switchMap.insert(std::make_pair("-", BOP_MINUS));
+	switchMap.insert(std::make_pair("*", BOP_MULT));
+	switchMap.insert(std::make_pair("/", BOP_DIV));
+	switchMap.insert(std::make_pair(">=", BOP_GTE));
+	switchMap.insert(std::make_pair("<=", BOP_LTE));
+	switchMap.insert(std::make_pair(">", BOP_GT));
+	switchMap.insert(std::make_pair("<", BOP_LT));
+	switchMap.insert(std::make_pair("!=", BOP_NEQ));
+	switchMap.insert(std::make_pair("==", BOP_EQ));
+	switchMap.insert(std::make_pair(".", BOP_DOT));
 } 
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
@@ -19,9 +19,30 @@ llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   return nullptr;
 }
 
+llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
+	std::string type = f->type->name;
+	llvm::FunctionType* funcType = nullptr;
+	llvm::Function* func = nullptr;
+	if(type == "void") {
+		return nullptr;
+	}
+	else if(type == "float") {
+		std::vector<llvm::Type*> Doubles(f->args->size(), llvm::Type::getDoubleTy(*context));
+		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), Doubles, false);
+	}
+	else if(type == "int") {
+		return nullptr;
+	}
+	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get()); //pass unique ptr to function
+	unsigned i = 0;
+	for (auto &arg : func->args())
+	  arg.setName(f->args[i++][0]->ident->name);
+	return func;
+}
+
 CodeGenVisitor::CodeGenVisitor(std::string name) {
-	context = &llvm::getGlobalContext();
 	populateSwitchMap();
+	context = &llvm::getGlobalContext();
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
 	builder = llvm::make_unique<llvm::IRBuilder<>>(*context);
 }
@@ -53,12 +74,10 @@ llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
 
 /*================================Identifier================================*/
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
-	// retrieve variable from the map
-	// TODO: insert code for variable checking during usage
-  llvm::Value *V = namedValues[i->name];
-  if (!V)
-    return ErrorV("Unknown variable name");
-  return V;
+  llvm::Value* val = namedValues[i->name];
+  if (!val)
+    return ErrorV("Attempt to generate code for not previously defined variable");
+  return val;
 }
 
 /*=============================NullaryOperator==============================*/
@@ -108,8 +127,8 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		case BOP_GT:
 		case BOP_LT:
 		case BOP_DOT:
-		return ErrorV("Not yet specified binary operator");
-		//assignment operator is separate
+		return ErrorV("Attempt to generate code for not yet implemented binary operator");
+		//assignment op separate
 		default:
 		return ErrorV("Invalid binary operator");
 	}
@@ -117,14 +136,32 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 
 /*==================================Block===================================*/
 llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
-	//iterate through vector
-	return nullptr;
+	llvm::Value* lastVisited;
+	std::vector<Statement*,gc_allocator<Statement*>>* statements = b->statements;
+	for(size_t i = 0, end = statements->size(); i != end; ++i) {
+		lastVisited = statements[i][0]->acceptVisitor(this);
+		//if(!lastVisited) //TODO:nullary operator needs more explicit handling
+		//	return nullptr; 
+	}
+	return lastVisited;
 }
 
 /*===============================FunctionCall===============================*/
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	//grab function and evaluate with arguments
-	return nullptr;
+	llvm::Function* func = theModule->getFunction(f->ident->name);
+	if(!func)
+		return ErrorV("Unknown function reference");
+	if(func->arg_size() != f->args->size())
+		return ErrorV("Wrong number of arguments passed");
+
+	std::vector<llvm::Value*> argVector;
+	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
+		argVector.push_back(f->args[i][0]->acceptVisitor(this));
+		if(!argVector.back())
+			return nullptr;
+	}
+	return builder->CreateCall(func, argVector, "calltmp");
 }
 
 /*=================================Keyword==================================*/
@@ -134,8 +171,17 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
-	//add identifier with a default value
-	return nullptr;
+	std::string type = v->type->name; //int float or void
+	llvm::Value* val = nullptr;
+	if(type == "int") {
+		int64_t i = 0; //TODO: Figure out why variable necessary
+		val = llvm::ConstantInt::get(*context, llvm::APInt(i, 64));
+	}
+	else if(type == "float")
+		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+	if(!val) //add default value variable to map
+		namedValues.insert(std::make_pair(v->ident->name, val));
+	return val;
 }
 
 /*===========================StructureDefinition============================*/
@@ -145,8 +191,24 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 
 /*============================FunctionDefinition============================*/
 llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
-	//add function to be called
-	return nullptr;
+	llvm::Function* func = theModule->getFunction(f->ident->name);
+	if(!func)
+		func = generateFunction(f); //create function object with type|ident|args
+	if(!func) //generateFunction returned nullptr
+		return nullptr;
+	if(!func->empty())
+		return ErrorV("Function is already defined");
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
+	builder->SetInsertPoint(block);
+	namedValues.clear();
+	for (auto &arg : func->args())
+		namedValues[arg.getName()] = &arg;
+	if(llvm::Value* retVal = f->block->acceptVisitor(this)) {//TODO:nullptr return happens when using return;
+		func->dump();//Function IR dump
+		return retVal;
+	}
+	func->eraseFromParent();//erase if nullptr returned
+	return nullptr; 
 }
 
 /*==========================StructureDeclaration============================*/
@@ -157,19 +219,23 @@ llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) 
 
 /*===========================ExpressionStatement============================*/
 llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
-	//evaluated but value discarded
-	return nullptr;
+	return e->exp->acceptVisitor(this);	//evaluated but value discarded
 }
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
-	//exit the current block
-	return nullptr;
+	llvm::Value* returnVal = r->exp->acceptVisitor(this);
+	if(returnVal) {
+		builder->CreateRet(returnVal); //builder returns value
+	}
+	return returnVal;
 }
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	//map a value to an exisiting identifier
+	//TODO: map a value to an exisiting identifier
+	//look for identifier
+	//map target to value
 	return nullptr;
 }
 

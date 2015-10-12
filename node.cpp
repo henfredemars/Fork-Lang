@@ -22,7 +22,10 @@ void Node::describe() const {
 }
 
 llvm::Value* Node::acceptVisitor(Visitor* v) {
-	return v->visitNode(this);
+	llvm::Value* visitedVal = v->visitNode(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*================================Expression================================*/
@@ -31,7 +34,10 @@ void Expression::describe() const {
 }
 
 llvm::Value* Expression::acceptVisitor(Visitor* v) {
-	return v->visitExpression(this);
+	llvm::Value* visitedVal = v->visitExpression(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*================================Statement=================================*/
@@ -40,7 +46,10 @@ void Statement::describe() const {
 }
 
 llvm::Value* Statement::acceptVisitor(Visitor* v) {
-	return v->visitStatement(this);
+	llvm::Value* visitedVal = v->visitStatement(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*=================================Integer==================================*/
@@ -53,7 +62,10 @@ void Integer::describe() const {
 }
 
 llvm::Value* Integer::acceptVisitor(Visitor* v) {
-	return v->visitInteger(this);
+	llvm::Value* visitedVal = v->visitInteger(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*==================================Float===================================*/
@@ -66,7 +78,10 @@ void Float::describe() const {
 }
 
 llvm::Value* Float::acceptVisitor(Visitor* v) {
-	return v->visitFloat(this);
+	llvm::Value* visitedVal = v->visitFloat(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*================================Identifier================================*/
@@ -90,7 +105,10 @@ bool Identifier::assertDeclared() const {
 }
 
 llvm::Value* Identifier::acceptVisitor(Visitor* v) {
-	return v->visitIdentifier(this);
+	llvm::Value* visitedVal = v->visitIdentifier(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*=============================NullaryOperator==============================*/
@@ -104,7 +122,10 @@ void NullaryOperator::describe() const {
 }
 
 llvm::Value* NullaryOperator::acceptVisitor(Visitor* v) {
-	return v->visitNullaryOperator(this);
+	llvm::Value* visitedVal = v->visitNullaryOperator(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*==============================UnaryOperator===============================*/
@@ -118,7 +139,10 @@ void UnaryOperator::describe() const {
 }
 
 llvm::Value* UnaryOperator::acceptVisitor(Visitor* v) {
-	return v->visitUnaryOperator(this);
+	llvm::Value* visitedVal = v->visitUnaryOperator(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*==============================BinaryOperator==============================*/
@@ -133,7 +157,10 @@ void BinaryOperator::describe() const {
 }
 
 llvm::Value* BinaryOperator::acceptVisitor(Visitor* v) {
-	return v->visitBinaryOperator(this);
+	llvm::Value* visitedVal = v->visitBinaryOperator(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*==================================Block===================================*/
@@ -150,7 +177,10 @@ Block::Block() {
 }
 
 llvm::Value* Block::acceptVisitor(Visitor* v) {
-	return v->visitBlock(this);
+	llvm::Value* visitedVal = v->visitBlock(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*===============================FunctionCall===============================*/
@@ -169,7 +199,10 @@ void FunctionCall::describe() const {
 }
 
 llvm::Value* FunctionCall::acceptVisitor(Visitor* v) {
-	return v->visitFunctionCall(this);
+	llvm::Value* visitedVal = v->visitFunctionCall(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*=================================Keyword==================================*/
@@ -182,7 +215,10 @@ void Keyword::describe() const {
 }
 
 llvm::Value* Keyword::acceptVisitor(Visitor* v) {
-	return v->visitKeyword(this);
+	llvm::Value* visitedVal = v->visitKeyword(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*============================VariableDefinition============================*/
@@ -199,7 +235,10 @@ void VariableDefinition::describe() const {
 }
 
 llvm::Value* VariableDefinition::acceptVisitor(Visitor* v) {
-	return v->visitVariableDefinition(this);
+	llvm::Value* visitedVal = v->visitVariableDefinition(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*===========================StructureDefinition============================*/
@@ -214,7 +253,10 @@ void StructureDefinition::describe() const {
 }
 
 llvm::Value* StructureDefinition::acceptVisitor(Visitor* v) {
-	return v->visitStructureDefinition(this);
+	llvm::Value* visitedVal = v->visitStructureDefinition(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 
@@ -234,7 +276,10 @@ void FunctionDefinition::describe() const {
 }
 
 llvm::Value* FunctionDefinition::acceptVisitor(Visitor* v) {
-	return v->visitFunctionDefinition(this);
+	llvm::Value* visitedVal = v->visitFunctionDefinition(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*==========================StructureDeclaration============================*/
@@ -255,7 +300,10 @@ void StructureDeclaration::describe() const {
 }
 
 llvm::Value* StructureDeclaration::acceptVisitor(Visitor* v) {
-	return v->visitStructureDeclaration(this);
+	llvm::Value* visitedVal = v->visitStructureDeclaration(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*===========================ExpressionStatement============================*/
@@ -268,7 +316,10 @@ void ExpressionStatement::describe() const {
 }
 
 llvm::Value* ExpressionStatement::acceptVisitor(Visitor* v) {
-	return v->visitExpressionStatement(this);
+	llvm::Value* visitedVal = v->visitExpressionStatement(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*=============================ReturnStatement==============================*/
@@ -285,7 +336,10 @@ void ReturnStatement::describe() const {
 }
 
 llvm::Value* ReturnStatement::acceptVisitor(Visitor* v) {
-	return v->visitReturnStatement(this);
+	llvm::Value* visitedVal = v->visitReturnStatement(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*=============================AssignStatement==============================*/
@@ -299,7 +353,10 @@ void AssignStatement::describe() const {
 }
 
 llvm::Value* AssignStatement::acceptVisitor(Visitor* v) {
-	return v->visitAssignStatement(this);
+	llvm::Value* visitedVal = v->visitAssignStatement(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*===============================IfStatement================================*/
@@ -313,7 +370,10 @@ void IfStatement::describe() const {
 }
 
 llvm::Value* IfStatement::acceptVisitor(Visitor* v) {
-	return v->visitIfStatement(this);
+	llvm::Value* visitedVal = v->visitIfStatement(this);
+	if(visitedVal)
+		visitedVal->dump();
+	return visitedVal;
 }
 
 /*===============================SymbolTable================================*/
