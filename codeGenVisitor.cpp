@@ -124,7 +124,19 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 /*===============================FunctionCall===============================*/
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	//grab function and evaluate with arguments
-	return nullptr;
+	llvm::Function* func = theModule->getFunction(f->ident->name);
+	if(!func)
+		return ErrorV("Unknown function reference");
+	if(func->arg_size() != f->args->size())
+		return ErrorV("Wrong number of arguments passed");
+
+	std::vector<llvm::Value*> argVector;
+	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
+		argVector.push_back(f->args[i][0]->acceptVisitor(this));
+		if(!argVector.back())
+			return nullptr;
+	}
+	return builder->CreateCall(func, argVector, "calltmp");
 }
 
 /*=================================Keyword==================================*/
