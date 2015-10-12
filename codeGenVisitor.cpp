@@ -136,15 +136,14 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 
 /*==================================Block===================================*/
 llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
-	//iterate through vector
-	std::vector<llvm::Value *> visited;
+	llvm::Value* lastVisited;
 	std::vector<Statement*,gc_allocator<Statement*>>* statements = b->statements;
 	for(size_t i = 0, end = statements->size(); i != end; ++i) {
-		visited.push_back(statements[i][0]->acceptVisitor(this));
-		if(!visited.back())
-			return nullptr;
+		lastVisited = statements[i][0]->acceptVisitor(this);
+		//if(!lastVisited) //TODO:nullary operator needs more explicit handling
+		//	return nullptr; 
 	}
-	return nullptr;
+	return lastVisited;
 }
 
 /*===============================FunctionCall===============================*/
@@ -192,8 +191,23 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 }
 
 /*============================FunctionDefinition============================*/
-llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
-	return nullptr;
+llvm::Function* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
+	llvm::Function* func = theModule->getFunction(f->ident->name);
+	if(!func)
+		func = generateFunction(f); //create function object with type|ident|args
+	if(!func) //generateFunction returned nullptr
+		return nullptr;
+	if(!func->empty())
+		return (llvm::Function*) ErrorV("Function is already defined");
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
+	builder->SetInsertPoint(block);
+	namedValues.clear();
+	for (auto &arg : func->args())
+		namedValues[arg.getName()] = &arg;
+	if(!f->block->acceptVisitor(this))
+		func->eraseFromParent();//erase if nullptr returned
+	//TODO:nullptr return happens if return;
+	return func; 
 }
 
 /*==========================StructureDeclaration============================*/
@@ -204,16 +218,15 @@ llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) 
 
 /*===========================ExpressionStatement============================*/
 llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
-	//evaluated but value discarded
-	return e->exp->acceptVisitor(this);	
+	return e->exp->acceptVisitor(this);	//evaluated but value discarded
 }
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	llvm::Value* returnVal = r->exp->acceptVisitor(this);
 	if(returnVal)
-		builder->CreateRet(returnVal); //return value if applicable
-	return returnVal; //let function exit after visiting return
+		builder->CreateRet(returnVal); //builder returns value
+	return returnVal;
 }
 
 /*=============================AssignStatement==============================*/
