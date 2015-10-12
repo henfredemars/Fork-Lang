@@ -108,7 +108,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		case BOP_GT:
 		case BOP_LT:
 		case BOP_DOT:
-		return ErrorV("Not yet specified binary operator");
+		return ErrorV("Attempt to generate code for not yet implemented binary operator");
 		//assignment operator is separate
 		default:
 		return ErrorV("Invalid binary operator");
@@ -135,7 +135,17 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	//add identifier with a default value
-	return nullptr;
+	std::string type = v->type->name; //int float or void
+	llvm::Value* val = nullptr;
+	if(type == "int") {
+		int64_t i = 0;
+		val = llvm::ConstantInt::get(*context, llvm::APInt(i, 64));
+	}
+	else if(type == "float")
+		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+	if(val != nullptr)
+		namedValues.insert(std::make_pair(v->ident->name, val));
+	return val;
 }
 
 /*===========================StructureDefinition============================*/
