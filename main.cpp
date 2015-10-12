@@ -22,14 +22,14 @@ int main(int argc, char **argv) {
 			//((Block)ast_root)->accept(c);
 		}
 		else {
-			cout << "Error, failed to open file: " << argv[1] << "\n";
+			std::cout << "Error, failed to open file: " << argv[1] << "\n";
 		}
 	}
 	else if(argc > 2) {
-		cout << "Error, too many inputs.\n";
+		std::cout << "Error, too many inputs.\n";
 	}
 	else {
-		cout << "Error, need file input.\n";
+		std::cout << "Error, need file input.\n";
 	}
 	return 0;
 }
