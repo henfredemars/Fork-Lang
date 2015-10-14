@@ -23,7 +23,7 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	std::string type = f->type->name;
 	llvm::FunctionType* funcType = nullptr;
 	llvm::Function* func = nullptr;
-	std::vector<llvm::Type*> inputArgs;
+	std::vector<llvm::Type*> inputArgs; //set input args as float or int
 	for(size_t i = 0, end = f->args->size(); i < end; ++i) {
 		std::string type = f->args[i][0]->type->name;
 		if(type == "float") {
@@ -35,19 +35,21 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 		else
 			return nullptr;
 	}
-	if(type == "void") {
-		funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); //return is float
+	if(type == "void") { //set function return type
+		funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); 
 	}
 	else if(type == "float") {
-		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false); //return is float
+		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false);
 	}
 	else if(type == "int") {
-		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false); //return is float
+		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
 	}
 	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get()); //pass unique ptr to function
-	unsigned i = 0;
+	{
+	size_t i = 0;
 	for (auto &arg : func->args())
 	  arg.setName(f->args[i++][0]->ident->name);
+	}
 	return func;
 }
 
@@ -185,7 +187,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	std::string type = v->type->name; //int float or void
 	llvm::Value* val = nullptr;
 	if(type == "int") {
-		int64_t i = 0; //TODO: Figure out why variable necessary
+		int64_t i = 0; //TODO: Figure out why variable necessary, attempted casting already
 		val = llvm::ConstantInt::get(*context, llvm::APInt(i, 64));
 	}
 	else if(type == "float")
@@ -214,11 +216,12 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	namedValues.clear();
 	for (auto &arg : func->args())
 		namedValues[arg.getName()] = &arg;
-	if(llvm::Value* retVal = f->block->acceptVisitor(this)) {//TODO:nullptr return happens when using return;
 		func->dump();//Function IR dump
+		llvm::Value* retVal = f->block->acceptVisitor(this);
+	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) {
 		return retVal;
 	}
-	func->eraseFromParent();//erase if nullptr returned
+	func->eraseFromParent();//erase if incorrect type returned
 	return nullptr; 
 }
 
