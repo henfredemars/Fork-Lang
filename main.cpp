@@ -7,7 +7,7 @@ extern int yyparse();
 extern int yydebug;
 extern FILE* yyin;
 
-Node* ast_root = NULL;
+Block* ast_root = NULL;
 
 int main(int argc, char **argv) {
 	GC_INIT();
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 			fclose(yyin);
 			yyin = NULL;
 			CodeGenVisitor c("LLVM Compiler");
-			//((Block)ast_root)->accept(c);
+			ast_root->acceptVisitor(&c);
 		}
 		else {
 			std::cout << "Error, failed to open file: " << argv[1] << "\n";

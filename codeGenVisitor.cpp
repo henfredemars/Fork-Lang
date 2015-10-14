@@ -15,7 +15,7 @@ void CodeGenVisitor::populateSwitchMap() {
 } 
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
-  fprintf(stderr, "Error: %s\n", str);
+  fprintf(stderr, "Error: %s\n", str); //maybe llvm shutdown
   return nullptr;
 }
 
@@ -25,7 +25,7 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	llvm::Function* func = nullptr;
 	std::vector<llvm::Type*> inputArgs; //set input args as float or int
 	for(size_t i = 0, end = f->args->size(); i < end; ++i) {
-		std::string type = f->args[i][0]->type->name;
+		std::string type = f->args->at(i)->type->name;
 		if(type == "float") {
 			inputArgs.push_back(llvm::Type::getDoubleTy(*context));
 		}
@@ -33,7 +33,7 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 			inputArgs.push_back(llvm::Type::getInt64Ty(*context));
 		}
 		else
-			return nullptr;
+			return (llvm::Function*) ErrorV("Invalid type - malformed function definition");
 	}
 	if(type == "void") { //set function return type
 		funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); 
@@ -43,12 +43,12 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	}
 	else if(type == "int") {
 		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
-	}
+	}//add pointer types
 	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get()); //pass unique ptr to function
 	{
 	size_t i = 0;
 	for (auto &arg : func->args())
-	  arg.setName(f->args[i++][0]->ident->name);
+	  arg.setName(f->args->at(i++)->ident->name);
 	}
 	return func;
 }
@@ -149,12 +149,9 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 
 /*==================================Block===================================*/
 llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
-	llvm::Value* lastVisited;
-	std::vector<Statement*,gc_allocator<Statement*>>* statements = b->statements;
-	for(size_t i = 0, end = statements->size(); i != end; ++i) {
-		lastVisited = statements[i][0]->acceptVisitor(this);
-		//if(!lastVisited) //TODO:nullary operator needs more explicit handling
-		//	return nullptr; 
+	llvm::Value* lastVisited = nullptr;
+	for(size_t i = 0, end = b->statements->size(); i != end; ++i) {
+		lastVisited = b->statements->at(i)->acceptVisitor(this);
 	}
 	return lastVisited;
 }
@@ -170,9 +167,7 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 
 	std::vector<llvm::Value*> argVector;
 	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
-		argVector.push_back(f->args[i][0]->acceptVisitor(this));
-		if(!argVector.back())
-			return nullptr;
+		argVector.push_back(f->args->at(i)->acceptVisitor(this));
 	}
 	return builder->CreateCall(func, argVector, "calltmp");
 }
@@ -208,7 +203,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	if(!func)
 		func = generateFunction(f); //create function object with type|ident|args
 	if(!func) //generateFunction returned nullptr
-		return nullptr;
+		return ErrorV("Invalid function signature");
 	if(!func->empty())
 		return ErrorV("Function is already defined");
 	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
@@ -216,14 +211,18 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	namedValues.clear();
 	for (auto &arg : func->args())
 		namedValues[arg.getName()] = &arg;
-		llvm::Value* retVal = f->block->acceptVisitor(this);
-	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) //void return nullptr
+	llvm::Value* retVal = f->block->acceptVisitor(this);
+	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) {//void return nullptr
 		func->dump();//Function IR dump
+		builder->CreateRet(retVal);
 		return nullptr;
-	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) //check typing for int/float
+	}
+	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) {//check typing for int/float
 		func->dump();
+		builder->CreateRet(retVal);
 		return retVal;
-	func->eraseFromParent();//erase if incorrect type returned
+	}
+	func->eraseFromParent();//erase function
 	return ErrorV("Function deleted for erroneous return type or function body complications"); 
 }
 
@@ -240,11 +239,7 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
-	llvm::Value* returnVal = r->exp->acceptVisitor(this);
-	if(returnVal) {
-		builder->CreateRet(returnVal); //builder returns value
-	}
-	return returnVal;
+	return r->exp->acceptVisitor(this);
 }
 
 /*=============================AssignStatement==============================*/
