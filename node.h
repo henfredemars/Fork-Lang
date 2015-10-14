@@ -67,21 +67,21 @@ extern SymbolTable sym_table;
 class Node : public gc {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*================================Expression================================*/
 class Expression : public Node {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*================================Statement=================================*/
 class Statement : public Node {
 public:
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*=================================Integer==================================*/
@@ -90,7 +90,7 @@ public:
 	int64_t value;
 	Integer(int64_t value);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*==================================Float===================================*/
@@ -99,7 +99,7 @@ public:
 	double value;
 	Float(double value);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*================================Identifier================================*/
@@ -109,7 +109,7 @@ public:
 	Identifier(char* name);
 	virtual void describe() const;
         bool assertDeclared() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*=============================NullaryOperator==============================*/
@@ -118,7 +118,7 @@ public:
 	char* op;
 	NullaryOperator(char* op);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*==============================UnaryOperator===============================*/
@@ -128,7 +128,7 @@ public:
 	Expression* exp;
 	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*==============================BinaryOperator==============================*/
@@ -139,7 +139,7 @@ public:
 	Expression* right;
 	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*==================================Block===================================*/
@@ -151,7 +151,7 @@ public:
 	Block(std::vector<Statement*,gc_allocator<Statement*>>* statements);
 	std::vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*===============================FunctionCall===============================*/
@@ -161,7 +161,7 @@ public:
 	std::vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*=================================Keyword==================================*/
@@ -171,7 +171,7 @@ public:
 	char* name;
 	Keyword(char* name);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*============================VariableDefinition============================*/
@@ -182,7 +182,7 @@ public:
 	Expression* exp;
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*===========================StructureDefinition============================*/
@@ -192,7 +192,7 @@ public:
 	Block* block;
 	StructureDefinition(Identifier* ident,Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*============================FunctionDefinition============================*/
@@ -205,7 +205,7 @@ public:
 	FunctionDefinition(Keyword* type, Identifier* ident, std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	 Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*==========================StructureDeclaration============================*/
@@ -216,7 +216,7 @@ public:
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*===========================ExpressionStatement============================*/
@@ -226,7 +226,7 @@ public:
 	Expression* exp;
 	ExpressionStatement(Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*=============================ReturnStatement==============================*/
@@ -236,7 +236,7 @@ public:
 	Expression* exp;
 	ReturnStatement(Expression* exp);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*=============================AssignStatement==============================*/
@@ -247,7 +247,7 @@ public:
 	Expression* target;
 	AssignStatement(Expression* target,Expression* valxp);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*===============================IfStatement================================*/
@@ -258,7 +258,7 @@ public:
 	Block* block;
 	IfStatement(Expression* exp,Block* block);
 	virtual void describe() const;
-	llvm::Value* acceptVisitor(Visitor* v);
+	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 /*===============================SymbolTable================================*/
