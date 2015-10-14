@@ -23,15 +23,26 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	std::string type = f->type->name;
 	llvm::FunctionType* funcType = nullptr;
 	llvm::Function* func = nullptr;
+	std::vector<llvm::Type*> inputArgs;
+	for(size_t i = 0, end = f->args->size(); i < end; ++i) {
+		std::string type = f->args[i][0]->type->name;
+		if(type == "float") {
+			inputArgs.push_back(llvm::Type::getDoubleTy(*context));
+		}
+		else if(type == "int") {
+			inputArgs.push_back(llvm::Type::getInt64Ty(*context));
+		}
+		else
+			return nullptr;
+	}
 	if(type == "void") {
-		return nullptr;
+		funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); //return is float
 	}
 	else if(type == "float") {
-		std::vector<llvm::Type*> Doubles(f->args->size(), llvm::Type::getDoubleTy(*context));
-		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), Doubles, false);
+		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false); //return is float
 	}
 	else if(type == "int") {
-		return nullptr;
+		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false); //return is float
 	}
 	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get()); //pass unique ptr to function
 	unsigned i = 0;
@@ -241,5 +252,5 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 
 /*===============================IfStatement================================*/
 llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
-	return ErrorV("Attempt to evluate not yet implemented if statement");
+	return ErrorV("Attempt to evaluate not yet implemented if statement");
 }
