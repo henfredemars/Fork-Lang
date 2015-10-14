@@ -216,13 +216,15 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	namedValues.clear();
 	for (auto &arg : func->args())
 		namedValues[arg.getName()] = &arg;
-		func->dump();//Function IR dump
 		llvm::Value* retVal = f->block->acceptVisitor(this);
-	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) {
+	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) //void return nullptr
+		func->dump();//Function IR dump
+		return nullptr;
+	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) //check typing for int/float
+		func->dump();
 		return retVal;
-	}
 	func->eraseFromParent();//erase if incorrect type returned
-	return nullptr; 
+	return ErrorV("Function deleted for erroneous return type or function body complications"); 
 }
 
 /*==========================StructureDeclaration============================*/
