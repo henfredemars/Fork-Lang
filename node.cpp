@@ -379,11 +379,11 @@ llvm::Value* IfStatement::acceptVisitor(Visitor* v) {
 /*===============================SymbolTable================================*/
 SymbolTable::SymbolTable() {
 	//Push global scope
-	char* print_int = "print_int";
-	char* print_float = "print_float";
+	const char* print_int = "print_int";
+	const char* print_float = "print_float";
 	this->push();
-	this->insert(print_int,FUNCTION);
-	this->insert(print_float,FUNCTION);
+	this->insert((char*)print_int,FUNCTION);
+	this->insert((char*)print_float,FUNCTION);
 }
 
 void SymbolTable::insert(char* ident,IdentType type) {

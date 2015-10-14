@@ -12,7 +12,7 @@ void CodeGenVisitor::populateSwitchMap() {
 	switchMap.insert(std::make_pair("!=", BOP_NEQ));
 	switchMap.insert(std::make_pair("==", BOP_EQ));
 	switchMap.insert(std::make_pair(".", BOP_DOT));
-} 
+}
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str); //maybe llvm shutdown
