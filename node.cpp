@@ -382,11 +382,11 @@ SymbolTable::SymbolTable() {
 	const char* print_int = "print_int";
 	const char* print_float = "print_float";
 	this->push();
-	this->insert((char*)print_int,FUNCTION);
-	this->insert((char*)print_float,FUNCTION);
+	this->insert(print_int,FUNCTION);
+	this->insert(print_float,FUNCTION);
 }
 
-void SymbolTable::insert(char* ident,IdentType type) {
+void SymbolTable::insert(const char* ident,IdentType type) {
 	assert(frames.size());
 	std::map<std::string,IdentType>& lframe = frames.back();
         if (this->check(ident))
@@ -394,18 +394,17 @@ void SymbolTable::insert(char* ident,IdentType type) {
         lframe.insert(std::make_pair(std::string(ident),type));
 }
 
-bool SymbolTable::check(char* ident) {
+bool SymbolTable::check(const char* ident) {
         assert(frames.size());
         for (int i = 0; i<frames.size();i++) {
           if (frames.at(i).count(std::string(ident))) {
-            printf("Found\n");
 	    return true;
           }
         }
         return false;
 }
 
-bool SymbolTable::check(char* ident,IdentType type) {
+bool SymbolTable::check(const char* ident,IdentType type) {
         assert(frames.size());
         for (int i = 0; i<frames.size();i++) {
           if (frames.at(i).count(std::string(ident))) {

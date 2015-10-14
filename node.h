@@ -266,9 +266,9 @@ public:
 class SymbolTable : public gc {
 public:
 	SymbolTable();
-        void insert(char* ident,IdentType type);
-	bool check(char* ident,IdentType type);
-        bool check(char* ident);
+        void insert(const char* ident,IdentType type);
+	bool check(const char* ident,IdentType type);
+        bool check(const char* ident);
 	void push();
         void pop();
 private:
