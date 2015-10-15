@@ -138,13 +138,13 @@ if_statement : TIF TLPAREN exp TRPAREN block {
 		$$->describe();
 	       } ;
 
-block : leftBraceToken statements rightBraceToken { $$ = $2; $$->describe();
+block : leftBraceToken statements rightBraceToken { $$ = $2;
 		printf("Parser: statements become block\n"); } |
-        leftBraceToken TENDL statements rightBraceToken { $$ = $3; $$->describe();
+        leftBraceToken TENDL statements rightBraceToken { $$ = $3;
                 printf("Parser: statements become block\n"); } |
-        leftBraceToken statements TENDL rightBraceToken { $$ = $2; $$->describe();
+        leftBraceToken statements TENDL rightBraceToken { $$ = $2;
                 printf("Parser: statements become block\n"); } |
-        leftBraceToken TENDL statements TENDL rightBraceToken { $$ = $3; $$->describe();
+        leftBraceToken TENDL statements TENDL rightBraceToken { $$ = $3;
                 printf("Parser: statements become block\n"); }
 
               | leftBraceToken rightBraceToken { $$ = new Block(); $$->describe(); }
