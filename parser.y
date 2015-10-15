@@ -25,8 +25,8 @@
     Identifier* identifier;
     Block* block;
     Keyword* keyword;
-    vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* variableVec;
-    vector<Expression*,gc_allocator<Expression*>>* expressionVec;
+    std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* variableVec;
+    std::vector<Expression*,gc_allocator<Expression*>>* expressionVec;
     char* string;
     int token;
 }
@@ -78,8 +78,8 @@ program : statements { program = $1; program->describe();
 
 //Statements can be collected together to form blocks
 statements : statement { 
-                vector<Statement*,gc_allocator<Statement*>>* statements;
-		statements = new vector<Statement*,gc_allocator<Statement*>>();
+                std::vector<Statement*,gc_allocator<Statement*>>* statements;
+		statements = new std::vector<Statement*,gc_allocator<Statement*>>();
                 $$ = new Block(statements);
                 $$->statements->push_back($1);
                 $$->describe();
@@ -209,9 +209,9 @@ struct_keyword : TSTRUCT {
 
 //Arguments in a function definition
 functionArgs : /* empty */ { 
-                $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+                $$ = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 		  printf("Parser: functionArgs, empty in function definition\n");} %prec EMPTYFUNARGS
-                | variableDec { $$ = new vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
+                | variableDec { $$ = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
                   $$->push_back((VariableDefinition*)$1); 
 		  printf("Parser: functionArgs, one argument in function definition\n");} 
                   //VariableDec always a VariableDefinition*, although defined as a statement
@@ -220,9 +220,9 @@ functionArgs : /* empty */ {
                 ;
 
 //Arguments of a particular function call at the call site
-callArgs : /* empty */ { $$ = new vector<Expression*,gc_allocator<Expression*>>(); 
+callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expression*>>(); 
 		printf("Parser: new callArgs, empty\n");} %prec EMPTYFUNARGS
-              | exp { $$ = new vector<Expression*,gc_allocator<Expression*>>(); $$->push_back($1);
+              | exp { $$ = new std::vector<Expression*,gc_allocator<Expression*>>(); $$->push_back($1);
 		printf("Parser: new callArgs, one argument expression\n");}
               | callArgs TCOMMA exp { $1->push_back($3); 
 		printf("Parser: callArgs additional argument found\n");}
