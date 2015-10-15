@@ -45,6 +45,7 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
 	}//add pointer types
 	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get()); //pass unique ptr to function
+
 	{
 	size_t i = 0;
 	for (auto &arg : func->args())
@@ -107,7 +108,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
 	switch(*u->op) {
 		case '-':
-		return builder->CreateFMul(llvm::ConstantInt::get(*context, llvm::APInt(-1, 64)), expr, "multmp");
+		return builder->CreateFMul(llvm::ConstantInt::get(*context, llvm::APInt(-1, 64)), expr);
 		case '!':
 		case '*':
 		return ErrorV("Not yet specified unary operator");
@@ -126,13 +127,13 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	//use map for binary operators
 	switch (switchMap.find(b->op)->second) {
 		case BOP_PLUS:
-		return builder->CreateFAdd(left, right, "addtmp");
+		return builder->CreateFAdd(left, right);
 		case BOP_MINUS:
-		return builder->CreateFSub(left, right, "subtmp");
+		return builder->CreateFSub(left, right);
 		case BOP_MULT:
-		return builder->CreateFMul(left, right, "multmp");
+		return builder->CreateFMul(left, right);
 		case BOP_DIV:
-		return builder->CreateFDiv(left, right, "divtmp");
+		return builder->CreateFDiv(left, right);
 		case BOP_NEQ:
 		case BOP_EQ:
 		case BOP_GTE:
@@ -169,7 +170,7 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
 		argVector.push_back(f->args->at(i)->acceptVisitor(this));
 	}
-	return builder->CreateCall(func, argVector, "calltmp");
+	return builder->CreateCall(func, argVector);
 }
 
 /*=================================Keyword==================================*/
