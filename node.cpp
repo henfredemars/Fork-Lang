@@ -23,8 +23,6 @@ void Node::describe() const {
 
 llvm::Value* Node::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitNode(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -35,8 +33,6 @@ void Expression::describe() const {
 
 llvm::Value* Expression::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitExpression(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -47,8 +43,6 @@ void Statement::describe() const {
 
 llvm::Value* Statement::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitStatement(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -123,8 +117,6 @@ void NullaryOperator::describe() const {
 
 llvm::Value* NullaryOperator::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitNullaryOperator(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -140,8 +132,6 @@ void UnaryOperator::describe() const {
 
 llvm::Value* UnaryOperator::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitUnaryOperator(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -158,8 +148,6 @@ void BinaryOperator::describe() const {
 
 llvm::Value* BinaryOperator::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitBinaryOperator(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -178,8 +166,6 @@ Block::Block() {
 
 llvm::Value* Block::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitBlock(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -200,8 +186,6 @@ void FunctionCall::describe() const {
 
 llvm::Value* FunctionCall::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitFunctionCall(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -216,8 +200,6 @@ void Keyword::describe() const {
 
 llvm::Value* Keyword::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitKeyword(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -277,8 +259,6 @@ void FunctionDefinition::describe() const {
 
 llvm::Value* FunctionDefinition::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitFunctionDefinition(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -337,8 +317,6 @@ void ReturnStatement::describe() const {
 
 llvm::Value* ReturnStatement::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitReturnStatement(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
