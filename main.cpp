@@ -4,14 +4,14 @@
 #include "gc/include/gc.h"
 
 extern int yyparse();
-extern int yydebug;
+//extern int yydebug;
 extern FILE* yyin;
 
 Block* ast_root = NULL;
 
 int main(int argc, char **argv) {
 	GC_INIT();
-	yydebug = 1;
+	//yydebug = 1;
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");
 		if(yyin) {
@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
 			yyin = NULL;
 			CodeGenVisitor c("LLVM Compiler");
 			ast_root->acceptVisitor(&c);
+			llvm::llvm_shutdown();
 		}
 		else {
 			std::cout << "Error, failed to open file: " << argv[1] << "\n";

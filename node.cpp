@@ -107,7 +107,6 @@ llvm::Value* Identifier::acceptVisitor(Visitor* v) {
 
 /*=============================NullaryOperator==============================*/
 NullaryOperator::NullaryOperator(char* op) {
-        printf("%s",op);
 	this->op = dup_char(op);
 }
 
