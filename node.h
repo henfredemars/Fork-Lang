@@ -4,9 +4,10 @@
 #ifndef __NODE_H
 #define __NODE_H
 
-#define GC_DEBUG 1
-#define YYDEBUG 1
+/*#define GC_DEBUG 1
+#define YY_DEBUG 1*/
 
+#include "llvm/Support/ManagedStatic.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
