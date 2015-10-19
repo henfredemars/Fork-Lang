@@ -57,8 +57,6 @@ void Integer::describe() const {
 
 llvm::Value* Integer::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitInteger(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -73,8 +71,6 @@ void Float::describe() const {
 
 llvm::Value* Float::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitFloat(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -100,8 +96,6 @@ bool Identifier::assertDeclared() const {
 
 llvm::Value* Identifier::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitIdentifier(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -217,8 +211,6 @@ void VariableDefinition::describe() const {
 
 llvm::Value* VariableDefinition::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitVariableDefinition(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -235,8 +227,6 @@ void StructureDefinition::describe() const {
 
 llvm::Value* StructureDefinition::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitStructureDefinition(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -280,8 +270,6 @@ void StructureDeclaration::describe() const {
 
 llvm::Value* StructureDeclaration::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitStructureDeclaration(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -296,8 +284,6 @@ void ExpressionStatement::describe() const {
 
 llvm::Value* ExpressionStatement::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitExpressionStatement(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -331,8 +317,6 @@ void AssignStatement::describe() const {
 
 llvm::Value* AssignStatement::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitAssignStatement(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
@@ -348,8 +332,6 @@ void IfStatement::describe() const {
 
 llvm::Value* IfStatement::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitIfStatement(this);
-	if(visitedVal)
-		visitedVal->dump();
 	return visitedVal;
 }
 
