@@ -46,7 +46,7 @@ public:
 class CodeGenVisitor : public Visitor {
 private:
 	llvm::LLVMContext* context;
-	std::unique_ptr<llvm::IRBuilder<>> builder;
+	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
 	std::map<std::string, llvm::Value*> namedValues;
 	std::map<std::string, Binops> switchMap;
@@ -56,6 +56,7 @@ private:
 public:
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
+	void printModule();
 	llvm::Value* visitNode(Node* n);
 	llvm::Value* visitExpression(Expression* e);
 	llvm::Value* visitStatement(Statement* s);

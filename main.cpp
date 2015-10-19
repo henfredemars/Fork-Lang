@@ -20,7 +20,8 @@ int main(int argc, char **argv) {
 			yyin = NULL;
 			CodeGenVisitor c("LLVM Compiler");
 			ast_root->acceptVisitor(&c);
-			llvm::llvm_shutdown();
+			//llvm::llvm_shutdown();
+			c.printModule();
 		}
 		else {
 			std::cout << "Error, failed to open file: " << argv[1] << "\n";

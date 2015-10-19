@@ -58,7 +58,11 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	populateSwitchMap();
 	context = &llvm::getGlobalContext();
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
-	builder = llvm::make_unique<llvm::IRBuilder<>>(*context);
+	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
+}
+
+void CodeGenVisitor::printModule() {
+	theModule->dump();
 }
 
 /*===================================Node===================================*/
@@ -108,7 +112,12 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
 	switch(*u->op) {
 		case '-':
-		return builder->CreateFMul(llvm::ConstantInt::get(*context, llvm::APInt(-1, 64)), expr);
+		switch(expr->getType()->getTypeID()) { //switch by type to apply -1 to expr
+			case llvm::Type::DoubleTyID:
+				return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
+			case llvm::Type::IntegerTyID:
+				return builder->CreateFMul(llvm::ConstantInt::get(*context, llvm::APInt(-1, 64)), expr);
+		}
 		case '!':
 		case '*':
 		return ErrorV("Not yet specified unary operator");
@@ -214,12 +223,10 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 		namedValues[arg.getName()] = &arg;
 	llvm::Value* retVal = f->block->acceptVisitor(this);
 	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) {//void return nullptr
-		func->dump();//Function IR dump
 		builder->CreateRet(retVal);
 		return nullptr;
 	}
 	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) {//check typing for int/float
-		func->dump();
 		builder->CreateRet(retVal);
 		return retVal;
 	}
