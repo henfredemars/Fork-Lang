@@ -60,9 +60,9 @@ extern "C" int yywrap() { return 1; }
 "float"                   return TOKEN(TFLOAT);
 "void"                    return TOKEN(TVOID);
 "struct"                  return TOKEN(TSTRUCT);
-(\+|-)?\d*\.\d+            SAVE_TOKEN; return TFLOATLIT;
-(\+|-)?\d+                    SAVE_TOKEN; return TINTLIT;
+(\+|-)?\d*\.\d+           SAVE_TOKEN; return TFLOATLIT;
+(\+|-)?\d+                SAVE_TOKEN; return TINTLIT;
 [a-zA-Z$_][a-zA-Z0-9$_]*  SAVE_TOKEN; return TIDENTIFIER;
-.                         printf("Unknown token encountered in lexer\n"); yyterminate();
+.                         printf("Unknown token encountered in lexer %s\n",yytext); yyterminate();
 
 %%
