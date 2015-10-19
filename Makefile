@@ -19,7 +19,7 @@ lex.o: lex.cpp
 	g++ -std=c++11 -c lex.cpp -o lex.o $(LLVM_INC)
 
 lib.o: lib.cpp
-	g++ -std=c++11 -c lib.cpp -o lib.o
+	g++ -std=c++11 -shared -c lib.cpp -o lib.o
 
 node.o: node.h node.cpp
 	g++ -std=c++11 -c node.cpp -o node.o $(LLVM_INC)
