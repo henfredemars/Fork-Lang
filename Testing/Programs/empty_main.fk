@@ -5,5 +5,3 @@ void main() {
 	return;
 	//comment
 }
-main();
-
