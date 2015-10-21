@@ -41,6 +41,7 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	else if(type == "float") {
 		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false);
 	}
+
 	else if(type == "int") {
 		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
 	}//add pointer types
@@ -57,8 +58,9 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	populateSwitchMap();
 	context = &llvm::getGlobalContext();
-	theModule = llvm::make_unique<llvm::Module>(name, *context);
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
+	theModule = llvm::make_unique<llvm::Module>(name, *context);
+	theModule->setDataLayout(forkJIT->getTargetMachine().createDataLayout());
 	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
 }
 
@@ -68,6 +70,8 @@ void CodeGenVisitor::executeMain() {
 	assert(mainSymbol && "No code to be execute, include a main function");
 	void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
     func();
+    printf("main() returns: void\n");
+    forkJIT->removeModule(handle);
 }
 
 void CodeGenVisitor::printModule() {
