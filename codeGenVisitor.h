@@ -48,6 +48,7 @@ private:
 	llvm::LLVMContext* context;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
+	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
 	std::map<std::string, llvm::Value*> namedValues;
 	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
@@ -56,6 +57,7 @@ private:
 public:
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
+	void executeMain();
 	void printModule();
 	llvm::Value* visitNode(Node* n);
 	llvm::Value* visitExpression(Expression* e);
