@@ -11,6 +11,9 @@ Block* ast_root = NULL;
 
 int main(int argc, char **argv) {
 	GC_INIT();
+	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+	llvm::InitializeNativeTargetAsmParser();
 	//yydebug = 1;
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");
@@ -20,8 +23,8 @@ int main(int argc, char **argv) {
 			yyin = NULL;
 			CodeGenVisitor c("LLVM Compiler");
 			ast_root->acceptVisitor(&c);
-			c.executeMain();
 			c.printModule();
+			c.executeMain();
 		}
 		else {
 			std::cout << "Error, failed to open file: " << argv[1] << "\n";

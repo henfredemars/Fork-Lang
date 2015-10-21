@@ -6,7 +6,7 @@ LLVM_BIN := ./llvm/build/*+Asserts/bin/llvm-config
 all: parser CTest
 
 parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o
-	g++ `$(LLVM_BIN) --cxxflags --ldflags` -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo -rdynamic `$(LLVM_BIN) --system-libs`
+	g++ `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs`
 
 parser.cpp: parser.y
 	touch parser.cpp; bison -d -o parser.cpp parser.y

@@ -14,6 +14,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/NoFolder.h"
+#include "llvm/Support/TargetSelect.h"
 #include "KaleidoscopeJIT.h"
 #include <map>
 #include <cctype>
