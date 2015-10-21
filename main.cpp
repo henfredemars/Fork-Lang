@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 			yyin = NULL;
 			CodeGenVisitor c("LLVM Compiler");
 			ast_root->acceptVisitor(&c);
-			//llvm::llvm_shutdown();
+			c.executeMain();
 			c.printModule();
 		}
 		else {

@@ -15,7 +15,7 @@ void CodeGenVisitor::populateSwitchMap() {
 }
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
-  fprintf(stderr, "Error: %s\n", str); //maybe llvm shutdown
+  assert(true && fprintf(stderr, "Error: %s\n", str));
   return nullptr;
 }
 
@@ -58,7 +58,16 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	populateSwitchMap();
 	context = &llvm::getGlobalContext();
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
+	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
 	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
+}
+
+void CodeGenVisitor::executeMain() {
+	auto handle = forkJIT->addModule(std::move(theModule));
+	auto mainSymbol = forkJIT->findSymbol("main");
+	assert(mainSymbol && "No code to be execute, include a main function");
+	void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
+    func();
 }
 
 void CodeGenVisitor::printModule() {
@@ -223,11 +232,13 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 		namedValues[arg.getName()] = &arg;
 	llvm::Value* retVal = f->block->acceptVisitor(this);
 	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) {//void return nullptr
-		builder->CreateRet(retVal);
+		builder->CreateRetVoid();
+		verifyFunction(*func);
 		return nullptr;
 	}
 	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) {//check typing for int/float
 		builder->CreateRet(retVal);
+		verifyFunction(*func);
 		return retVal;
 	}
 	func->eraseFromParent();//erase function
