@@ -6,5 +6,3 @@ void main() {
 	a = function();
 	return;
 }
-main();
-

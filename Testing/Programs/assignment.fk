@@ -5,6 +5,3 @@ void main() {
   a = 5;
   return;
 }
-
-main();
-

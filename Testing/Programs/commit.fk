@@ -3,5 +3,3 @@ void main() {
 	7 * 5;
 	return;
 }
-
-main();

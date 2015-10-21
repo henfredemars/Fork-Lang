@@ -11,6 +11,3 @@ void main() {
 	b.c = 4.0;
 	return;
 }
-
-main();
-
