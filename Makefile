@@ -1,10 +1,12 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidoscope/include
 LLVM_BIN := ./llvm/build/*+Asserts/bin/llvm-config
 
+export REQUIRES_RTTI = 1
+
 all: parser CTest
 
 parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o
-	g++ -std=c++11 -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo -rdynamic `$(LLVM_BIN) --system-libs`
+	g++ `$(LLVM_BIN) --cxxflags` -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo -rdynamic `$(LLVM_BIN) --system-libs`
 
 parser.cpp: parser.y
 	touch parser.cpp; bison -d -o parser.cpp parser.y
