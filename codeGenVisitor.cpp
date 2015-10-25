@@ -179,11 +179,17 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		case BOP_DIV:
 		return isInteger ? builder->CreateSDiv(left, right) : builder->CreateFDiv(left, right);
 		case BOP_NEQ:
+		return isInteger ? builder->CreateICmpNE(left, right) : builder->CreateFCmpONE(left, right);		
 		case BOP_EQ:
+		return isInteger ? builder->CreateICmpEQ(left, right) : builder->CreateFCmpOEQ(left, right);
 		case BOP_GTE:
+		return isInteger ? builder->CreateICmpSGE(left, right) : builder->CreateFCmpOGE(left, right);
 		case BOP_LTE:
+		return isInteger ? builder->CreateICmpSLE(left, right) : builder->CreateFCmpOLE(left, right);
 		case BOP_GT:
+		return isInteger ? builder->CreateICmpSGT(left, right) : builder->CreateFCmpOGT(left, right);
 		case BOP_LT:
+		return isInteger ? builder->CreateICmpSLT(left, right) : builder->CreateFCmpOLT(left, right);
 		case BOP_DOT:
 		return ErrorV("Attempt to generate code for not yet implemented binary operator");
 		//assignment op separate
@@ -322,5 +328,49 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 
 /*===============================IfStatement================================*/
 llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
-	return ErrorV("Attempt to evaluate not yet implemented if statement");
+	llvm::Value* condition = i->exp->acceptVisitor(this);
+	if(!condition)
+		return ErrorV("Unable to evaluate if statement condition");
+	if(condition->getType()->getTypeID() == llvm::Type::DoubleTyID) {
+		condition = builder->CreateFCmpONE(condition, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
+	}
+	else if (condition->getType()->getTypeID() == llvm::Type::IntegerTyID){
+		condition = builder->CreateICmpNE(condition, llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true)));
+	}
+	else {
+		return ErrorV("Unable to determine condition type");
+	}
+	llvm::Function* func = builder->GetInsertBlock()->getParent();
+	llvm::BasicBlock* thenIf = llvm::BasicBlock::Create(*context, "then", func);
+	llvm::BasicBlock* elseIf = llvm::BasicBlock::Create(*context, "else");
+	llvm::BasicBlock* mergeIf = llvm::BasicBlock::Create(*context, "if");
+	builder->CreateCondBr(condition, thenIf, elseIf);
+	builder->SetInsertPoint(thenIf);
+	llvm::Value* ifEval = i->block->acceptVisitor(this);
+	if(!ifEval)
+		return ErrorV("If block could not be evaluated");
+	builder->CreateBr(mergeIf);
+	thenIf = builder->GetInsertBlock();
+	func->getBasicBlockList().push_back(elseIf);
+	builder->SetInsertPoint(elseIf);
+	builder->CreateBr(mergeIf);
+	elseIf = builder->GetInsertBlock();
+	func->getBasicBlockList().push_back(mergeIf);
+	builder->SetInsertPoint(mergeIf);
+	llvm::PHINode* phi = nullptr;
+	if(ifEval->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+		phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
+	}
+	else if(ifEval->getType()->getTypeID() == llvm::Type::DoubleTyID) {
+		phi = builder->CreatePHI(llvm::Type::getInt64Ty(*context), 2);
+	}
+	else if(ifEval->getType()->getTypeID() == llvm::Type::VoidTyID) {
+		phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
+	}
+	else {
+		return ErrorV("If block could not be evaluated to an acceptable type");
+	}
+	phi->addIncoming(ifEval, thenIf);
+	phi->addIncoming(nullptr, elseIf);
+	return phi;
 }
