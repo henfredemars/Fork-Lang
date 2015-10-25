@@ -247,8 +247,8 @@ public:
 //C-like assignment of a variable
 class AssignStatement : public Statement {
 public:
-	Expression* valxp;
 	Expression* target;
+	Expression* valxp;
 	AssignStatement(Expression* target,Expression* valxp);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);

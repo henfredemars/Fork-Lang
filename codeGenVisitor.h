@@ -49,11 +49,12 @@ private:
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
-	std::map<std::string, llvm::Value*> namedValues;
+	std::map<std::string, llvm::AllocaInst*> namedValues;
 	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
 	llvm::Value* ErrorV(const char* str);
 	llvm::Function* generateFunction(FunctionDefinition* f);
+	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();

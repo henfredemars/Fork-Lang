@@ -55,6 +55,14 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	return func;
 }
 
+llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name) {
+	llvm::IRBuilder<true, llvm::NoFolder> tempBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+	if(type->getTypeID() == llvm::Type::DoubleTyID) {
+		return tempBuilder.CreateAlloca(llvm::Type::getDoubleTy(*context), 0, name);
+	}
+	return tempBuilder.CreateAlloca(llvm::Type::getInt64Ty(*context), 0, name);
+}
+
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	populateSwitchMap();
 	context = &llvm::getGlobalContext();
@@ -108,7 +116,7 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
   llvm::Value* val = namedValues[i->name];
   if (!val)
     return ErrorV("Attempt to generate code for not previously defined variable");
-  return val;
+  return builder->CreateLoad(val, i->name);
 }
 
 /*=============================NullaryOperator==============================*/
@@ -146,9 +154,10 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
  	//grab left and right
 	if (!left || !right)
 		return ErrorV("Could not evaluate binary operator");
-	//use map for binary operators
+	//use flag for check if both operands are integers
 	bool isInteger = false;
 	if((left->getType()->getTypeID() != right->getType()->getTypeID())) {
+		//cast values in IR
 		if(left->getType()->getTypeID() == llvm::Type::IntegerTyID) {
 			left = builder->CreateSIToFP(left, llvm::Type::getDoubleTy(*context));
 		}
@@ -159,6 +168,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	if(left->getType()->getTypeID() == llvm::Type::IntegerTyID) {
 		isInteger = true;
 	}
+	//binary op map
 	switch (switchMap.find(b->op)->second) {
 		case BOP_PLUS:
 		return isInteger ? builder->CreateAdd(left, right) : builder->CreateFAdd(left, right);
@@ -214,17 +224,18 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
-	std::string type = v->type->name; //int float or void
-	llvm::Value* val = nullptr;
-	if(type == "int") {
-		int64_t i = 0; //TODO: Figure out why variable necessary, attempted casting already
-		val = llvm::ConstantInt::get(*context, llvm::APInt(64, i, true));
-	}
-	else if(type == "float")
-		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-	if(!val) //add default value variable to map
-		namedValues.insert(std::make_pair(v->ident->name, val));
-	return val;
+	//std::string type = v->type->name; //int float or void
+	//llvm::Value* val = nullptr;
+	//if(type == "int") {
+	//	int64_t i = 0; //TODO: Figure out why variable necessary, attempted casting already
+	//	val = llvm::ConstantInt::get(*context, llvm::APInt(64, i, true));
+	//}
+	//else if(type == "float")
+	//	val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+	//if(!val) //add default value variable to map
+	//	namedValues.insert(std::make_pair(v->ident->name, val));
+	//return val;
+	return nullptr;
 }
 
 /*===========================StructureDefinition============================*/
@@ -244,8 +255,11 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
-	for (auto &arg : func->args())
-		namedValues[arg.getName()] = &arg;
+	for (auto &arg : func->args()) {
+		llvm::AllocaInst* alloca = createAlloca(func, arg.getType(), arg.getName());
+    	builder->CreateStore(&arg, alloca); // Store init value into alloca
+		namedValues[arg.getName()] = alloca; //setup map
+	} //create alloca for each argument
 	llvm::Value* retVal = f->block->acceptVisitor(this);
 	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) {//void return nullptr
 		builder->CreateRetVoid();
@@ -279,10 +293,15 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	//TODO: map a value to an exisiting identifier
-	//look for identifier
-	//map target to value
-	return nullptr;
+	Identifier* left = (Identifier*)a->target;
+	llvm::Value* right = a->valxp->acceptVisitor(this);
+	if(!right)
+		return ErrorV("Unable to evaluate assignment statement");
+	llvm::Value* var = namedValues[left->name];
+	if(!var)
+		return ErrorV("Unknown variable target for assignment statement");
+	builder->CreateStore(right, var); //store value for right in var
+	return right; //allows chained assignment X = ( Y = 4 + 1);
 }
 
 /*===============================IfStatement================================*/
