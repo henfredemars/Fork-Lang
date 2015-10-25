@@ -224,18 +224,23 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
-	//std::string type = v->type->name; //int float or void
-	//llvm::Value* val = nullptr;
-	//if(type == "int") {
-	//	int64_t i = 0; //TODO: Figure out why variable necessary, attempted casting already
-	//	val = llvm::ConstantInt::get(*context, llvm::APInt(64, i, true));
-	//}
-	//else if(type == "float")
-	//	val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-	//if(!val) //add default value variable to map
-	//	namedValues.insert(std::make_pair(v->ident->name, val));
-	//return val;
-	return nullptr;
+	llvm::Function* func = builder->GetInsertBlock()->getParent();
+	std::string type = v->type->name;
+	llvm::Value* val = nullptr;
+	if(type == "int") {
+		val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+	}
+	else if(type == "float")
+		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+	else
+		return ErrorV("Attempt to create variable of an incorrect type");
+	if(val) {//add default var to map as alloca
+		llvm::AllocaInst* alloca = createAlloca(func, val->getType(), v->ident->name);
+		namedValues.insert(std::make_pair(v->ident->name, alloca));
+  		builder->CreateStore(val, alloca);
+  		return v->ident;
+	}
+	return ErrorV("Unable to generate default value for variable");
 }
 
 /*===========================StructureDefinition============================*/
