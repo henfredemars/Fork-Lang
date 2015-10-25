@@ -224,23 +224,34 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
-	llvm::Function* func = builder->GetInsertBlock()->getParent();
+	llvm::Function* func = builder->GetInsertBlock()->getParent(); //future optimizations include memgen
 	std::string type = v->type->name;
 	llvm::Value* val = nullptr;
-	if(type == "int") {
-		val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+	if(v->exp) {
+		val = v->exp->acceptVisitor(this);
+		if((type == "float" && val->getType()->getTypeID()) != llvm::Type::DoubleTyID) {
+			return ErrorV("Attempt to return float to int type");
+		}
+		else if((type == "int" && val->getType()->getTypeID()) != llvm::Type::IntegerTyID) {
+			val = builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context)); //cast int to float type
+		}
 	}
-	else if(type == "float")
-		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-	else
-		return ErrorV("Attempt to create variable of an incorrect type");
-	if(val) {//add default var to map as alloca
+	else { // add default
+		if(type == "int") {
+			val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+		}
+		else if(type == "float")
+			val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+		else
+			return ErrorV("Attempt to create variable of an incorrect type");
+	}
+	if(val) {//add to map
 		llvm::AllocaInst* alloca = createAlloca(func, val->getType(), v->ident->name);
 		namedValues.insert(std::make_pair(v->ident->name, alloca));
   		builder->CreateStore(val, alloca);
-  		return v->ident;
+  		return v->ident->acceptVisitor(this);
 	}
-	return ErrorV("Unable to generate default value for variable");
+	return ErrorV("Unable to generate value for variable");
 }
 
 /*===========================StructureDefinition============================*/
