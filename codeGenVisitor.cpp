@@ -15,7 +15,8 @@ void CodeGenVisitor::populateSwitchMap() {
 }
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
-  assert(true && fprintf(stderr, "Error: %s\n", str));
+  fprintf(stderr, "Error: %s\n", str);
+  error = true;
   return nullptr;
 }
 
@@ -64,6 +65,7 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 }
 
 CodeGenVisitor::CodeGenVisitor(std::string name) {
+	error = false;
 	populateSwitchMap();
 	context = &llvm::getGlobalContext();
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
@@ -73,17 +75,28 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 }
 
 void CodeGenVisitor::executeMain() {
-	auto handle = forkJIT->addModule(std::move(theModule));
-	auto mainSymbol = forkJIT->findSymbol("main");
-	assert(mainSymbol && "No code to be execute, include a main function");
-	void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
-    func();
-    printf("main() returns: void\n");
-    forkJIT->removeModule(handle);
+	if(!error) {
+		auto handle = forkJIT->addModule(std::move(theModule));
+		auto mainSymbol = forkJIT->findSymbol("main");
+		assert(mainSymbol && "No code to execute, include a main function");
+		void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
+	    func();
+	    printf("main() returns: void\n");
+	    forkJIT->removeModule(handle);
+	}
+	else {
+		printf("Main execution halted due to errors\n");
+	}
+
 }
 
 void CodeGenVisitor::printModule() {
-	theModule->dump();
+	if(!error) {
+		theModule->dump();
+	}
+	else {
+		printf("IR dump prevented due to errors\n");
+	}
 }
 
 /*===================================Node===================================*/
