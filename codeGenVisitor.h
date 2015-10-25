@@ -45,6 +45,7 @@ public:
 
 class CodeGenVisitor : public Visitor {
 private:
+	bool error;
 	llvm::LLVMContext* context;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
