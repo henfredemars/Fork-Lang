@@ -95,7 +95,7 @@ llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	return llvm::ConstantInt::get(*context, llvm::APInt(i->value, 64));
+	return llvm::ConstantInt::get(*context, llvm::APInt(64, i->value, true));
 }
 
 /*==================================Float===================================*/
@@ -129,7 +129,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			case llvm::Type::DoubleTyID:
 				return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
 			case llvm::Type::IntegerTyID:
-				return builder->CreateFMul(llvm::ConstantInt::get(*context, llvm::APInt(-1, 64)), expr);
+				return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
 		}
 		case '!':
 		case '*':
@@ -147,15 +147,27 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	if (!left || !right)
 		return ErrorV("Could not evaluate binary operator");
 	//use map for binary operators
+	bool isInteger = false;
+	if((left->getType()->getTypeID() != right->getType()->getTypeID())) {
+		if(left->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+			left = builder->CreateSIToFP(left, llvm::Type::getDoubleTy(*context));
+		}
+		else {
+			right = builder->CreateSIToFP(right, llvm::Type::getDoubleTy(*context));
+		}
+	}
+	if(left->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+		isInteger = true;
+	}
 	switch (switchMap.find(b->op)->second) {
 		case BOP_PLUS:
-		return builder->CreateFAdd(left, right);
+		return isInteger ? builder->CreateAdd(left, right) : builder->CreateFAdd(left, right);
 		case BOP_MINUS:
-		return builder->CreateFSub(left, right);
+		return isInteger ? builder->CreateSub(left, right) : builder->CreateFSub(left, right);
 		case BOP_MULT:
-		return builder->CreateFMul(left, right);
+		return isInteger ? builder->CreateMul(left, right) : builder->CreateFMul(left, right);
 		case BOP_DIV:
-		return builder->CreateFDiv(left, right);
+		return isInteger ? builder->CreateSDiv(left, right) : builder->CreateFDiv(left, right);
 		case BOP_NEQ:
 		case BOP_EQ:
 		case BOP_GTE:
@@ -206,7 +218,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	llvm::Value* val = nullptr;
 	if(type == "int") {
 		int64_t i = 0; //TODO: Figure out why variable necessary, attempted casting already
-		val = llvm::ConstantInt::get(*context, llvm::APInt(i, 64));
+		val = llvm::ConstantInt::get(*context, llvm::APInt(64, i, true));
 	}
 	else if(type == "float")
 		val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
