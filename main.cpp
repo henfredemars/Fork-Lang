@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 			yyparse(); //ast_root points to program
 			fclose(yyin);
 			yyin = NULL;
-			CodeGenVisitor c("LLVM Compiler");
+			CodeGenVisitor c("LLVM Compiler Backend");
 			ast_root->acceptVisitor(&c);
 			c.printModule();
 			c.executeMain();
