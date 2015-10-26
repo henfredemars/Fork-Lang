@@ -16,6 +16,8 @@ enum Binops {
 	BOP_GT,
 	BOP_NEQ,
 	BOP_EQ,
+	BOP_OR,
+	BOP_AND,
 	BOP_DOT
 };
 
@@ -45,15 +47,28 @@ public:
 
 class CodeGenVisitor : public Visitor {
 private:
+	bool error;
 	llvm::LLVMContext* context;
+	llvm::Function* currFunc;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
-	std::map<std::string, llvm::Value*> namedValues;
+	std::map<std::string, llvm::AllocaInst*> namedValues;
 	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
+	bool isIntegerType(llvm::Value* val);
+	bool isFloatType(llvm::Value* val);
+	bool isVoidType(llvm::Value* val);
+	llvm::Value* castIntToFloat(llvm::Value* val);
+	llvm::Value* castIntToBoolean(llvm::Value* val);
+	llvm::Value* castFloatToBoolean(llvm::Value* val);
+	llvm::Value* castBooleantoInt(llvm::Value* val);
+	int getValType(llvm::Value* val);
+	int getFuncRetType(llvm::Function* func);
+	int getAllocaType(llvm::AllocaInst* alloca);
 	llvm::Value* ErrorV(const char* str);
 	llvm::Function* generateFunction(FunctionDefinition* f);
+	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
