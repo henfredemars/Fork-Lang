@@ -202,7 +202,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			case '-':
 			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
 			case '!':
-			return castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)));
+			return castBooleantoInt(builder->CreateNot(expr));
 			case '*'://TODO
 			return ErrorV("Not yet specified unary operator");
 			default:
@@ -284,9 +284,9 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_LT:
 			return castBooleantoInt(builder->CreateICmpSLT(left, right));
 			case BOP_OR:
-			return castBooleantoInt(builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right)));
+			return castBooleantoInt(builder->CreateOr(left, right));
 			case BOP_AND:
-			return castBooleantoInt(builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right)));
+			return castBooleantoInt(builder->CreateAnd(left, right));
 			case BOP_DOT: //TODO
 			return ErrorV("Attempt to generate code for not yet implemented binary operator");
 			//assignment op separate
