@@ -31,6 +31,11 @@ void Expression::describe() const {
 	printf("---Found generic Expression object with no fields\n");
 }
 
+bool Expression::identsDeclared() const {
+        printf("Attempt to check idents on generic expression\n");
+        assert(false);
+}
+
 llvm::Value* Expression::acceptVisitor(Visitor* v) {
 	llvm::Value* visitedVal = v->visitExpression(this);
 	return visitedVal;
@@ -51,6 +56,10 @@ Integer::Integer(int64_t value) {
 	this->value = value;
 }
 
+bool Integer::identsDeclared() const {
+	return true;
+}
+
 void Integer::describe() const {
 	printf("---Found Literal Integer: %i\n", (int)value);
 }
@@ -63,6 +72,10 @@ llvm::Value* Integer::acceptVisitor(Visitor* v) {
 /*==================================Float===================================*/
 Float::Float(double value) {
 	this->value = value;
+}
+
+bool Float::identsDeclared() const {
+	return true;
 }
 
 void Float::describe() const {
@@ -79,19 +92,42 @@ Identifier::Identifier(char* name) {
 	this->name = dup_char(name);
 }
 
+bool Identifier::identsDeclared() const {
+	return declaredAtAll();
+}
+
 void Identifier::describe() const {
 	printf("---Found Identifier: %s\n",name);
 }
 
-bool Identifier::assertDeclared() const {
+bool Identifier::declaredAsVar() const {
 	if (!sym_table.check(name)) {
                 yyerror("Identifier does not exist in symbol table");
-                return true;
+                return false;
         } else if (!sym_table.check(name,VARIABLE)) {
                 yyerror("Identifier was not a variable");
-		return true;
+		return false;
         }
-	return false;
+	return true;
+}
+
+bool Identifier::declaredAsFunc() const {
+	if (!sym_table.check(name)) {
+                yyerror("Identifier does not exist in symbol table");
+                return false;
+        } else if (!sym_table.check(name,FUNCTION)) {
+                yyerror("Identifier was not a function");
+		return false;
+        }
+	return true;
+}
+
+bool Identifier::declaredAtAll() const {
+	if (!sym_table.check(name)) {
+                yyerror("Identifier does not exist in symbol table");
+                return false;
+        }
+	return true;
 }
 
 llvm::Value* Identifier::acceptVisitor(Visitor* v) {
@@ -102,6 +138,10 @@ llvm::Value* Identifier::acceptVisitor(Visitor* v) {
 /*=============================NullaryOperator==============================*/
 NullaryOperator::NullaryOperator(char* op) {
 	this->op = dup_char(op);
+}
+
+bool NullaryOperator::identsDeclared() const {
+	return true;
 }
 
 void NullaryOperator::describe() const {
@@ -120,6 +160,10 @@ UnaryOperator::UnaryOperator(char* op, Expression* exp) {
 	this->exp = exp;
 }
 
+bool UnaryOperator::identsDeclared() const {
+	return exp->identsDeclared();
+}
+
 void UnaryOperator::describe() const {
 	printf("---Found Unary Operator\n");
 }
@@ -136,6 +180,10 @@ BinaryOperator::BinaryOperator(Expression* left, char* op, Expression* right) {
 	this->right = right;
 }
 
+bool BinaryOperator::identsDeclared() const {
+	return (left->identsDeclared() && right->identsDeclared());
+}
+
 void BinaryOperator::describe() const {
 	printf("---Found Binary Operator %s\n",this->op);
 }
@@ -150,12 +198,18 @@ Block::Block(std::vector<Statement*, gc_allocator<Statement*>>* statements) {
 	this->statements = statements;
 }
 
+bool Block::identsDeclared() const {
+	printf("Attempt to check idents on Block\n");
+	assert(false);
+	return false;
+}
+
 void Block::describe() const {
 	printf("---Found Block\n");
 }
 
 Block::Block() {
-	this->statements = NULL;
+	this->statements = nullptr;
 }
 
 llvm::Value* Block::acceptVisitor(Visitor* v) {
@@ -172,6 +226,10 @@ FunctionCall::FunctionCall(Identifier* ident, std::vector<Expression*, gc_alloca
 	} else if (!sym_table.check(ident->name,FUNCTION)) {
 		yyerror("Identifier was not a function");
 	}
+}
+
+bool FunctionCall::identsDeclared() const {
+	return ident->declaredAsFunc();
 }
 
 void FunctionCall::describe() const {
@@ -307,7 +365,7 @@ llvm::Value* ReturnStatement::acceptVisitor(Visitor* v) {
 }
 
 /*=============================AssignStatement==============================*/
-AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
+AssignStatement::AssignStatement(ReferenceExpression* target,Expression* valxp) {
 	this->target = target;
 	this->valxp = valxp;
 }
@@ -385,5 +443,28 @@ void SymbolTable::pop() {
 	//Pop current scope
 	assert(frames.size());
 	frames.pop_back();
+}
+
+/*===============================LeftExpression================================*/
+ReferenceExpression::ReferenceExpression(Identifier* ident,Expression* offsetExpression) {
+	this->ident = ident;
+	this->offsetExpression = offsetExpression;
+}
+
+bool ReferenceExpression::assignsPointerDirectly() const {
+	return offsetExpression == nullptr;
+}
+
+bool ReferenceExpression::identsDeclared() const {
+	return (ident->declaredAsVar() && (!offsetExpression || offsetExpression->identsDeclared()));
+}
+
+void ReferenceExpression::describe() const {
+	printf("---Found ReferenceExpression for ident: %s\n",ident->name);
+}
+
+llvm::Value* ReferenceExpression::acceptVisitor(Visitor* v) {
+	llvm::Value* visitedVal = v->visitReferenceExpression(this);
+	return visitedVal;
 }
 

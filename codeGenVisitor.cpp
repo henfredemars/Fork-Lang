@@ -520,3 +520,9 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	phi->addIncoming(elseEval, elseIf);
 	return phi;
 }
+
+/*===============================ReferenceExpression================================*/
+llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* i) {
+	return ErrorV("Unimplemented - visitReferenceExpression");
+}
+

@@ -21,6 +21,7 @@
 %union {
     Node* node;
     Expression* exp;
+    ReferenceExpression* rexp;
     Statement* statement;
     Identifier* identifier;
     Block* block;
@@ -43,6 +44,7 @@
 //Types of grammar targets
 %type <identifier> ident
 %type <exp> exp numeric
+%type <rexp> rexp
 %type <statement> statement variableDec functionDec structDec
 %type <statement> if_statement
 %type <block> block statements program
@@ -96,12 +98,14 @@ statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes
              | structDec TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
 	     | if_statement TENDL {$$=$1;}
 	     |
-	     exp TSET exp {
+	     rexp TSET exp {
 		$$ = new AssignStatement($1,$3);
+		if(!($1->identsDeclared())) YYERROR;
 		$$->describe();
 	     } |
-	     exp TSET exp TENDL {
+	     rexp TSET exp TENDL {
                 $$ = new AssignStatement($1,$3);
+		if(!($1->identsDeclared())) YYERROR;
                 $$->describe();
              } |
              exp TENDL {
@@ -109,7 +113,7 @@ statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes
                 $$->describe();
              } |
 	     TRETURN TENDL {
-		$$ = new ReturnStatement(NULL);
+		$$ = new ReturnStatement(nullptr);
 		$$->describe();
 	     } |
 	     TRETURN exp TENDL {
@@ -121,7 +125,7 @@ statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes
                 $$->describe();
              } |
              TRETURN {
-                $$ = new ReturnStatement(NULL);
+                $$ = new ReturnStatement(nullptr);
                 $$->describe();
              } |
              TRETURN exp {
@@ -152,7 +156,7 @@ block : leftBraceToken statements rightBraceToken { $$ = $2;
               ;
 
 //A variable declaration is made of a var_keyword, identifier, and possibly an expression
-variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,NULL);
+variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr);
                 $$->describe();
              } |
 	     ident ident { $$ = new StructureDeclaration($1,$2);
@@ -228,18 +232,27 @@ callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expressio
 		printf("Parser: callArgs additional argument found\n");}
               ;
 
+rexp : ident { $$ = new ReferenceExpression($1,nullptr); $$->describe(); }
+	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0)); $$->describe(); }
+	    | ident TLSBRACE exp TRSBRACE  { $$ = new ReferenceExpression($1,$3); $$->describe(); }
+	    ;
+
 //An identifier comes from the corresponding token string
 ident : TIDENTIFIER { $$ = new Identifier($1); $$->describe(); }
         ;
 
 //An expression is pretty much any (valid) mixture of operators
-exp : exp binaryOperatorToken exp { $$ = new BinaryOperator($1,$2,$3); $$->describe(); }
-            | unaryOperatorToken exp { $$ = new UnaryOperator($1,$2); $$->describe(); } %prec UMINUS
+//Identifiers inside expressions must always be declared beforehand
+exp : exp binaryOperatorToken exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR;
+		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
+            | unaryOperatorToken exp { if (!($2->identsDeclared())) YYERROR;
+		$$ = new UnaryOperator($1,$2); $$->describe(); } %prec UMINUS
             | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); } %prec TCOMMIT
             | numeric { $$ = $1; }
-            | ident { $$ = $1; if ($1->assertDeclared()) YYERROR; }
+            | rexp { if (!($1->identsDeclared())) YYERROR; $$ = $1; }
             | TLPAREN exp TRPAREN { $$ = $2; } //Consume pairs of parentheses
-            | ident TEQUAL exp { $$ = new BinaryOperator($1,$2,$3); $$->describe(); }
+            | exp TEQUAL exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR; 
+		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); $$->describe(); }
             ;
 
@@ -254,7 +267,7 @@ binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH
 leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
 rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
-unaryOperatorToken : TSTAR | TDASH | TLNOT {$$=$1; printf("UOP: %s\n",$1); }
+unaryOperatorToken : TDASH | TLNOT;
 
 nullaryOperatorToken : TSCOLON;
 

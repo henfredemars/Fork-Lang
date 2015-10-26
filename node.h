@@ -5,7 +5,7 @@
 #define __NODE_H
 
 //#define GC_DEBUG 1
-//#define YY_DEBUG 1
+#define YYDEBUG 1
 
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/ADT/STLExtras.h"
@@ -54,6 +54,7 @@ class IfStatement;
 class Visitor;
 class CodeGenVisitor;
 class SymbolTable;
+class ReferenceExpression;
 
 //Symbol Table
 enum IdentType {
@@ -78,6 +79,7 @@ public:
 class Expression : public Node {
 public:
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -94,6 +96,7 @@ public:
 	int64_t value;
 	Integer(int64_t value);
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -103,6 +106,7 @@ public:
 	double value;
 	Float(double value);
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -111,8 +115,11 @@ class Identifier : public Expression {
 public:
 	char* name;
 	Identifier(char* name);
+        bool declaredAsVar() const;
+        bool declaredAsFunc() const;
+        bool declaredAtAll() const;
 	virtual void describe() const;
-        bool assertDeclared() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -122,6 +129,7 @@ public:
 	char* op;
 	NullaryOperator(char* op);
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -132,6 +140,7 @@ public:
 	Expression* exp;
 	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -143,6 +152,7 @@ public:
 	Expression* right;
 	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -155,6 +165,7 @@ public:
 	Block(std::vector<Statement*,gc_allocator<Statement*>>* statements);
 	std::vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -165,6 +176,7 @@ public:
 	std::vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe() const;
+        virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -247,9 +259,9 @@ public:
 //C-like assignment of a variable
 class AssignStatement : public Statement {
 public:
-	Expression* target;
+	ReferenceExpression* target;
 	Expression* valxp;
-	AssignStatement(Expression* target,Expression* valxp);
+	AssignStatement(ReferenceExpression* target,Expression* valxp);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
@@ -278,5 +290,19 @@ public:
 private:
 	std::vector<std::map<std::string,IdentType>> frames;
 };
+
+/*===============================ReferenceExpression================================*/
+//Assignable l-expressions
+class ReferenceExpression : public Expression {
+public:
+        Expression* offsetExpression;
+        Identifier* ident;
+	bool assignsPointerDirectly() const;
+        ReferenceExpression(Identifier* ident, Expression* offsetExpression);
+        virtual void describe() const;
+        virtual bool identsDeclared() const;
+        virtual llvm::Value* acceptVisitor(Visitor* v);
+};
+
 
 #endif

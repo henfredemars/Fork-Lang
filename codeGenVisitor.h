@@ -43,6 +43,7 @@ public:
 	virtual llvm::Value* visitReturnStatement(ReturnStatement* r) =0;
 	virtual llvm::Value* visitAssignStatement(AssignStatement* a) =0;
 	virtual llvm::Value* visitIfStatement(IfStatement* i) =0;
+	virtual llvm::Value* visitReferenceExpression(ReferenceExpression* e) =0;
 };
 
 class CodeGenVisitor : public Visitor {
@@ -94,6 +95,7 @@ public:
 	llvm::Value* visitReturnStatement(ReturnStatement* r);
 	llvm::Value* visitAssignStatement(AssignStatement* a);
 	llvm::Value* visitIfStatement(IfStatement* i);
+        llvm::Value* visitReferenceExpression(ReferenceExpression* e);
 };
 
 #endif
