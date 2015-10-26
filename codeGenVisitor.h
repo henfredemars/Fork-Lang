@@ -16,6 +16,8 @@ enum Binops {
 	BOP_GT,
 	BOP_NEQ,
 	BOP_EQ,
+	BOP_OR,
+	BOP_AND,
 	BOP_DOT
 };
 
@@ -58,6 +60,9 @@ private:
 	bool isFloatType(llvm::Value* val);
 	bool isVoidType(llvm::Value* val);
 	llvm::Value* castIntToFloat(llvm::Value* val);
+	llvm::Value* castIntToBoolean(llvm::Value* val);
+	llvm::Value* castFloatToBoolean(llvm::Value* val);
+	llvm::Value* castBooleantoInt(llvm::Value* val);
 	int getValType(llvm::Value* val);
 	int getFuncRetType(llvm::Function* func);
 	int getAllocaType(llvm::AllocaInst* alloca);

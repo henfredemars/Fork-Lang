@@ -1,4 +1,5 @@
 #include "codeGenVisitor.h"
+#include <iostream>
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str);
@@ -17,6 +18,8 @@ void CodeGenVisitor::populateSwitchMap() {
 	switchMap.insert(std::make_pair("<", BOP_LT));
 	switchMap.insert(std::make_pair("!=", BOP_NEQ));
 	switchMap.insert(std::make_pair("==", BOP_EQ));
+	switchMap.insert(std::make_pair("||", BOP_OR));
+	switchMap.insert(std::make_pair("&&", BOP_AND));
 	switchMap.insert(std::make_pair(".", BOP_DOT));
 }
 
@@ -31,6 +34,15 @@ bool CodeGenVisitor::isVoidType(llvm::Value* val) {
 }
 llvm::Value* CodeGenVisitor::castIntToFloat(llvm::Value* val) {
 	return builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context));
+}
+llvm::Value* CodeGenVisitor::castIntToBoolean(llvm::Value* val) {
+	return builder->CreateICmpNE(val, llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true)));
+}
+llvm::Value* CodeGenVisitor::castFloatToBoolean(llvm::Value* val) {
+	return builder->CreateFCmpONE(val, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
+}
+llvm::Value* CodeGenVisitor::castBooleantoInt(llvm::Value* val) {
+	return builder->CreateZExtOrBitCast(val, llvm::Type::getInt64Ty(*context));
 }
 int CodeGenVisitor::getValType(llvm::Value* val) {
 	return val->getType()->getTypeID();
@@ -178,7 +190,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			case '-':
 			return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
 			case '!':
-			return builder->CreateFCmpOEQ(expr, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
+			return castBooleantoInt(builder->CreateNot(castFloatToBoolean(expr)));
 			case '*'://TODO
 			return ErrorV("Not yet specified unary operator");
 			default:
@@ -190,7 +202,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			case '-':
 			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
 			case '!':
-			return builder->CreateICmpNE(expr, llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true)));
+			return castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)));
 			case '*'://TODO
 			return ErrorV("Not yet specified unary operator");
 			default:
@@ -227,17 +239,21 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_DIV:
 			return builder->CreateFDiv(left, right);
 			case BOP_NEQ:
-			return builder->CreateFCmpONE(left, right);
+			return castBooleantoInt(builder->CreateFCmpONE(left, right));
 			case BOP_EQ:
-			return builder->CreateFCmpOEQ(left, right);
+			return castBooleantoInt(builder->CreateFCmpOEQ(left, right));
 			case BOP_GTE:
-			return builder->CreateFCmpOGE(left, right);
+			return castBooleantoInt(builder->CreateFCmpOGE(left, right));
 			case BOP_LTE:
-			return builder->CreateFCmpOLE(left, right);
+			return castBooleantoInt(builder->CreateFCmpOLE(left, right));
 			case BOP_GT:
-			return builder->CreateFCmpOGT(left, right);
+			return castBooleantoInt(builder->CreateFCmpOGT(left, right));
 			case BOP_LT:
-			return builder->CreateFCmpOLT(left, right);
+			return castBooleantoInt(builder->CreateFCmpOLT(left, right));
+			case BOP_OR:
+			return castBooleantoInt(builder->CreateOr(castFloatToBoolean(left), castFloatToBoolean(right)));
+			case BOP_AND:
+			return castBooleantoInt(builder->CreateAnd(castFloatToBoolean(left), castFloatToBoolean(right)));
 			case BOP_DOT: //TODO
 			return ErrorV("Attempt to generate code for not yet implemented binary operator");
 			//assignment op separate
@@ -256,17 +272,21 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_DIV:
 			return builder->CreateSDiv(left, right);
 			case BOP_NEQ:
-			return builder->CreateICmpNE(left, right);	
+			return castBooleantoInt(builder->CreateICmpNE(left, right));
 			case BOP_EQ:
-			return builder->CreateICmpEQ(left, right);
+			return castBooleantoInt(builder->CreateICmpEQ(left, right));
 			case BOP_GTE:
-			return builder->CreateICmpSGE(left, right);
+			return castBooleantoInt(builder->CreateICmpSGE(left, right));
 			case BOP_LTE:
-			return builder->CreateICmpSLE(left, right);
+			return castBooleantoInt(builder->CreateICmpSLE(left, right));
 			case BOP_GT:
-			return builder->CreateICmpSGT(left, right);
+			return castBooleantoInt(builder->CreateICmpSGT(left, right));
 			case BOP_LT:
-			return builder->CreateICmpSLT(left, right);
+			return castBooleantoInt(builder->CreateICmpSLT(left, right));
+			case BOP_OR:
+			return castBooleantoInt(builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right)));
+			case BOP_AND:
+			return castBooleantoInt(builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right)));
 			case BOP_DOT: //TODO
 			return ErrorV("Attempt to generate code for not yet implemented binary operator");
 			//assignment op separate
@@ -449,10 +469,10 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 		return ErrorV("Unable to evaluate if statement condition");
 	}
 	if(isFloatType(condition)) {
-		condition = builder->CreateFCmpONE(condition, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
+		condition = castFloatToBoolean(condition);
 	}
-	else if (isIntegerType(condition)){
-		condition = builder->CreateICmpNE(condition, llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true)));
+	else if (isIntegerType(condition)) {
+		condition = castIntToBoolean(condition);
 	}
 	else {
 		return ErrorV("Unable to determine condition type");
