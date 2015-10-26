@@ -1,5 +1,11 @@
 #include "codeGenVisitor.h"
 
+llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
+  fprintf(stderr, "Error: %s\n", str);
+  error = true;
+  return nullptr;
+}
+
 void CodeGenVisitor::populateSwitchMap() {
 	switchMap.insert(std::make_pair("+", BOP_PLUS));
 	switchMap.insert(std::make_pair("-", BOP_MINUS));
@@ -14,11 +20,18 @@ void CodeGenVisitor::populateSwitchMap() {
 	switchMap.insert(std::make_pair(".", BOP_DOT));
 }
 
-llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
-  fprintf(stderr, "Error: %s\n", str);
-  error = true;
-  return nullptr;
+bool CodeGenVisitor::isIntegerType(llvm::Value* val) {
+	return val->getType()->getTypeID() == llvm::Type::IntegerTyID;
 }
+bool CodeGenVisitor::isFloatType(llvm::Value* val) {
+	return val->getType()->getTypeID() == llvm::Type::DoubleTyID;
+}
+bool CodeGenVisitor::isVoidType(llvm::Value* val) {
+	return val->getType()->getTypeID() == llvm::Type::VoidTyID;
+}
+llvm::Value* CodeGenVisitor::castIntToFloat(llvm::Value* val) {
+	return builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context));
+} 
 
 llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	std::string type = f->type->name;
@@ -147,14 +160,17 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
 	switch(*u->op) {
 		case '-':
-		switch(expr->getType()->getTypeID()) { //switch by type to apply -1 to expr
-			case llvm::Type::DoubleTyID:
-				return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
-			case llvm::Type::IntegerTyID:
-				return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
+		if(isFloatType(expr)) {
+			return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
 		}
-		case '!':
-		case '*':
+		else if(isIntegerType(expr)) {
+			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
+		}
+		else {
+			return ErrorV("Unary operator applied to void type");
+		}
+		case '!'://TODO
+		case '*'://TODO
 		return ErrorV("Not yet specified unary operator");
 		default:
 		return ErrorV("Invalid unary operator");
@@ -172,14 +188,14 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	bool isInteger = false;
 	if((left->getType()->getTypeID() != right->getType()->getTypeID())) {
 		//cast values in IR
-		if(left->getType()->getTypeID() == llvm::Type::IntegerTyID) {
-			left = builder->CreateSIToFP(left, llvm::Type::getDoubleTy(*context));
+		if(isIntegerType(left)) {
+			left = castIntToFloat(left);
 		}
 		else {
-			right = builder->CreateSIToFP(right, llvm::Type::getDoubleTy(*context));
+			right = castIntToFloat(right);
 		}
 	}
-	if(left->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+	if(isIntegerType(left)) {
 		isInteger = true;
 	}
 	//binary op map
@@ -232,7 +248,11 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 
 	std::vector<llvm::Value*> argVector;
 	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
-		argVector.push_back(f->args->at(i)->acceptVisitor(this));
+		llvm::Value* argument = f->args->at(i)->acceptVisitor(this);
+		//if(argument->getType()->getTypeID() == llvm::Type::IntegerTyID && func->args()->getType()->getTypeID == llvm::Type::DoubleTyID) {
+		//	argument = builder->CreateSIToFP(argVector.back(), llvm::Type::getDoubleTy(*context));
+		//}
+		argVector.push_back(argument);
 	}
 	return builder->CreateCall(func, argVector);
 }
@@ -249,11 +269,11 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	llvm::Value* val = nullptr;
 	if(v->exp) {
 		val = v->exp->acceptVisitor(this);
-		if((type == "float" && val->getType()->getTypeID()) != llvm::Type::DoubleTyID) {
+		if(type == "int" && isFloatType(val)) {
 			return ErrorV("Attempt to return float to int type");
 		}
-		else if((type == "int" && val->getType()->getTypeID()) != llvm::Type::IntegerTyID) {
-			val = builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context)); //cast int to float type
+		else if(type == "float" && isIntegerType(val)) {
+			val = castIntToFloat(val); //cast int to float type
 		}
 	}
 	else { // add default
@@ -276,6 +296,8 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 
 /*===========================StructureDefinition============================*/
 llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
+	//llvm::ArrayRef<llvm::Type*> types;
+	//llvm::StructType* structDef = llvm::StructType::create(*context, types, s->ident->name, true);
 	return ErrorV("Attempt to evaluate not yet implemented structure definition");
 }
 
@@ -347,10 +369,16 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	Identifier* left = (Identifier*)a->target;
 	llvm::Value* right = a->valxp->acceptVisitor(this);
 	if(!right)
-		return ErrorV("Unable to evaluate assignment statement");
-	llvm::Value* var = namedValues[left->name];
+		return ErrorV("Unable to evaluate right operand in assignment statement");
+	llvm::AllocaInst* var = namedValues[left->name];
 	if(!var)
-		return ErrorV("Unknown variable target for assignment statement");
+		return ErrorV("Unable to evaluate left operand in assignment statement");
+	if((var->getAllocatedType()->getTypeID() == llvm::Type::DoubleTyID) && isIntegerType(right)) {
+		right = castIntToFloat(right);
+	}
+	else if(var->getAllocatedType()->getTypeID() != right->getType()->getTypeID()) {
+		return ErrorV("Unable to assign evaluated right operand of bad type to left operand");
+	}
 	builder->CreateStore(right, var); //store value for right in var
 	return right; //allows chained assignment X = ( Y = 4 + 1);
 }
@@ -360,10 +388,10 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	llvm::Value* condition = i->exp->acceptVisitor(this);
 	if(!condition)
 		return ErrorV("Unable to evaluate if statement condition");
-	if(condition->getType()->getTypeID() == llvm::Type::DoubleTyID) {
+	if(isFloatType(condition)) {
 		condition = builder->CreateFCmpONE(condition, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
 	}
-	else if (condition->getType()->getTypeID() == llvm::Type::IntegerTyID){
+	else if (isIntegerType(condition)){
 		condition = builder->CreateICmpNE(condition, llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true)));
 	}
 	else {
@@ -388,15 +416,15 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	builder->SetInsertPoint(mergeIf);
 	llvm::Value* elseEval = nullptr;
 	llvm::PHINode* phi = nullptr;
-	if(ifEval->getType()->getTypeID() == llvm::Type::DoubleTyID) {
+	if(isFloatType(ifEval)) {
 		phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
 		elseEval = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
 	}
-	else if(ifEval->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+	else if(isIntegerType(ifEval)) {
 		phi = builder->CreatePHI(llvm::Type::getInt64Ty(*context), 2);
 		elseEval = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
 	}
-	else if(ifEval->getType()->getTypeID() == llvm::Type::VoidTyID) {
+	else if(isVoidType(ifEval)) {
 		phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
 		elseEval = ifEval;
 	}

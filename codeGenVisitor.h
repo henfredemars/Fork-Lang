@@ -54,6 +54,10 @@ private:
 	std::map<std::string, llvm::AllocaInst*> namedValues;
 	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
+	bool isIntegerType(llvm::Value* val);
+	bool isFloatType(llvm::Value* val);
+	bool isVoidType(llvm::Value* val);
+	llvm::Value* castIntToFloat(llvm::Value* val);
 	llvm::Value* ErrorV(const char* str);
 	llvm::Function* generateFunction(FunctionDefinition* f);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
