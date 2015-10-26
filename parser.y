@@ -254,7 +254,7 @@ binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH
 leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
 rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
-unaryOperatorToken : TSTAR | TDASH | TLNOT;
+unaryOperatorToken : TSTAR | TDASH | TLNOT {$$=$1; printf("UOP: %s\n",$1); }
 
 nullaryOperatorToken : TSCOLON;
 

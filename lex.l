@@ -39,7 +39,7 @@ extern "C" int yywrap() { return 1; }
 ">="                      SAVE_TOKEN; return TGTE;
 "||"                      SAVE_TOKEN; return TLOR;
 "&&"                      SAVE_TOKEN; return TLAND;
-"!"                       return TOKEN(TLNOT);
+"!"                       SAVE_TOKEN; return TLNOT;
 "("                       return TOKEN(TLPAREN);
 ")"                       return TOKEN(TRPAREN);
 "{"                       return TOKEN(TLBRACE);
