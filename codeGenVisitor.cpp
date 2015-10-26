@@ -296,15 +296,18 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 		return ErrorV("Wrong number of arguments passed to function");
 	}
 	std::vector<llvm::Value*> argVector;
+	auto funcArgs = func->arg_begin();
 	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
 		llvm::Value* argument = f->args->at(i)->acceptVisitor(this);
-		//if(argument->getType()->getTypeID() == )
-		//else if(isIntegerType(argument) && isFloatType(func->args()...)) {
-		//	argument = castIntToFloat(argument);
-		//} //TODO type checking
-		//else {
-		//	return ErrorV("Invalid type as input for function args");
-		//}
+		llvm::Argument* funcArgument = funcArgs++;
+		if(getValType(argument) != getValType(funcArgument)) {
+			if(isIntegerType(argument) && isFloatType(funcArgument)) {
+				argument = castIntToFloat(argument);
+			}
+			else {
+				return ErrorV("Invalid type as input for function args");
+			}
+		}
 		argVector.push_back(argument);
 	}
 	return builder->CreateCall(func, argVector);
@@ -442,8 +445,9 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 /*===============================IfStatement================================*/
 llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	llvm::Value* condition = i->exp->acceptVisitor(this);
-	if(!condition)
+	if(!condition) {
 		return ErrorV("Unable to evaluate if statement condition");
+	}
 	if(isFloatType(condition)) {
 		condition = builder->CreateFCmpONE(condition, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
 	}
@@ -457,21 +461,26 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	llvm::BasicBlock* thenIf = llvm::BasicBlock::Create(*context, "then", func);
 	llvm::BasicBlock* elseIf = llvm::BasicBlock::Create(*context, "else");
 	llvm::BasicBlock* mergeIf = llvm::BasicBlock::Create(*context, "if");
-	builder->CreateCondBr(condition, thenIf, elseIf);
+	builder->CreateCondBr(condition, thenIf, elseIf); //branch between blocks
+	//insert into then
 	builder->SetInsertPoint(thenIf);
 	llvm::Value* ifEval = i->block->acceptVisitor(this);
-	if(!ifEval)
+	if(!ifEval) {
 		return ErrorV("If block could not be evaluated");
+	}
 	builder->CreateBr(mergeIf);
 	thenIf = builder->GetInsertBlock();
 	func->getBasicBlockList().push_back(elseIf);
+	//insert into else
 	builder->SetInsertPoint(elseIf);
+	llvm::Value* elseEval = nullptr;
 	builder->CreateBr(mergeIf);
 	elseIf = builder->GetInsertBlock();
 	func->getBasicBlockList().push_back(mergeIf);
+	//resolve then, else in mergeIf
 	builder->SetInsertPoint(mergeIf);
-	llvm::Value* elseEval = nullptr;
 	llvm::PHINode* phi = nullptr;
+	//evaluate phi node
 	if(isFloatType(ifEval)) {
 		phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
 		elseEval = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
