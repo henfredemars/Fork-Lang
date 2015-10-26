@@ -115,6 +115,7 @@ llvm::Value* NullaryOperator::acceptVisitor(Visitor* v) {
 
 /*==============================UnaryOperator===============================*/
 UnaryOperator::UnaryOperator(char* op, Expression* exp) {
+        printf("UO: %s\n",op);
 	this->op = dup_char(op);
 	this->exp = exp;
 }
