@@ -67,6 +67,7 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	error = false;
 	populateSwitchMap();
+	currFunc = nullptr;
 	context = &llvm::getGlobalContext();
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
@@ -287,6 +288,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 		return ErrorV("Invalid function signature");
 	if(!func->empty())
 		return ErrorV("Function is already defined");
+	currFunc = func; //store current function for access by other classes
 	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
@@ -295,19 +297,9 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
     	builder->CreateStore(&arg, alloca); // Store init value into alloca
 		namedValues[arg.getName()] = alloca; //setup map
 	} //create alloca for each argument
-	llvm::Value* retVal = f->block->acceptVisitor(this);
-	if(!retVal && (func->getReturnType()->getTypeID() == llvm::Type::VoidTyID)) {//void return nullptr
-		builder->CreateRetVoid();
-		verifyFunction(*func);
-		return nullptr;
-	}
-	if(retVal->getType()->getTypeID() == func->getReturnType()->getTypeID()) {//check typing for int/float
-		builder->CreateRet(retVal);
-		verifyFunction(*func);
-		return retVal;
-	}
-	func->eraseFromParent();//erase function
-	return ErrorV("Function deleted for erroneous return type or function body complications"); 
+	llvm::Value* retVal =  f->block->acceptVisitor(this);
+	currFunc = nullptr;
+	return retVal;
 }
 
 /*==========================StructureDeclaration============================*/
@@ -323,7 +315,31 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
-	return r->exp->acceptVisitor(this);
+	if(r->exp) {
+		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
+			if(currFunc->getReturnType()->getTypeID() == retVal->getType()->getTypeID()) {
+				builder->CreateRet(retVal);
+				verifyFunction(*currFunc);
+				return retVal;
+			}
+		}
+		else {
+			if(currFunc->getReturnType()->getTypeID() == llvm::Type::VoidTyID) {
+				builder->CreateRetVoid();
+				verifyFunction(*currFunc);
+				return nullptr;
+			}
+		}
+	}
+	else {
+		if(currFunc->getReturnType()->getTypeID() == llvm::Type::VoidTyID) {
+			builder->CreateRetVoid();
+			verifyFunction(*currFunc);
+			return nullptr;
+		}
+	}
+	currFunc->eraseFromParent();
+	return ErrorV("Function deleted for erroneous return type or function body complications");
 }
 
 /*=============================AssignStatement==============================*/
@@ -370,20 +386,24 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	elseIf = builder->GetInsertBlock();
 	func->getBasicBlockList().push_back(mergeIf);
 	builder->SetInsertPoint(mergeIf);
+	llvm::Value* elseEval = nullptr;
 	llvm::PHINode* phi = nullptr;
-	if(ifEval->getType()->getTypeID() == llvm::Type::IntegerTyID) {
+	if(ifEval->getType()->getTypeID() == llvm::Type::DoubleTyID) {
 		phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
+		elseEval = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
 	}
-	else if(ifEval->getType()->getTypeID() == llvm::Type::DoubleTyID) {
+	else if(ifEval->getType()->getTypeID() == llvm::Type::IntegerTyID) {
 		phi = builder->CreatePHI(llvm::Type::getInt64Ty(*context), 2);
+		elseEval = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
 	}
 	else if(ifEval->getType()->getTypeID() == llvm::Type::VoidTyID) {
 		phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
+		elseEval = ifEval;
 	}
 	else {
 		return ErrorV("If block could not be evaluated to an acceptable type");
 	}
 	phi->addIncoming(ifEval, thenIf);
-	phi->addIncoming(nullptr, elseIf);
+	phi->addIncoming(elseEval, elseIf);
 	return phi;
 }
