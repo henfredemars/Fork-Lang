@@ -58,6 +58,9 @@ private:
 	bool isFloatType(llvm::Value* val);
 	bool isVoidType(llvm::Value* val);
 	llvm::Value* castIntToFloat(llvm::Value* val);
+	int getValType(llvm::Value* val);
+	int getFuncRetType(llvm::Function* func);
+	int getAllocaType(llvm::AllocaInst* alloca);
 	llvm::Value* ErrorV(const char* str);
 	llvm::Function* generateFunction(FunctionDefinition* f);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
