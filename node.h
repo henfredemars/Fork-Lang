@@ -159,7 +159,7 @@ public:
 /*==================================Block===================================*/
 //Must be an Expression to be contained in other blocks, but
 //  strictly speaking, a Block is a collection of statements
-class Block : public Expression {
+class Block : public Node {
 public:
 	Block();
 	Block(std::vector<Statement*,gc_allocator<Statement*>>* statements);
