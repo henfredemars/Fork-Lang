@@ -229,7 +229,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 		return ErrorV("Invalid function signature");
 	if(!func->empty())
 		return ErrorV("Function is already defined");
-	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function begin", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
 	for (auto &arg : func->args())
