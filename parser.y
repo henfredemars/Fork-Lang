@@ -180,17 +180,13 @@ structDec : struct_keyword ident block {
 
 //A function definition is made of a var_keyword, identifier, arguments, and a function body block
 functionDec : var_keyword ident TLPAREN functionArgs TRPAREN block {
-              $$ = new FunctionDefinition($1,$2,$4,$6);
-              $$->describe();
-             }/* |
-             var_keyword ident TLPAREN functionArgs TRPAREN block {
-              $$ = new FunctionDefinition($1,$2,$4,$6);
+              $$ = new FunctionDefinition($1,$2,$4,$6,false);
               $$->describe();
              } |
-             var_keyword ident TLPAREN functionArgs TRPAREN TENDL block {
-              $$ = new FunctionDefinition($1,$2,$4,$6);
+	      var_keyword TSTAR ident TLPAREN functionArgs TRPAREN block {
+              $$ = new FunctionDefinition($1,$3,$4,$7,true);
               $$->describe();
-             }*/ ;
+             } ;
 
 //Langauge var_keywords listed here
 var_keyword : TINT {
