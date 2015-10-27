@@ -60,28 +60,61 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	std::vector<llvm::Type*> inputArgs; //set input args as float or int
 	for(size_t i = 0, end = f->args->size(); i < end; ++i) {
 		std::string type = f->args->at(i)->type->name;
+		if(f->args->at(i)->hasPointerType) {
+			if(type == "float") {
+				return (llvm::Function*) ErrorV("Not yet implemented argument float*");
+			}
+			else if(type == "int") {
+				return (llvm::Function*) ErrorV("Not yet implemented argument int*");
+			}
+			else {
+				return (llvm::Function*) ErrorV("Invalid argument pointer type for function definition");
+			}
+		}
+		else {
+			if(type == "float") {
+				inputArgs.push_back(llvm::Type::getDoubleTy(*context));
+			}
+			else if(type == "int") {
+				inputArgs.push_back(llvm::Type::getInt64Ty(*context));
+			}
+			else {
+				return (llvm::Function*) ErrorV("Invalid argument type for function definition");
+			}
+		}
+	}
+	if(f->hasPointerType) { //set function return type
 		if(type == "float") {
-			inputArgs.push_back(llvm::Type::getDoubleTy(*context));
+			return (llvm::Function*) ErrorV("Not yet implemented return type of float*");
 		}
+
 		else if(type == "int") {
-			inputArgs.push_back(llvm::Type::getInt64Ty(*context));
+			return (llvm::Function*) ErrorV("Not yet implemented return type of float*");
 		}
-		else
-			return (llvm::Function*) ErrorV("Invalid type - malformed function definition");
+		else if(type == "void") {
+			return (llvm::Function*) ErrorV("Invalid return type of void* for function definition");
+		}
+		else {
+			return (llvm::Function*) ErrorV("Invalid return pointer type for function definition");
+		}
 	}
-	if(type == "void") { //set function return type
-		funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); 
-	}
-	else if(type == "float") {
-		funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false);
-	}
+	else {
+		if(type == "float") {
+			funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false);
+		}
 
-	else if(type == "int") {
-		funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
-	}//add pointer types
-	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get()); //pass unique ptr to function
-
-	{
+		else if(type == "int") {
+			funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
+		}
+		else if(type == "void") {
+			funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); 
+		}
+		else {
+			return (llvm::Function*) ErrorV("Invalid return type for function definition");
+		}
+	}
+	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get());
+	{ //set names for func args
 	size_t i = 0;
 	for (auto &arg : func->args())
 	  arg.setName(f->args->at(i++)->ident->name);
@@ -189,10 +222,9 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(castFloatToBoolean(expr)));
-			case '*'://TODO
-			return ErrorV("Not yet specified unary operator");
+			//* operator included within referenceExpression
 			default:
-			return ErrorV("Invalid unary operator");
+			return ErrorV("Invalid unary operator found");
 		}
 	}
 	else if (isIntegerType(expr)) {
@@ -201,10 +233,8 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(expr));
-			case '*'://TODO
-			return ErrorV("Not yet specified unary operator");
 			default:
-			return ErrorV("Invalid unary operator");
+			return ErrorV("Invalid unary operator found");
 		}	
 	}
 	return ErrorV("Unexpected type found for evaluated expression applied to unary operator");
@@ -256,7 +286,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return ErrorV("Attempt to generate code for not yet implemented binary operator");
 			//assignment op separate
 			default:
-			return ErrorV("Invalid binary operator");
+			return ErrorV("Invalid binary operator found");
 		}
 	}
 	else if (isIntegerType(left)) { //both operands are ints
@@ -286,10 +316,9 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_AND:
 			return castBooleantoInt(builder->CreateAnd(left, right));
 			case BOP_DOT: //TODO
-			return ErrorV("Attempt to generate code for not yet implemented binary operator");
-			//assignment op separate
+			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			default:
-			return ErrorV("Invalid binary operator");
+			return ErrorV("Invalid binary operator found");
 		}
 	}
 	return ErrorV("Unexpected type found for evaluated operand applied to binary operator");
@@ -341,29 +370,34 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent(); //future optimizations include memgen
 	std::string type = v->type->name;
 	llvm::Value* val = nullptr;
-	if(v->exp) {
-		val = v->exp->acceptVisitor(this);
-		if(type == "int" && isFloatType(val)) {
-			return ErrorV("Attempt to return float to int type");
-		}
-		else if(type == "float" && isIntegerType(val)) {
-			val = castIntToFloat(val);
-		}
+	if(v->hasPointerType) {
+		return ErrorV("Not yet implemented variable definition for pointer type");
 	}
-	else { // add default
-		if(type == "int") {
-			val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+	else {
+		if(v->exp) {
+			val = v->exp->acceptVisitor(this);
+			if(type == "int" && isFloatType(val)) {
+				return ErrorV("Attempt to return float to int type");
+			}
+			else if(type == "float" && isIntegerType(val)) {
+				val = castIntToFloat(val);
+			}
 		}
-		else if(type == "float")
-			val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-		else
-			return ErrorV("Attempt to create variable of an incorrect type");
-	}
-	if(val) {//add to map
-		llvm::AllocaInst* alloca = createAlloca(func, val->getType(), v->ident->name);
-		namedValues.insert(std::make_pair(v->ident->name, alloca));
-  		builder->CreateStore(val, alloca);
-  		return v->ident->acceptVisitor(this);
+		else { // add default
+			if(type == "int") {
+				val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+			}
+			else if(type == "float")
+				val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+			else
+				return ErrorV("Attempt to create variable of an incorrect type");
+		}
+		if(val) {//add to map
+			llvm::AllocaInst* alloca = createAlloca(func, val->getType(), v->ident->name);
+			namedValues.insert(std::make_pair(v->ident->name, alloca));
+	  		builder->CreateStore(val, alloca);
+	  		return v->ident->acceptVisitor(this);
+		}
 	}
 	return ErrorV("Unable to generate value for variable");
 }
@@ -446,7 +480,7 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	ReferenceExpression* left = (ReferenceExpression*)a;
+	ReferenceExpression* left = a->target;
 	if(left->offsetExpression) {
 		return ErrorV("Unimplemented change of dereferenced pointer value");
 	}
@@ -532,6 +566,6 @@ llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 	if(!r->offsetExpression) {
 		return r->ident->acceptVisitor(this);
 	}
-	return ErrorV("Unimplemented - visitReferenceExpression");
+	return ErrorV("Unimplemented usage of * or [] on reference expression");
 }
 

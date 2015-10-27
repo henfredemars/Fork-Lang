@@ -196,10 +196,10 @@ public:
 	Keyword* type;
 	Identifier* ident;
 	Expression* exp;
+	bool hasPointerType;
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
-	bool hasPointerType;
 };
 
 /*===========================StructureDefinition============================*/
@@ -221,7 +221,7 @@ public:
 	Block* block;
 	bool hasPointerType;
 	FunctionDefinition(Keyword* type, Identifier* ident, std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
-	 Block* block, bool hasPointerType);
+	Block* block, bool hasPointerType);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
@@ -284,11 +284,11 @@ public:
 class SymbolTable : public gc {
 public:
 	SymbolTable();
-        void insert(const char* ident,IdentType type);
+	void insert(const char* ident,IdentType type);
 	bool check(const char* ident,IdentType type);
-        bool check(const char* ident);
+	bool check(const char* ident);
 	void push();
-        void pop();
+	void pop();
 private:
 	std::vector<std::map<std::string,IdentType>> frames;
 };
@@ -297,8 +297,8 @@ private:
 //Assignable l-expressions
 class ReferenceExpression : public Expression {
 public:
-        Expression* offsetExpression;
-        Identifier* ident;
+	Expression* offsetExpression;
+	Identifier* ident;
 	bool assignsPointerDirectly() const;
     ReferenceExpression(Identifier* ident, Expression* offsetExpression);
     virtual void describe() const;

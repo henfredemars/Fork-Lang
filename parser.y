@@ -184,7 +184,7 @@ functionDec : var_keyword ident TLPAREN functionArgs TRPAREN block {
               $$->describe();
              } |
 	      var_keyword TSTAR ident TLPAREN functionArgs TRPAREN block {
-              $$ = new FunctionDefinition($1,$3,$4,$7,true);
+              $$ = new FunctionDefinition($1,$3,$5,$7,true);
               $$->describe();
              } ;
 
