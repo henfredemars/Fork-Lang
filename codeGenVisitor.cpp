@@ -100,7 +100,6 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	error = false;
 	populateSwitchMap();
-	currFunc = nullptr;
 	context = &llvm::getGlobalContext();
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
@@ -388,8 +387,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	if(!func->empty()) {
 		return ErrorV("Function is already defined");
 	}
-	currFunc = func; //store current function for access by other classes
-	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function begin", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
 	for (auto &arg : func->args()) {
@@ -398,7 +396,6 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 		namedValues[arg.getName()] = alloca; //setup map
 	} //create alloca for each argument
 	llvm::Value* retVal =  f->block->acceptVisitor(this);
-	currFunc = nullptr;
 	return retVal;
 }
 
@@ -415,30 +412,30 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
+	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	if(r->exp) {
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
-			if(getFuncRetType(currFunc) == getValType(retVal)) {
+			if(getFuncRetType(func) == getValType(retVal)) {
 				builder->CreateRet(retVal);
-				verifyFunction(*currFunc);
+				verifyFunction(*func);
 				return retVal;
 			}
 		}
 		else {
-			if(getFuncRetType(currFunc) == llvm::Type::VoidTyID) {
+			if(getFuncRetType(func) == llvm::Type::VoidTyID) {
 				builder->CreateRetVoid();
-				verifyFunction(*currFunc);
+				verifyFunction(*func);
 				return nullptr;
 			}
 		}
 	}
 	else {
-		if(getFuncRetType(currFunc) == llvm::Type::VoidTyID) {
+		if(getFuncRetType(func) == llvm::Type::VoidTyID) {
 			builder->CreateRetVoid();
-			verifyFunction(*currFunc);
+			verifyFunction(*func);
 			return nullptr;
 		}
 	}
-	currFunc->eraseFromParent();
 	return ErrorV("Function deleted for erroneous return type or function body complications");
 }
 

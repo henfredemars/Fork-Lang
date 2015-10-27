@@ -50,7 +50,6 @@ class CodeGenVisitor : public Visitor {
 private:
 	bool error;
 	llvm::LLVMContext* context;
-	llvm::Function* currFunc;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
