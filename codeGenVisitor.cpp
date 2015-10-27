@@ -1,5 +1,4 @@
 #include "codeGenVisitor.h"
-#include <iostream>
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str);
