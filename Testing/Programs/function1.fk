@@ -5,3 +5,4 @@ void main() {
 	function();
 	return;
 }
+
