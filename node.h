@@ -302,7 +302,7 @@ public:
 	bool hasPointerType;
 	bool assignsPointerDirectly() const;
 	bool assignsDirectly() const;
-	ReferenceExpression(Identifier* ident, Expression* offsetExpression);
+	ReferenceExpression(Identifier* ident, Expression* offsetExpression, bool hasPointerType);
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
