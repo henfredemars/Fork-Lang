@@ -1,5 +1,4 @@
 #include "codeGenVisitor.h"
-#include <iostream>
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str);
@@ -101,7 +100,6 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	error = false;
 	populateSwitchMap();
-	currFunc = nullptr;
 	context = &llvm::getGlobalContext();
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
@@ -389,8 +387,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	if(!func->empty()) {
 		return ErrorV("Function is already defined");
 	}
-	currFunc = func; //store current function for access by other classes
-	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function start", func);
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function begin", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
 	for (auto &arg : func->args()) {
@@ -399,7 +396,6 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 		namedValues[arg.getName()] = alloca; //setup map
 	} //create alloca for each argument
 	llvm::Value* retVal =  f->block->acceptVisitor(this);
-	currFunc = nullptr;
 	return retVal;
 }
 
@@ -416,42 +412,52 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
+	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	if(r->exp) {
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
-			if(getFuncRetType(currFunc) == getValType(retVal)) {
+			if(getFuncRetType(func) == getValType(retVal)) {
 				builder->CreateRet(retVal);
-				verifyFunction(*currFunc);
+				verifyFunction(*func);
+				return retVal;
+			}
+			else if(getFuncRetType(func) == llvm::Type::DoubleTyID && isIntegerType(retVal)) {
+				builder->CreateRet(castIntToFloat(retVal));
+				verifyFunction(*func);
 				return retVal;
 			}
 		}
 		else {
-			if(getFuncRetType(currFunc) == llvm::Type::VoidTyID) {
+			if(getFuncRetType(func) == llvm::Type::VoidTyID) {
 				builder->CreateRetVoid();
-				verifyFunction(*currFunc);
+				verifyFunction(*func);
 				return nullptr;
 			}
 		}
 	}
 	else {
-		if(getFuncRetType(currFunc) == llvm::Type::VoidTyID) {
+		if(getFuncRetType(func) == llvm::Type::VoidTyID) {
 			builder->CreateRetVoid();
-			verifyFunction(*currFunc);
+			verifyFunction(*func);
 			return nullptr;
 		}
 	}
-	currFunc->eraseFromParent();
-	return ErrorV("Function deleted for erroneous return type or function body complications");
+	return ErrorV("Unable to return unevaluated or incorrect expression type from function");
 }
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	Identifier* left = (Identifier*)a->target;
+	ReferenceExpression* left = (ReferenceExpression*)a;
+	if(left->offsetExpression) {
+		return ErrorV("Unimplemented change of dereferenced pointer value");
+	}
 	llvm::Value* right = a->valxp->acceptVisitor(this);
-	if(!right)
+	if(!right) {
 		return ErrorV("Unable to evaluate right operand in assignment statement");
-	llvm::AllocaInst* var = namedValues[left->name];
-	if(!var)
+	}
+	llvm::AllocaInst* var = namedValues[left->ident->name];
+	if(!var) {
 		return ErrorV("Unable to evaluate left operand in assignment statement");
+	}
 	if((getAllocaType(var) == llvm::Type::DoubleTyID) && isIntegerType(right)) {
 		right = castIntToFloat(right);
 	}
@@ -522,7 +528,10 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 }
 
 /*===============================ReferenceExpression================================*/
-llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* i) {
+llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
+	if(!r->offsetExpression) {
+		return r->ident->acceptVisitor(this);
+	}
 	return ErrorV("Unimplemented - visitReferenceExpression");
 }
 
