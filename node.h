@@ -298,10 +298,10 @@ public:
         Expression* offsetExpression;
         Identifier* ident;
 	bool assignsPointerDirectly() const;
-        ReferenceExpression(Identifier* ident, Expression* offsetExpression);
-        virtual void describe() const;
-        virtual bool identsDeclared() const;
-        virtual llvm::Value* acceptVisitor(Visitor* v);
+    ReferenceExpression(Identifier* ident, Expression* offsetExpression);
+    virtual void describe() const;
+    virtual bool identsDeclared() const;
+    virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
 
