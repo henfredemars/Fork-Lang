@@ -420,6 +420,11 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 				verifyFunction(*func);
 				return retVal;
 			}
+			else if(getFuncRetType(func) == llvm::Type::DoubleTyID && isIntegerType(retVal)) {
+				builder->CreateRet(castIntToFloat(retVal));
+				verifyFunction(*func);
+				return retVal;
+			}
 		}
 		else {
 			if(getFuncRetType(func) == llvm::Type::VoidTyID) {
@@ -436,18 +441,23 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 			return nullptr;
 		}
 	}
-	return ErrorV("Function deleted for erroneous return type or function body complications");
+	return ErrorV("Unable to return unevaluated or incorrect expression type from function");
 }
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	Identifier* left = (Identifier*)a->target;
+	ReferenceExpression* left = (ReferenceExpression*)a;
+	if(left->offsetExpression) {
+		return ErrorV("Unimplemented change of dereferenced pointer value");
+	}
 	llvm::Value* right = a->valxp->acceptVisitor(this);
-	if(!right)
+	if(!right) {
 		return ErrorV("Unable to evaluate right operand in assignment statement");
-	llvm::AllocaInst* var = namedValues[left->name];
-	if(!var)
+	}
+	llvm::AllocaInst* var = namedValues[left->ident->name];
+	if(!var) {
 		return ErrorV("Unable to evaluate left operand in assignment statement");
+	}
 	if((getAllocaType(var) == llvm::Type::DoubleTyID) && isIntegerType(right)) {
 		right = castIntToFloat(right);
 	}
@@ -518,7 +528,10 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 }
 
 /*===============================ReferenceExpression================================*/
-llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* i) {
+llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
+	if(!r->offsetExpression) {
+		return r->ident->acceptVisitor(this);
+	}
 	return ErrorV("Unimplemented - visitReferenceExpression");
 }
 

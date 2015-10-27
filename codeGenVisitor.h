@@ -94,7 +94,7 @@ public:
 	llvm::Value* visitReturnStatement(ReturnStatement* r);
 	llvm::Value* visitAssignStatement(AssignStatement* a);
 	llvm::Value* visitIfStatement(IfStatement* i);
-        llvm::Value* visitReferenceExpression(ReferenceExpression* e);
+    llvm::Value* visitReferenceExpression(ReferenceExpression* r);
 };
 
 #endif
