@@ -79,7 +79,7 @@ public:
 class Expression : public Node {
 public:
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -96,7 +96,7 @@ public:
 	int64_t value;
 	Integer(int64_t value);
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -106,7 +106,7 @@ public:
 	double value;
 	Float(double value);
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -115,11 +115,11 @@ class Identifier : public Expression {
 public:
 	char* name;
 	Identifier(char* name);
-        bool declaredAsVar() const;
-        bool declaredAsFunc() const;
-        bool declaredAtAll() const;
+    bool declaredAsVar() const;
+	bool declaredAsFunc() const;
+	bool declaredAtAll() const;
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -129,7 +129,7 @@ public:
 	char* op;
 	NullaryOperator(char* op);
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -140,7 +140,7 @@ public:
 	Expression* exp;
 	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -152,7 +152,7 @@ public:
 	Expression* right;
 	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -165,7 +165,7 @@ public:
 	Block(std::vector<Statement*,gc_allocator<Statement*>>* statements);
 	std::vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -176,7 +176,7 @@ public:
 	std::vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe() const;
-        virtual bool identsDeclared() const;
+	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
