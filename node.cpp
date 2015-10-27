@@ -438,7 +438,7 @@ ReferenceExpression::ReferenceExpression(Identifier* ident,Expression* offsetExp
 	bool hasPointerType) {
 	this->ident = ident;
 	this->offsetExpression = offsetExpression;
-	this->hasPointerType = hasPointerType
+	this->hasPointerType = hasPointerType;
 }
 
 bool ReferenceExpression::assignsPointerDirectly() const {
