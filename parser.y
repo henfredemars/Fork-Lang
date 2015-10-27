@@ -38,7 +38,7 @@
 %token <string> TPLUS TDASH TSTAR TSLASH TLAND TDOT TSCOLON
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET
 %token <token> TLSBRACE TRSBRACE TENDL TCOMMA
-%token <token> TINT TFLOAT TVOID TSTRUCT TIF
+%token <token> TINT TFLOAT TVOID TSTRUCT TIF TSAMPER
 %token <token> TWHILE TRETURN UMINUS EMPTYFUNARGS
 
 //Types of grammar targets
@@ -61,7 +61,7 @@
 %left TEQUAL TNEQUAL TLT TLTE TGT TGTE TLAND TLOR TLNOT
 %left TPLUS TDASH
 %left TSTAR TSLASH
-%right UMINUS
+%right UMINUS TSAMPER
 %precedence TIDENTIFIER
 
 
@@ -269,7 +269,7 @@ binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH
 leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
 rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
-unaryOperatorToken : TDASH | TLNOT;
+unaryOperatorToken : TDASH | TLNOT | TSAMPR;
 
 nullaryOperatorToken : TSCOLON;
 
