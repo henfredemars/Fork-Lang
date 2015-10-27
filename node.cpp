@@ -244,16 +244,23 @@ llvm::Value* Keyword::acceptVisitor(Visitor* v) {
 }
 
 /*============================VariableDefinition============================*/
-VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Expression* exp) {
+VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Expression* exp,
+	bool isPointer) {
 	this->type = type;
 	this->ident = ident;
 	this->exp = exp;
+	this->hasPointerType = isPointer;
         sym_table.insert(ident->name,VARIABLE);
 }
 
 void VariableDefinition::describe() const {
-	printf("---Found Variable Declaration: type='%s' identifier='%s'\n",
-		type->name,ident->name);
+	if (hasPointerType) {
+		printf("---Found Variable Declaration: type='%s*' identifier='%s'\n",
+			type->name,ident->name);
+	} else {
+		printf("---Found Variable Declaration: type='%s' identifier='%s'\n",
+                        type->name,ident->name);
+	}
 }
 
 llvm::Value* VariableDefinition::acceptVisitor(Visitor* v) {
@@ -279,11 +286,12 @@ llvm::Value* StructureDefinition::acceptVisitor(Visitor* v) {
 /*============================FunctionDefinition============================*/
 FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
 	std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
-	Block* block) {
+	Block* block, bool hasPointerType) {
 	this->type = type;
 	this->ident = ident;
 	this->args = args;
 	this->block = block;
+	this->hasPointerType = hasPointerType;
         sym_table.insert(ident->name,FUNCTION);
 }
 
