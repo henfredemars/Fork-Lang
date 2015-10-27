@@ -156,13 +156,19 @@ block : leftBraceToken statements rightBraceToken { $$ = $2;
               ;
 
 //A variable declaration is made of a var_keyword, identifier, and possibly an expression
-variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr);
+variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr,false);
+                $$->describe();
+             } |
+	     var_keyword TSTAR ident { $$ = new VariableDefinition($1,$3,nullptr,true);
                 $$->describe();
              } |
 	     ident ident { $$ = new StructureDeclaration($1,$2);
                 $$->describe(); //Assume ident ident is a structure dec
              } |
-             var_keyword ident TSET exp { $$ = new VariableDefinition($1,$2,$4);
+             var_keyword ident TSET exp { $$ = new VariableDefinition($1,$2,$4,false);
+                $$->describe();
+             } |
+             var_keyword TSTAR ident TSET exp { $$ = new VariableDefinition($1,$3,$5,true);
                 $$->describe();
              } ;
 

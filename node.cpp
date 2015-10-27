@@ -256,10 +256,12 @@ llvm::Value* Keyword::acceptVisitor(Visitor* v) {
 }
 
 /*============================VariableDefinition============================*/
-VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Expression* exp) {
+VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Expression* exp,
+	bool isPointer) {
 	this->type = type;
 	this->ident = ident;
 	this->exp = exp;
+	this->isPointer = isPointer;
         sym_table.insert(ident->name,VARIABLE);
 }
 
