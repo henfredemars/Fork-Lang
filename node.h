@@ -196,9 +196,10 @@ public:
 	Keyword* type;
 	Identifier* ident;
 	Expression* exp;
-	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
+	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
+	bool hasPointerType;
 };
 
 /*===========================StructureDefinition============================*/
@@ -218,8 +219,9 @@ public:
 	Identifier* ident;
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args;
 	Block* block;
+	bool hasPointerType;
 	FunctionDefinition(Keyword* type, Identifier* ident, std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
-	 Block* block);
+	 Block* block, bool hasPointerType);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
