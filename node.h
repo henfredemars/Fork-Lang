@@ -196,9 +196,11 @@ public:
 	Keyword* type;
 	Identifier* ident;
 	Expression* exp;
-	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp);
+	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
+	bool isPointer() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
+	bool isPointer;
 };
 
 /*===========================StructureDefinition============================*/
