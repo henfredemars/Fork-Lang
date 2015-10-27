@@ -299,8 +299,9 @@ class ReferenceExpression : public Expression {
 public:
         Expression* offsetExpression;
         Identifier* ident;
-	bool assignsPointerDirectly() const;
-        ReferenceExpression(Identifier* ident, Expression* offsetExpression);
+	bool assignsDirectly() const;
+	bool hasPointerType;
+        ReferenceExpression(Identifier* ident, Expression* offsetExpression, bool hasPointerType);
         virtual void describe() const;
         virtual bool identsDeclared() const;
         virtual llvm::Value* acceptVisitor(Visitor* v);

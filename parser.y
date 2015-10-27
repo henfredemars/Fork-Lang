@@ -234,9 +234,9 @@ callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expressio
 		printf("Parser: callArgs additional argument found\n");}
               ;
 
-rexp : ident { $$ = new ReferenceExpression($1,nullptr); $$->describe(); }
-	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0)); $$->describe(); }
-	    | ident TLSBRACE exp TRSBRACE  { $$ = new ReferenceExpression($1,$3); $$->describe(); }
+rexp : ident { $$ = new ReferenceExpression($1,nullptr,false); $$->describe(); }
+	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0),true); $$->describe(); }
+	    | ident TLSBRACE exp TRSBRACE  { $$ = new ReferenceExpression($1,$3,true); $$->describe(); }
 	    ;
 
 //An identifier comes from the corresponding token string
