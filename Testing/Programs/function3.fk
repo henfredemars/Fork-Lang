@@ -8,3 +8,4 @@ void main() {
 	b = 4 + function(b);
 	return;
 }
+

@@ -4,3 +4,4 @@ void main() {
 	6 * (4 / 2);
 	return;
 }
+
