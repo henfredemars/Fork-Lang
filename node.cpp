@@ -435,14 +435,15 @@ void SymbolTable::pop() {
 
 /*===============================LeftExpression================================*/
 ReferenceExpression::ReferenceExpression(Identifier* ident,Expression* offsetExpression,
-	bool hasPointerType) {
+	bool hasPointerType, bool addressOfThis) {
 	this->ident = ident;
 	this->offsetExpression = offsetExpression;
 	this->hasPointerType = hasPointerType;
+	this->addressOfThis = addressOfThis;
 }
 
-bool ReferenceExpression::assignsPointerDirectly() const {
-	return hasPointerType && (offsetExpression == nullptr);
+bool ReferenceExpression::usesDirectValue() const {
+	return (offsetExpression == nullptr);
 }
 
 bool ReferenceExpression::identsDeclared() const {

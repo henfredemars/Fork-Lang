@@ -234,9 +234,12 @@ callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expressio
 		printf("Parser: callArgs additional argument found\n");}
               ;
 
-rexp : ident { $$ = new ReferenceExpression($1,nullptr,false); $$->describe(); }
-	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0),true); $$->describe(); }
-	    | ident TLSBRACE exp TRSBRACE  { $$ = new ReferenceExpression($1,$3,true); $$->describe(); }
+rexp : ident { $$ = new ReferenceExpression($1,nullptr,false,false); $$->describe(); }
+	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0),true,false); $$->describe(); }
+	    | TSAMPR ident { $$ = new ReferenceExpression($2,new Integer(0),false,true); $$->describe(); }
+	    | TSAMPR ident TLSBRACE exp TRSBRACE { 
+		$$ = new ReferenceExpression($2,$4,false,true); $$->describe(); }
+	    | ident TLSBRACE exp TRSBRACE  { $$ = new ReferenceExpression($1,$3,true,false); $$->describe(); }
 	    ;
 
 //An identifier comes from the corresponding token string
@@ -269,7 +272,7 @@ binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH
 leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
 rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
-unaryOperatorToken : TDASH | TLNOT | TSAMPR;
+unaryOperatorToken : TDASH | TLNOT;
 
 nullaryOperatorToken : TSCOLON;
 
