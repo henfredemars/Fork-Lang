@@ -7,6 +7,7 @@ from sys import exit
 def main():
   #Parse arguments
   parser = argparse.ArgumentParser(description='Fork toolchain command line parser...')
+  parser.add_argument('-v',action='store_true',help='Use valgrind')
   parser.add_argument('files',metavar='filename',type=str,nargs='+',help='files to process')
   regex_delete = re.compile("(^\s*//.*)|(^\s*$)")
   args = parser.parse_args()
@@ -31,8 +32,11 @@ def main():
     f_out.close()
   #Call parser on temp_files
   for file in temp_files:
-    print("Please ignore GC_INIT() uninitialized memory.")
-    os.system("valgrind --vgdb=no ./parser {}".format(file))
+    if args.v:
+      print("Please ignore GC_INIT() uninitialized memory.")
+      os.system("valgrind --vgdb=no ./parser {}".format(file))
+    else:
+      os.system("./parser {}".format(file))
   #Postprocessing
   for file in temp_files:
     os.remove(file)
