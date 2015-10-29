@@ -1,12 +1,13 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidoscope/include
-LLVM_BIN := ./llvm/build/*+Asserts/bin/llvm-config
+LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
 
 #export REQUIRES_RTTI = 1
 
 all: parser CTest
 
-parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o
-	g++ `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o `$(LLVM_BIN) --libfiles` ./gc/.libs/libgc.a -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs`
+parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o bcleanup
+	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc
+#`$(LLVM_BIN) --libfiles`
 
 parser.cpp: parser.y
 	touch parser.cpp; bison -d -o parser.cpp parser.y
@@ -41,7 +42,14 @@ CTest: .gc_built_marker
 .llvm_built_marker:
 	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-debug --enable-optimized --enable-shared --enable-targets=x86,x86_64;make;
 
+bcleanup:
+	rm -rf ./llvm/build/*.o ./llvm/build/*.lo ./llvm/build/*.a ./gc/*.o ./gc/*.lo ./gc/*.a ./gc/.libs/*.a ./gc/.libs/*.la ./gc/.libs/*.o
+
 clean:
+	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
+	rm -f parser.tab.c
+
+distclean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
 	rm -f parser.tab.c .llvm_built_marker .gc_built_marker;
 	make -C ./gc clean

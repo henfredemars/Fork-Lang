@@ -387,9 +387,13 @@ SymbolTable::SymbolTable() {
 	//Push global scope
 	const char* print_int = "print_int";
 	const char* print_float = "print_float";
+        const char* malloc_int = "malloc_int";
+	const char* malloc_float = "malloc_float";
 	this->push();
 	this->insert(print_int,FUNCTION);
 	this->insert(print_float,FUNCTION);
+	this->insert(malloc_int,FUNCTION);
+	this->insert(malloc_float,FUNCTION);
 }
 
 void SymbolTable::insert(const char* ident,IdentType type) {

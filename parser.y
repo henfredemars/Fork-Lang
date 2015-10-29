@@ -101,11 +101,19 @@ statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes
 	     rexp TSET exp {
 		$$ = new AssignStatement($1,$3);
 		if(!($1->identsDeclared())) YYERROR;
+		if($1->addressOfThis) {
+		  printf("Attempt to assign to constant address\n");
+		  YYERROR;
+		}
 		$$->describe();
 	     } |
 	     rexp TSET exp TENDL {
                 $$ = new AssignStatement($1,$3);
 		if(!($1->identsDeclared())) YYERROR;
+		if($1->addressOfThis) {
+		  printf("Attempt to assign to constant address\n");
+		  YYERROR;
+		}
                 $$->describe();
              } |
              exp TENDL {
