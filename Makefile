@@ -5,7 +5,7 @@ LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
 
 all: parser CTest
 
-parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o bcleanup
+parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o .bcleanup_marker
 	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc
 #`$(LLVM_BIN) --libfiles`
 
@@ -42,8 +42,8 @@ CTest: .gc_built_marker
 .llvm_built_marker:
 	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-debug --enable-optimized --enable-shared --enable-targets=x86,x86_64;make;
 
-bcleanup:
-	rm -rf ./llvm/build/*.o ./llvm/build/*.lo ./llvm/build/*.a ./gc/*.o ./gc/*.lo ./gc/*.a ./gc/.libs/*.a ./gc/.libs/*.la ./gc/.libs/*.o
+.bcleanup_marker:
+	touch .bcleanup_marker; rm -rf ./llvm/build/*.o ./llvm/build/*.lo ./llvm/build/*.a ./gc/*.o ./gc/*.lo ./gc/*.a ./gc/.libs/*.a ./gc/.libs/*.la ./gc/.libs/*.o
 
 clean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
@@ -51,7 +51,7 @@ clean:
 
 distclean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
-	rm -f parser.tab.c .llvm_built_marker .gc_built_marker;
+	rm -f parser.tab.c .llvm_built_marker .gc_built_marker .bcleanup_marker;
 	make -C ./gc clean
 	make -C ./Bench/C++ clean
 	rm -rf ./llvm/build

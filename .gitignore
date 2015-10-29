@@ -34,6 +34,7 @@ parser.cpp
 lex.cpp
 .gc_built_marker
 .llvm_built_marker
+.bcleanup_marker
 gc/.deps
 gc/Makefile
 gc/config.log
