@@ -8,6 +8,7 @@
 
 //Never garble writing to the output stream
 std::mutex print_mutex;
+std::mutex malloc_mutex;
 
 extern "C" void print_int(int64_t i) {
   print_mutex.lock();
@@ -21,13 +22,25 @@ extern "C" void print_float(double d) {
   print_mutex.unlock();
 }
 
-extern "C" float reconcilef(double d_old,double d_new,int partx, int ofn) {
+extern "C" float reconcile_float(double d_old,double d_new,int partx, int ofn) {
   return d_new; //Update always wins for now
 }
 
-extern "C" int64_t reconcilei(int64_t i_old,int64_t i_new,int partx, int ofn) {
+extern "C" int64_t reconcile_int(int64_t i_old,int64_t i_new,int partx, int ofn) {
   return i_new; //Update always wins for now
 }
 
-//Just call the system malloc/free implementation
+extern "C" float* malloc_float(int64_t s) {
+  malloc_mutex.lock();
+  float* allocd = (float*)malloc(s);
+  malloc_mutex.unlock();
+  return allocd;
+}
+
+extern "C" int64_t* malloc_int(int64_t s) {
+  malloc_mutex.lock();
+  int64_t* allocd = (int64_t*)malloc(s);
+  malloc_mutex.unlock();
+  return allocd;
+}
 
