@@ -93,7 +93,11 @@ statements : statement {
              } ;
 
 //A statement is a variable declaration, function declaration, empty, or an expression-statement
-statement : variableDec TSCOLON TENDL {$$=$1;printf("Parser: variableDec becomes statement\n");} 
+statement : variableDec TSCOLON TENDL {
+	       if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
+	       $1->insertIntoSymbolTable();
+	       $$=$1; printf("Parser: variableDec becomes statement\n");
+	     } 
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
              | structDec TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
 	     | if_statement TENDL {$$=$1;}
@@ -227,11 +231,13 @@ functionArgs : /* empty */ {
 		  printf("Parser: functionArgs, empty in function definition\n");} %prec EMPTYFUNARGS
                 | variableDec { $$ = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
                   $$->push_back((VariableDefinition*)$1); 
+		  $1->insertIntoSymbolTable();
 		  printf("Parser: functionArgs, one argument in function definition\n");} 
                   //VariableDec always a VariableDefinition*, although defined as a statement
                 | functionArgs TCOMMA variableDec { $1->push_back((VariableDefinition*)$3);
-		  printf("Parser: additional function argument found in function definition\n");}
-                ;
+		  $3->insertIntoSymbolTable();
+		  printf("Parser: additional function argument found in function definition\n");
+		} ;
 
 //Arguments of a particular function call at the call site
 callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expression*>>(); 

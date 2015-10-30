@@ -5,7 +5,7 @@
 #define __NODE_H
 
 //#define GC_DEBUG 1
-#define YYDEBUG 1
+//#define YYDEBUG 1
 
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/ADT/STLExtras.h"
@@ -87,6 +87,9 @@ public:
 class Statement : public Node {
 public:
 	virtual void describe() const;
+	virtual bool alreadyExistsInSymbolTable() const { return false; } //No RTTI needed in parser
+	virtual bool alreadyExistsInLocalSymbolTable() const { return false; }
+	virtual void insertIntoSymbolTable() { return; }
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
 
@@ -198,6 +201,9 @@ public:
 	Expression* exp;
 	bool hasPointerType;
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
+	virtual void insertIntoSymbolTable();
+	virtual bool alreadyExistsInSymbolTable() const;
+	virtual bool alreadyExistsInLocalSymbolTable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };
@@ -285,8 +291,10 @@ class SymbolTable : public gc {
 public:
 	SymbolTable();
 	void insert(const char* ident,IdentType type);
-	bool check(const char* ident,IdentType type);
-	bool check(const char* ident);
+	bool check(const char* ident,IdentType type) const;
+	bool check(const char* ident) const;
+	bool checkLocal(const char* ident,IdentType type) const;
+	bool checkLocal(const char* ident) const;
 	void push();
 	void pop();
 private:
