@@ -570,6 +570,11 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	else if(getAllocaType(var)->getTypeID() != getValType(right)->getTypeID()) {
 		return ErrorV("Unable to assign evaluated right operand of bad type to left operand");
 	}
+	else if(getPointedType(var)) {
+		if(getPointedType(var)->getTypeID() != getPointedType(right)->getTypeID()) {
+			return ErrorV("Unable to assign evaluated right operand of bad pointer type to left operand");
+		}
+	}
 	builder->CreateStore(right, var); //store value for right in var
 	return right; //allows chained assignment X = ( Y = 4 + 1);
 }
