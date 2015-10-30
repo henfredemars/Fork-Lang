@@ -250,7 +250,18 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->ident = ident;
 	this->exp = exp;
 	this->hasPointerType = isPointer;
+}
+
+void VariableDefinition::insertIntoSymbolTable() {
         sym_table.insert(ident->name,VARIABLE);
+}
+
+bool VariableDefinition::alreadyExistsInSymbolTable() const {
+	return sym_table.check(ident->name,VARIABLE);
+}
+
+bool VariableDefinition::alreadyExistsInLocalSymbolTable() const {
+	return sym_table.checkLocal(ident->name,VARIABLE);
 }
 
 void VariableDefinition::describe() const {
@@ -404,9 +415,10 @@ void SymbolTable::insert(const char* ident,IdentType type) {
         lframe.insert(std::make_pair(std::string(ident),type));
 }
 
-bool SymbolTable::check(const char* ident) {
-        assert(frames.size());
-        for (int i = 0; i<frames.size();i++) {
+bool SymbolTable::check(const char* ident) const {
+	int frame_size = frames.size();
+        assert(frame_size);
+        for (int i = 0; i<frame_size;i++) {
           if (frames.at(i).count(std::string(ident))) {
 	    return true;
           }
@@ -414,9 +426,19 @@ bool SymbolTable::check(const char* ident) {
         return false;
 }
 
-bool SymbolTable::check(const char* ident,IdentType type) {
-        assert(frames.size());
-        for (int i = 0; i<frames.size();i++) {
+bool SymbolTable::checkLocal(const char* ident) const {
+	int frame_size = frames.size();
+	assert(frame_size);
+	if (frames.at(frame_size-1).count(std::string(ident))) {
+	  return true;
+	}
+	return false;
+}
+
+bool SymbolTable::check(const char* ident,IdentType type) const {
+	int frame_size = frames.size();
+        assert(frame_size);
+        for (int i = 0; i<frame_size;i++) {
           if (frames.at(i).count(std::string(ident))) {
             if (frames.at(i).at(std::string(ident))==type) {
               return true;
@@ -425,6 +447,18 @@ bool SymbolTable::check(const char* ident,IdentType type) {
         }
         return false;
 }
+
+bool SymbolTable::checkLocal(const char* ident,IdentType type) const {
+	int frame_size = frames.size();
+        assert(frame_size);
+        if (frames.at(frame_size-1).count(std::string(ident))) {
+          if (frames.at(frame_size-1).at(std::string(ident))==type) {
+            return true;
+          }
+        }
+        return false;
+}
+
 
 void SymbolTable::push() {
 	//Push new scope
@@ -437,7 +471,7 @@ void SymbolTable::pop() {
 	frames.pop_back();
 }
 
-/*===============================LeftExpression================================*/
+/*===============================ReferenceExpression================================*/
 ReferenceExpression::ReferenceExpression(Identifier* ident,Expression* offsetExpression,
 	bool hasPointerType, bool addressOfThis) {
 	this->ident = ident;

@@ -4,7 +4,7 @@
 #include "gc/include/gc.h"
 
 extern int yyparse();
-extern int yydebug;
+//extern int yydebug;
 extern FILE* yyin;
 
 Block* ast_root = NULL;
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 	llvm::InitializeNativeTarget();
 	llvm::InitializeNativeTargetAsmPrinter();
 	llvm::InitializeNativeTargetAsmParser();
-	yydebug = 1;
+	//yydebug = 1;
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");
 		if(yyin) {
@@ -22,9 +22,13 @@ int main(int argc, char **argv) {
 			fclose(yyin);
 			yyin = NULL;
 			CodeGenVisitor c("LLVM Compiler Backend");
-			ast_root->acceptVisitor(&c);
-			c.printModule();
-			c.executeMain();
+			if (ast_root) {
+			  ast_root->acceptVisitor(&c);
+			  c.printModule();
+			  c.executeMain();
+			} else {
+			  printf("Parser closed without returning an AST\n");
+			}
 		}
 		else {
 			std::cout << "Error, failed to open file: " << argv[1] << "\n";
