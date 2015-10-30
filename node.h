@@ -293,9 +293,9 @@ public:
 	Keyword* type;
 	Identifier* ident;
 	bool hasPointerType;
-	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* statements;
+	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args;
 	ExternStatement(Keyword* type,Identifier* ident,
-	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* statements, bool hasPointerType);
+	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };

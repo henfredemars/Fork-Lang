@@ -66,7 +66,7 @@ private:
 	llvm::Type* getFuncRetType(llvm::Function* func);
 	llvm::Type* getAllocaType(llvm::AllocaInst* alloca);
 	llvm::Value* ErrorV(const char* str);
-	llvm::Function* generateFunction(FunctionDefinition* f);
+	llvm::Function* generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
 	CodeGenVisitor(std::string name);
@@ -93,7 +93,7 @@ public:
 	llvm::Value* visitReturnStatement(ReturnStatement* r);
 	llvm::Value* visitAssignStatement(AssignStatement* a);
 	llvm::Value* visitIfStatement(IfStatement* i);
-        llvm::Value* visitReferenceExpression(ReferenceExpression* r);
+    llvm::Value* visitReferenceExpression(ReferenceExpression* r);
 	llvm::Value* visitExternStatement(ExternStatement* e);
 };
 

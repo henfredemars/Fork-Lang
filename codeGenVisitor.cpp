@@ -55,14 +55,13 @@ llvm::Type* CodeGenVisitor::getAllocaType(llvm::AllocaInst* alloca) {
 	return alloca->getAllocatedType();
 }
 
-llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
-	std::string type = f->type->name;
+llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments) {
 	llvm::FunctionType* funcType = nullptr;
 	llvm::Function* func = nullptr;
 	std::vector<llvm::Type*> inputArgs; //set input args as float or int
-	for(size_t i = 0, end = f->args->size(); i < end; ++i) {
-		std::string type = f->args->at(i)->type->name;
-		if(f->args->at(i)->hasPointerType) {
+	for(size_t i = 0, end = arguments->size(); i < end; ++i) {
+		std::string type = arguments->at(i)->type->name;
+		if(arguments->at(i)->hasPointerType) {
 			if(type == "float") {
 				inputArgs.push_back(llvm::Type::getDoublePtrTy(*context));
 			}
@@ -85,15 +84,15 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 			}
 		}
 	}
-	if(f->hasPointerType) { //set function return type
-		if(type == "float") {
+	if(hasPointerType) { //set function return type
+		if(returnType == "float") {
 			funcType = llvm::FunctionType::get(llvm::Type::getDoublePtrTy(*context), inputArgs, false);
 		}
 
-		else if(type == "int") {
+		else if(returnType == "int") {
 			funcType = llvm::FunctionType::get(llvm::Type::getInt64PtrTy(*context), inputArgs, false);
 		}
-		else if(type == "void") {
+		else if(returnType == "void") {
 			return (llvm::Function*) ErrorV("Invalid return type of void* for function definition");
 		}
 		else {
@@ -101,25 +100,25 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 		}
 	}
 	else {
-		if(type == "float") {
+		if(returnType == "float") {
 			funcType = llvm::FunctionType::get(builder->getDoubleTy(), inputArgs, false);
 		}
 
-		else if(type == "int") {
+		else if(returnType == "int") {
 			funcType = llvm::FunctionType::get(builder->getInt64Ty(), inputArgs, false);
 		}
-		else if(type == "void") {
+		else if(returnType == "void") {
 			funcType = llvm::FunctionType::get(builder->getVoidTy(), inputArgs, false); 
 		}
 		else {
 			return (llvm::Function*) ErrorV("Invalid return type for function definition");
 		}
 	}
-	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, f->ident->name, theModule.get());
+	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, theModule.get());
 	{ //set names for func args
 	size_t i = 0;
 	for (auto &arg : func->args())
-	  arg.setName(f->args->at(i++)->ident->name);
+	  arg.setName(arguments->at(i++)->ident->name);
 	}
 	return func;
 }
@@ -468,7 +467,7 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	llvm::Function* func = theModule->getFunction(f->ident->name);
 	if(!func) {
-		func = generateFunction(f); //create function object with type|ident|args
+		func = generateFunction(f->hasPointerType, f->type->name, f->ident->name, f->args); //create function object with type|ident|args
 	}
 	if(!func) {//generateFunction returned nullptr
 		return ErrorV("Invalid function signature");
@@ -690,7 +689,14 @@ llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 
 /*===============================ExternStatement================================*/
 llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
-	return ErrorV("Unimplemented ExternStatement");
+	llvm::Function* func = theModule->getFunction(e->ident->name);
+	if(!func) {
+		func = generateFunction(e->hasPointerType, e->type->name, e->ident->name, e->args); //create function object with type|ident|args
+	}
+	if(!func) {
+		return ErrorV("Invalid function signature");
+	}
+	return nullptr;
 }
 
 
