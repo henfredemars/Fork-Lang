@@ -1,4 +1,5 @@
 #include "codeGenVisitor.h"
+#include <iostream>
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str);
@@ -23,7 +24,7 @@ void CodeGenVisitor::populateSwitchMap() {
 }
 
 llvm::Value* CodeGenVisitor::castIntToFloat(llvm::Value* val) {
-	return builder->CreateSIToFP(val, llvm::Type::getDoubleTy(*context));
+	return builder->CreateSIToFP(val, builder->getDoubleTy());
 }
 
 llvm::Value* CodeGenVisitor::castIntToBoolean(llvm::Value* val) {
@@ -35,11 +36,15 @@ llvm::Value* CodeGenVisitor::castFloatToBoolean(llvm::Value* val) {
 }
 
 llvm::Value* CodeGenVisitor::castBooleantoInt(llvm::Value* val) {
-	return builder->CreateZExtOrBitCast(val, llvm::Type::getInt64Ty(*context));
+	return builder->CreateZExtOrBitCast(val, builder->getInt64Ty());
 }
 
 llvm::Type* CodeGenVisitor::getValType(llvm::Value* val) {
 	return val->getType();
+}
+
+llvm::Type* CodeGenVisitor::getPointedType(llvm::Value* val) {
+	return val->getType()->getContainedType(0);
 }
 
 llvm::Type* CodeGenVisitor::getFuncRetType(llvm::Function* func) {
@@ -59,10 +64,10 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 		std::string type = f->args->at(i)->type->name;
 		if(f->args->at(i)->hasPointerType) {
 			if(type == "float") {
-				return (llvm::Function*) ErrorV("Not yet implemented argument float*");
+				inputArgs.push_back(llvm::Type::getDoublePtrTy(*context));
 			}
 			else if(type == "int") {
-				return (llvm::Function*) ErrorV("Not yet implemented argument int*");
+				inputArgs.push_back(llvm::Type::getInt64PtrTy(*context));
 			}
 			else {
 				return (llvm::Function*) ErrorV("Invalid argument pointer type for function definition");
@@ -70,10 +75,10 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 		}
 		else {
 			if(type == "float") {
-				inputArgs.push_back(llvm::Type::getDoubleTy(*context));
+				inputArgs.push_back(builder->getDoubleTy());
 			}
 			else if(type == "int") {
-				inputArgs.push_back(llvm::Type::getInt64Ty(*context));
+				inputArgs.push_back(builder->getInt64Ty());
 			}
 			else {
 				return (llvm::Function*) ErrorV("Invalid argument type for function definition");
@@ -82,11 +87,11 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	}
 	if(f->hasPointerType) { //set function return type
 		if(type == "float") {
-			return (llvm::Function*) ErrorV("Not yet implemented return type of float*");
+			funcType = llvm::FunctionType::get(llvm::Type::getDoublePtrTy(*context), inputArgs, false);
 		}
 
 		else if(type == "int") {
-			return (llvm::Function*) ErrorV("Not yet implemented return type of float*");
+			funcType = llvm::FunctionType::get(llvm::Type::getInt64PtrTy(*context), inputArgs, false);
 		}
 		else if(type == "void") {
 			return (llvm::Function*) ErrorV("Invalid return type of void* for function definition");
@@ -97,14 +102,14 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 	}
 	else {
 		if(type == "float") {
-			funcType = llvm::FunctionType::get(llvm::Type::getDoubleTy(*context), inputArgs, false);
+			funcType = llvm::FunctionType::get(builder->getDoubleTy(), inputArgs, false);
 		}
 
 		else if(type == "int") {
-			funcType = llvm::FunctionType::get(llvm::Type::getInt64Ty(*context), inputArgs, false);
+			funcType = llvm::FunctionType::get(builder->getInt64Ty(), inputArgs, false);
 		}
 		else if(type == "void") {
-			funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(*context), inputArgs, false); 
+			funcType = llvm::FunctionType::get(builder->getVoidTy(), inputArgs, false); 
 		}
 		else {
 			return (llvm::Function*) ErrorV("Invalid return type for function definition");
@@ -122,9 +127,20 @@ llvm::Function* CodeGenVisitor::generateFunction(FunctionDefinition* f) {
 llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name) {
 	llvm::IRBuilder<true, llvm::NoFolder> tempBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
 	if(type->isDoubleTy()) {
-		return tempBuilder.CreateAlloca(llvm::Type::getDoubleTy(*context), 0, name);
+		return tempBuilder.CreateAlloca(builder->getDoubleTy(), 0, name);
 	}
-	return tempBuilder.CreateAlloca(llvm::Type::getInt64Ty(*context), 0, name);
+	else if(type->isIntegerTy()) {
+		return tempBuilder.CreateAlloca(builder->getInt64Ty(), 0, name);
+	}
+	else if(type->isPointerTy()) {
+		if(type->getContainedType(0)->isIntegerTy()) {
+			return tempBuilder.CreateAlloca(llvm::Type::getInt64PtrTy(*context), 0, name);
+		}
+		else if(type->getContainedType(0)->isDoubleTy()) {
+			return tempBuilder.CreateAlloca(llvm::Type::getDoublePtrTy(*context), 0, name);
+		}
+	}
+	return nullptr;
 }
 
 CodeGenVisitor::CodeGenVisitor(std::string name) {
@@ -256,7 +272,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	if(getValType(left)->isIntegerTy() && getValType(right)->isDoubleTy()) {
 		left = castIntToFloat(left);
 	}
-	else if(getValType(right)->isDoubleTy() && getValType(right)->isIntegerTy()) {
+	else if(getValType(left)->isDoubleTy() && getValType(right)->isIntegerTy()) {
 		right = castIntToFloat(right);
 	}
 	if(getValType(left)->isDoubleTy()) { //both operands are floats
@@ -374,33 +390,57 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	std::string type = v->type->name;
 	llvm::Value* val = nullptr;
 	if(v->hasPointerType) {
-		return ErrorV("Not yet implemented variable definition for pointer type");
+		if(v->exp) { //custom value
+			val = v->exp->acceptVisitor(this);
+			if(!getValType(val)->isPointerTy()) {
+				return ErrorV("Attempt to assign non-pointer type to pointer type");
+			}
+		}
+		else { //default value		
+			if(type == "int") {
+				val = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context)); //null address
+			}
+			else if(type == "float") {
+				val = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
+			}
+			else {
+				return ErrorV("Attempt to create variable of incorrect pointer type");
+			}
+		}
 	}
 	else {
 		if(v->exp) {
 			val = v->exp->acceptVisitor(this);
+			if(getValType(val)->isPointerTy()) {
+				return ErrorV("Attempt to assign pointer type to non-pointer type");
+			}
 			if(type == "int" && getValType(val)->isDoubleTy()) {
-				return ErrorV("Attempt to return float to int type");
+				return ErrorV("Attempt to assign float to int type");
 			}
 			else if(type == "float" && getValType(val)->isIntegerTy()) {
 				val = castIntToFloat(val);
 			}
 		}
-		else { // add default
+		else { // default value
 			if(type == "int") {
 				val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
 			}
-			else if(type == "float")
+			else if(type == "float") {
 				val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-			else
+			}
+			else {
 				return ErrorV("Attempt to create variable of an incorrect type");
+			}
 		}
-		if(val) {//add to map
-			llvm::AllocaInst* alloca = createAlloca(func, getValType(val), v->ident->name);
-			namedValues.insert(std::make_pair(v->ident->name, alloca));
-	  		builder->CreateStore(val, alloca);
-	  		return v->ident->acceptVisitor(this);
+	}
+	if(val) {//add to map
+		llvm::AllocaInst* alloca = createAlloca(func, val->getType(), v->ident->name);
+		if(!alloca) {
+			return ErrorV("Unable to generate stack variable with type or function parameters");
 		}
+		namedValues.insert(std::make_pair(v->ident->name, alloca));
+  		builder->CreateStore(val, alloca);
+  		return v->ident->acceptVisitor(this);
 	}
 	return ErrorV("Unable to generate value for variable");
 }
@@ -484,8 +524,8 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	ReferenceExpression* left = a->target;
-	if(left->offsetExpression) {
-		return ErrorV("Unimplemented change of dereferenced pointer value");
+	if(left->addressOfThis) {
+		return ErrorV("Unable to assign memory address of left operand");
 	}
 	llvm::Value* right = a->valxp->acceptVisitor(this);
 	if(!right) {
@@ -494,6 +534,23 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	llvm::AllocaInst* var = namedValues[left->ident->name];
 	if(!var) {
 		return ErrorV("Unable to evaluate left operand in assignment statement");
+	}
+	if(left->hasPointerType) {
+		llvm::Value* offset = left->offsetExpression->acceptVisitor(this);
+		//dereference left
+		auto varPtr = builder->CreateLoad(var)->getPointerOperand();
+		if(getValType(right) != getPointedType(varPtr)->getContainedType(0)) {
+			if(getValType(right)->isIntegerTy() && getPointedType(varPtr)->getContainedType(0)->isDoubleTy()) {
+				right = castIntToFloat(right);
+			}
+			else {
+				return ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+			}
+		}
+		llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateGEP(varPtr, offset));
+		//store value for right in dereferenced left
+		builder->CreateStore(right, derefVar);
+		return right;	
 	}
 	if(getAllocaType(var)->isDoubleTy() && getValType(right)->isIntegerTy()) {
 		right = castIntToFloat(right);
@@ -556,6 +613,16 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 		phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
 		elseEval = ifEval;
 	}
+	else if(getValType(ifEval)->isPointerTy()) {
+		if(getPointedType(ifEval)->isIntegerTy()) {
+			phi = builder->CreatePHI(llvm::Type::getInt64PtrTy(*context), 2);
+			elseEval = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context));
+		}
+		if(getPointedType(ifEval)->isDoubleTy()) {
+			phi = builder->CreatePHI(llvm::Type::getDoublePtrTy(*context), 2); 
+ 			elseEval = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
+		}
+	}
 	else {
 		return ErrorV("If block could not be evaluated to an acceptable type");
 	}
@@ -566,9 +633,26 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 
 /*===============================ReferenceExpression================================*/
 llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
-	if(!r->hasPointerType) {
+	if(!r)
+		return ErrorV("Unable to evaluate reference Expression");
+	llvm::AllocaInst* var = namedValues[r->ident->name];
+	if(!var) {
+		return ErrorV("Unable to evaluate variable");
+	}
+	if(!r->hasPointerType) { 
+		if(r->addressOfThis) {
+			return builder->CreateLoad(builder->CreateConstGEP1_64(builder->CreateLoad(var)->getPointerOperand(), 0))->getPointerOperand();
+		}
 		return r->ident->acceptVisitor(this);
 	}
-	return ErrorV("Unimplemented usage of * or [] on reference expression");
+	//dereference using [] or *, assume already of GEP type
+	llvm::Value* offset = r->offsetExpression->acceptVisitor(this);
+	if(!getValType(offset)->isIntegerTy()) {
+		return ErrorV("Unable to access relative address as a non-integer type");
+	}
+	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
+	if(r->addressOfThis) { 
+		return builder->CreateLoad(builder->CreateGEP(varPtr, offset))->getPointerOperand();
+	}
+	return builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
 }
-
