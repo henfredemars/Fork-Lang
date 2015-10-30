@@ -395,11 +395,11 @@ llvm::Value* IfStatement::acceptVisitor(Visitor* v) {
 
 /*===============================ExternStatement================================*/
 ExternStatement::ExternStatement(Keyword* type,Identifier* ident,
-          std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* statements, bool hasPointerType)
+          std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType)
 {
 	this->type = type;
 	this->ident = ident;
-	this->statements = statements;
+	this->args = args;
 	this->hasPointerType = hasPointerType;
 }
 
@@ -416,7 +416,7 @@ SymbolTable::SymbolTable() {
 	//Push global scope
 	const char* print_int = "print_int";
 	const char* print_float = "print_float";
-        const char* malloc_int = "malloc_int";
+	const char* malloc_int = "malloc_int";
 	const char* malloc_float = "malloc_float";
 	this->push();
 	this->insert(print_int,FUNCTION);
