@@ -386,6 +386,10 @@ llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 
 /*============================VariableDefinition============================*/
 llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
+	std::string name = v->ident->name;
+	if(namedValues.count(name) != 0) {
+		return ErrorV("Attempt to redefine variable");
+	}
 	llvm::Function* func = builder->GetInsertBlock()->getParent(); //future optimizations include memgen
 	std::string type = v->type->name;
 	llvm::Value* val = nullptr;
