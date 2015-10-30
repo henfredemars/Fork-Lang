@@ -38,7 +38,7 @@
 %token <string> TPLUS TDASH TSTAR TSLASH TLAND TDOT TSCOLON
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET
 %token <token> TLSBRACE TRSBRACE TENDL TCOMMA
-%token <token> TINT TFLOAT TVOID TSTRUCT TIF
+%token <token> TINT TFLOAT TVOID TSTRUCT TIF TEXTERN
 %token <token> TWHILE TRETURN UMINUS EMPTYFUNARGS
 
 //Types of grammar targets
@@ -46,7 +46,7 @@
 %type <exp> exp numeric
 %type <rexp> rexp
 %type <statement> statement variableDec functionDec structDec
-%type <statement> if_statement
+%type <statement> if_statement externStatement
 %type <block> block statements program
 %type <keyword> var_keyword struct_keyword
 %type <variableVec> functionArgs
@@ -101,6 +101,7 @@ statement : variableDec TSCOLON TENDL {
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
              | structDec TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
 	     | if_statement TENDL {$$=$1;}
+	     | externStatement TENDL {$$=$1;printf("Parser: externStatement becomes statement\n");}
 	     |
 	     rexp TSET exp {
 		$$ = new AssignStatement($1,$3);
@@ -148,6 +149,16 @@ statement : variableDec TSCOLON TENDL {
                 $$ = new ReturnStatement($2);
                 $$->describe();
              } ;
+
+//Declarations of external functions (standard library for example)
+externStatement : TEXTERN var_keyword TSTAR ident TLPAREN functionArgs TRPAREN TSCOLON {
+		  $$ = new ExternStatement($2,$4,$6,true);
+		  $$->describe();
+		} |
+		TEXTERN var_keyword ident TLPAREN functionArgs TRPAREN TSCOLON {
+                  $$ = new ExternStatement($2,$3,$5,false);
+                  $$->describe();
+                };
 
 if_statement : TIF TLPAREN exp TRPAREN block {
 		$$ = new IfStatement($3,$5);
