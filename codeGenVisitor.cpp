@@ -505,6 +505,11 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	if(r->exp) {
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
 			if(getFuncRetType(func)->getTypeID() == getValType(retVal)->getTypeID()) {
+				if(getFuncRetType(func)->isPointerTy()) {
+					if(getFuncRetType(func)->getContainedType(0)->getTypeID() != getPointedType(retVal)->getTypeID()) {
+						return ErrorV("Unable to return bad pointer type from function");
+					}
+				}
 				builder->CreateRet(retVal);
 				verifyFunction(*func);
 				return retVal;
@@ -514,23 +519,32 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 				verifyFunction(*func);
 				return retVal;
 			}
+			else {
+				return ErrorV("Unable to return bad type from function");
+			}
 		}
 		else {
 			if(getFuncRetType(func)->isVoidTy()) {
-				builder->CreateRetVoid();
+				retVal = builder->CreateRetVoid();
 				verifyFunction(*func);
-				return nullptr;
+				return retVal;
+			}
+			else {
+				return ErrorV("Unable to return bad void type from function");
 			}
 		}
 	}
 	else {
 		if(getFuncRetType(func)->isVoidTy()) {
-			builder->CreateRetVoid();
+			llvm::Value* retVal = builder->CreateRetVoid();
 			verifyFunction(*func);
-			return nullptr;
+			return retVal;
+		}
+		else {
+			return ErrorV("Unable to return bad void type from function");
 		}
 	}
-	return ErrorV("Unable to return unevaluated or incorrect expression type from function");
+	return ErrorV("Unable to return unevaluated expression from function");
 }
 
 /*=============================AssignStatement==============================*/
