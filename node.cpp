@@ -393,6 +393,24 @@ llvm::Value* IfStatement::acceptVisitor(Visitor* v) {
 	return v->visitIfStatement(this);
 }
 
+/*===============================ExternStatement================================*/
+ExternStatement::ExternStatement(Keyword* type,Identifier* ident,
+          std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* statements, bool hasPointerType)
+{
+	this->type = type;
+	this->ident = ident;
+	this->statements = statements;
+	this->hasPointerType = hasPointerType;
+}
+
+void ExternStatement::describe() const {
+	printf("---Found extern: %s\n",ident->name);
+}
+
+llvm::Value* ExternStatement::acceptVisitor(Visitor* v) {
+        return v->visitExternStatement(this);
+}
+
 /*===============================SymbolTable================================*/
 SymbolTable::SymbolTable() {
 	//Push global scope

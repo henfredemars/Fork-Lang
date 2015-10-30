@@ -55,6 +55,7 @@ class Visitor;
 class CodeGenVisitor;
 class SymbolTable;
 class ReferenceExpression;
+class ExternStatement;
 
 //Symbol Table
 enum IdentType {
@@ -118,7 +119,7 @@ class Identifier : public Expression {
 public:
 	char* name;
 	Identifier(char* name);
-    bool declaredAsVar() const;
+        bool declaredAsVar() const;
 	bool declaredAsFunc() const;
 	bool declaredAtAll() const;
 	virtual void describe() const;
@@ -281,6 +282,20 @@ public:
 	Expression* exp;
 	Block* block;
 	IfStatement(Expression* exp,Block* block);
+	virtual void describe() const;
+	virtual llvm::Value* acceptVisitor(Visitor* v);
+};
+
+/*===============================ExternStatement================================*/
+//Extern declaration of a function in the standard library
+class ExternStatement : public Statement {
+public:
+	Keyword* type;
+	Identifier* ident;
+	bool hasPointerType;
+	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* statements;
+	ExternStatement(Keyword* type,Identifier* ident,
+	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* statements, bool hasPointerType);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(Visitor* v);
 };

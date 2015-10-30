@@ -687,3 +687,10 @@ llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 	}
 	return builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
 }
+
+/*===============================ExternStatement================================*/
+llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
+	return ErrorV("Unimplemented ExternStatement");
+}
+
+
