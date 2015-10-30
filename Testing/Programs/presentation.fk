@@ -1,8 +1,0 @@
-float function() {
-	return 6.4 * 3.5;
-}
-void main() {
-	function();
-	return;
-}
-
