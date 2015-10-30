@@ -399,6 +399,14 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 			if(!getValType(val)->isPointerTy()) {
 				return ErrorV("Attempt to assign non-pointer type to pointer type");
 			}
+			else {
+				if(getPointedType(val)->isIntegerTy() && type != "int") {
+					return ErrorV("Attempt to assign incorrect pointer type to int*");
+				}
+				else if(getPointedType(val)->isDoubleTy() && type != "float") {
+					return ErrorV("Attempt to assign incorrect pointer type to float*");
+				}
+			}
 		}
 		else { //default value		
 			if(type == "int") {
