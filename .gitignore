@@ -44,3 +44,4 @@ gc/libtool
 gc/cord/.deps
 parser
 Bench/C++/CTest
+Testing/Programs/practice.fk
