@@ -11,6 +11,7 @@
     extern int yydebug;
     extern int yylineno;
     extern SymbolTable sym_table;
+    extern TypeTable user_type_table;
     extern Node* ast_root;
     void yyerror(const char *s) { 
 	printf("Error in parser near line %d: %s\n", yylineno, s);
@@ -33,11 +34,11 @@
 }
 
 //Tokens
-%token <string> TIDENTIFIER TINTLIT TFLOATLIT TEQUAL 
+%token <string> TIDENTIFIER TINTLIT TFLOATLIT TEQUAL TNEW 
 %token <string> TNEQUAL TLT TLTE TGT TGTE TLOR TLNOT TSAMPR
 %token <string> TPLUS TDASH TSTAR TSLASH TLAND TDOT TSCOLON
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET
-%token <token> TLSBRACE TRSBRACE TENDL TCOMMA
+%token <token> TLSBRACE TRSBRACE TENDL TCOMMA 
 %token <token> TINT TFLOAT TVOID TSTRUCT TIF TEXTERN
 %token <token> TWHILE TRETURN UMINUS EMPTYFUNARGS
 
@@ -185,7 +186,9 @@ variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr,fals
 	     var_keyword TSTAR ident { $$ = new VariableDefinition($1,$3,nullptr,true);
                 $$->describe();
              } |
-	     ident ident { $$ = new StructureDeclaration($1,$2);
+	     ident ident { StructureDeclaration* sd = new StructureDeclaration($1,$2);
+		if (!(sd->validate())) YYERROR;
+		$$ = sd; //Place on stack
                 $$->describe(); //Assume ident ident is a structure dec
              } |
              var_keyword ident TSET exp { $$ = new VariableDefinition($1,$2,$4,false);
@@ -196,8 +199,10 @@ variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr,fals
              } ;
 
 //Definition of a structure
-structDec : struct_keyword ident block {
-	      $$ = new StructureDefinition($2,$3);
+structDec : struct_keyword ident block TSCOLON {
+	      StructureDefinition* sd = new StructureDefinition($2,$3);
+	      if (!(sd->validate())) YYERROR;
+	      $$ = sd; //Place on stack
 	      $$->describe();
 	    } ;
 
@@ -259,12 +264,14 @@ callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expressio
 		printf("Parser: callArgs additional argument found\n");}
               ;
 
-rexp : ident { $$ = new ReferenceExpression($1,nullptr,false,false); $$->describe(); }
-	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0),true,false); $$->describe(); }
-	    | TSAMPR ident { $$ = new ReferenceExpression($2,new Integer(0),false,true); $$->describe(); }
+rexp : ident { $$ = new ReferenceExpression($1,nullptr,false,false,false); $$->describe(); }
+	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0),true,false,false); $$->describe(); }
+	    | TSAMPR ident { $$ = new ReferenceExpression($2,new Integer(0),false,true,false); $$->describe(); }
 	    | TSAMPR ident TLSBRACE exp TRSBRACE { 
-		$$ = new ReferenceExpression($2,$4,false,true); $$->describe(); }
-	    | ident TLSBRACE exp TRSBRACE  { $$ = new ReferenceExpression($1,$3,true,false); $$->describe(); }
+		$$ = new ReferenceExpression($2,$4,false,true,false); $$->describe(); }
+	    | ident TLSBRACE rexp TRSBRACE  { $$ = new ReferenceExpression($1,$3,true,false,false); $$->describe(); }
+	    | ident TDOT ident { $$ = new ReferenceExpression($1,new ReferenceExpression($3,nullptr,false,false,false),
+		false,false,true); }
 	    ;
 
 //An identifier comes from the corresponding token string
@@ -291,13 +298,12 @@ numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
             ;
 
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH 
-			| TPLUS | TSTAR | TSLASH | TDOT |
-			TLOR | TLAND;
+			| TPLUS | TSTAR | TSLASH | TLOR | TLAND;
 
 leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
 rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
-unaryOperatorToken : TDASH | TLNOT;
+unaryOperatorToken : TDASH | TLNOT | TNEW;
 
 nullaryOperatorToken : TSCOLON;
 

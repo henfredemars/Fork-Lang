@@ -5,17 +5,17 @@ LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
 
 all: parser CTest
 
-parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o main.o parser.hpp lib.o .bcleanup_marker
-	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o lib.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc
+parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o statementVisitor.o main.o parser.hpp lib.o .bcleanup_marker
+	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o statementVisitor.o lib.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc
 #`$(LLVM_BIN) --libfiles`
 
-parser.cpp: parser.y
+parser.cpp: parser.y node.h
 	touch parser.cpp; bison -d -o parser.cpp parser.y
 
 parser.o: parser.cpp
 	g++ `$(LLVM_BIN) --cxxflags` -c parser.cpp -o parser.o $(LLVM_INC)
 
-lex.cpp: lex.l
+lex.cpp: lex.l node.h
 	touch lex.cpp; lex -o lex.cpp lex.l
 
 lex.o: lex.cpp
@@ -27,10 +27,13 @@ lib.o: lib.cpp
 node.o: node.h node.cpp
 	g++ `$(LLVM_BIN) --cxxflags` -c node.cpp -o node.o $(LLVM_INC)
 
-codeGenVisitor.o: codeGenVisitor.h codeGenVisitor.cpp
+codeGenVisitor.o: codeGenVisitor.h codeGenVisitor.cpp node.h
 	g++ `$(LLVM_BIN) --cxxflags` -c codeGenVisitor.cpp -o codeGenVisitor.o $(LLVM_INC)
 
-main.o: main.cpp
+statementVisitor.o: statementVisitor.h statementVisitor.cpp node.h
+	g++ `$(LLVM_BIN) --cxxflags` -c statementVisitor.cpp -o statementVisitor.o $(LLVM_INC)
+
+main.o: main.cpp node.h
 	g++ `$(LLVM_BIN) --cxxflags` -c main.cpp -o main.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 .gc_built_marker:
