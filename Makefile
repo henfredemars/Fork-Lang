@@ -1,5 +1,6 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidoscope/include
 LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
+OPT_LVL := -O0
 
 #export REQUIRES_RTTI = 1
 
@@ -13,28 +14,28 @@ parser.cpp: parser.y node.h
 	touch parser.cpp; bison -d -o parser.cpp parser.y
 
 parser.o: parser.cpp
-	g++ `$(LLVM_BIN) --cxxflags` -c parser.cpp -o parser.o $(LLVM_INC)
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c parser.cpp -o parser.o $(LLVM_INC)
 
 lex.cpp: lex.l node.h
 	touch lex.cpp; lex -o lex.cpp lex.l
 
 lex.o: lex.cpp
-	g++ `$(LLVM_BIN) --cxxflags` -c lex.cpp -o lex.o $(LLVM_INC)
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c lex.cpp -o lex.o $(LLVM_INC)
 
 lib.o: lib.cpp
-	g++ `$(LLVM_BIN) --cxxflags` -shared -c lib.cpp -o lib.o
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -shared -c lib.cpp -o lib.o
 
 node.o: node.h node.cpp
-	g++ `$(LLVM_BIN) --cxxflags` -c node.cpp -o node.o $(LLVM_INC)
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c node.cpp -o node.o $(LLVM_INC)
 
 codeGenVisitor.o: codeGenVisitor.h codeGenVisitor.cpp node.h
-	g++ `$(LLVM_BIN) --cxxflags` -c codeGenVisitor.cpp -o codeGenVisitor.o $(LLVM_INC)
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c codeGenVisitor.cpp -o codeGenVisitor.o $(LLVM_INC)
 
 statementVisitor.o: statementVisitor.h statementVisitor.cpp node.h
-	g++ `$(LLVM_BIN) --cxxflags` -c statementVisitor.cpp -o statementVisitor.o $(LLVM_INC)
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c statementVisitor.cpp -o statementVisitor.o $(LLVM_INC)
 
 main.o: main.cpp node.h
-	g++ `$(LLVM_BIN) --cxxflags` -c main.cpp -o main.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c main.cpp -o main.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 .gc_built_marker:
 	touch .gc_built_marker;cd ./gc;./configure --prefix=/usr/local/ --enable-threads=posix --enable-parallel-mark --enable-cplusplus --enable-gc-assertions;make
