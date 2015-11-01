@@ -62,6 +62,7 @@ extern "C" int yywrap() { return 1; }
 "void"                    return TOKEN(TVOID);
 "struct"                  return TOKEN(TSTRUCT);
 "extern"		  return TOKEN(TEXTERN);
+"else"			  return TOKEN(TELSE);
 "new"			  SAVE_TOKEN; return TNEW;
 [0-9]*\.[0-9]+            SAVE_TOKEN; return TFLOATLIT;
 [0-9]+                    SAVE_TOKEN; return TINTLIT;
