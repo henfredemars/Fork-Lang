@@ -21,7 +21,7 @@ enum Binops {
 	BOP_DOT
 };
 
-class Visitor {
+class ASTVisitor : public gc {
 public:
 	virtual llvm::Value* visitNode(Node* n) =0;
 	virtual llvm::Value* visitExpression(Expression* e) =0;
@@ -47,7 +47,7 @@ public:
 	virtual llvm::Value* visitExternStatement(ExternStatement* e) =0;
 };
 
-class CodeGenVisitor : public Visitor {
+class CodeGenVisitor : public ASTVisitor {
 private:
 	bool error;
 	llvm::LLVMContext* context;
