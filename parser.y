@@ -38,7 +38,7 @@
 %token <string> TNEQUAL TLT TLTE TGT TGTE TLOR TLNOT TSAMPR
 %token <string> TPLUS TDASH TSTAR TSLASH TLAND TDOT TSCOLON
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET
-%token <token> TLSBRACE TRSBRACE TENDL TCOMMA 
+%token <token> TLSBRACE TRSBRACE TENDL TCOMMA TELSE
 %token <token> TINT TFLOAT TVOID TSTRUCT TIF TEXTERN
 %token <token> TWHILE TRETURN UMINUS EMPTYFUNARGS
 
@@ -162,9 +162,14 @@ externStatement : TEXTERN var_keyword TSTAR ident TLPAREN functionArgs TRPAREN T
                 };
 
 if_statement : TIF TLPAREN exp TRPAREN block {
-		$$ = new IfStatement($3,$5);
+		$$ = new IfStatement($3,$5,nullptr);
 		$$->describe();
-	       } ;
+	       } |
+		TIF TLPAREN exp TRPAREN block TELSE block {
+                $$ = new IfStatement($3,$5,$7);
+                $$->describe();
+               } ;
+
 
 block : leftBraceToken statements rightBraceToken { $$ = $2;
 		printf("Parser: statements become block\n"); } |

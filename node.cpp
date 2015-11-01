@@ -412,9 +412,10 @@ llvm::Value* AssignStatement::acceptVisitor(ASTVisitor* v) {
 }
 
 /*===============================IfStatement================================*/
-IfStatement::IfStatement(Expression* exp,Block* block) {
+IfStatement::IfStatement(Expression* exp,Block* block,Block* else_block) {
 	this->exp = exp;
 	this->block = block;
+	this->else_block = else_block;
 }
 
 void IfStatement::describe() const {

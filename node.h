@@ -292,7 +292,8 @@ class IfStatement : public Statement {
 public:
 	Expression* exp;
 	Block* block;
-	IfStatement(Expression* exp,Block* block);
+	Block* else_block;
+	IfStatement(Expression* exp,Block* block,Block* else_block);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
