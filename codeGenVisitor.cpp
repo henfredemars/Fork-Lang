@@ -214,7 +214,7 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 	if(*n->op == ';') {
 		//commit action //TODO
-		return nullptr;
+		return llvm::ReturnInst::Create(*context);
 	}
 	return ErrorV("Invalid nullary operator");
 }
@@ -503,7 +503,17 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	if(r->exp) {
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
-			if(getFuncRetType(func)->getTypeID() == getValType(retVal)->getTypeID()) {
+			if(getValType(retVal)->isVoidTy() && getFuncRetType(func)->isVoidTy()) {
+				if(getFuncRetType(func)->isVoidTy()) {
+					retVal = builder->CreateRetVoid();
+					verifyFunction(*func);
+					return retVal;
+				}
+				else {
+					return ErrorV("Unable to return bad void type from function");
+				}
+			}
+			else if(getFuncRetType(func)->getTypeID() == getValType(retVal)->getTypeID()) {
 				if(getFuncRetType(func)->isPointerTy()) {
 					if(getFuncRetType(func)->getContainedType(0)->getTypeID() != getPointedType(retVal)->getTypeID()) {
 						return ErrorV("Unable to return bad pointer type from function");
@@ -520,16 +530,6 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 			}
 			else {
 				return ErrorV("Unable to return bad type from function");
-			}
-		}
-		else {
-			if(getFuncRetType(func)->isVoidTy()) {
-				retVal = builder->CreateRetVoid();
-				verifyFunction(*func);
-				return retVal;
-			}
-			else {
-				return ErrorV("Unable to return bad void type from function");
 			}
 		}
 	}
@@ -583,8 +583,8 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	else if(getAllocaType(var)->getTypeID() != getValType(right)->getTypeID()) {
 		return ErrorV("Unable to assign evaluated right operand of bad type to left operand");
 	}
-	else if(getPointedType(var)) {
-		if(getPointedType(var)->getTypeID() != getPointedType(right)->getTypeID()) {
+	else if(getAllocaType(var)->isPointerTy()) {
+		if(getAllocaType(var)->getContainedType(0)->getTypeID() != getPointedType(right)->getTypeID()) {
 			return ErrorV("Unable to assign evaluated right operand of bad pointer type to left operand");
 		}
 	}
@@ -624,41 +624,44 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	//insert into else
 	builder->SetInsertPoint(elseIf);
 	llvm::Value* elseEval = nullptr;
+	if(i->else_block) {
+		elseEval = i->else_block->acceptVisitor(this);
+	}
 	builder->CreateBr(mergeIf);
 	elseIf = builder->GetInsertBlock();
 	func->getBasicBlockList().push_back(mergeIf);
 	//resolve then, else in mergeIf
 	builder->SetInsertPoint(mergeIf);
-	llvm::PHINode* phi = nullptr;
+	//llvm::PHINode* phi = nullptr;
 	//evaluate phi node
-	if(getValType(ifEval)->isDoubleTy()) {
-		phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
-		elseEval = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-	}
-	else if(getValType(ifEval)->isIntegerTy()) {
-		phi = builder->CreatePHI(llvm::Type::getInt64Ty(*context), 2);
-		elseEval = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
-	}
-	else if(getValType(ifEval)->isVoidTy()) {
-		phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
-		elseEval = ifEval;
-	}
-	else if(getValType(ifEval)->isPointerTy()) {
-		if(getPointedType(ifEval)->isIntegerTy()) {
-			phi = builder->CreatePHI(llvm::Type::getInt64PtrTy(*context), 2);
-			elseEval = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context));
-		}
-		if(getPointedType(ifEval)->isDoubleTy()) {
-			phi = builder->CreatePHI(llvm::Type::getDoublePtrTy(*context), 2); 
- 			elseEval = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
-		}
-	}
-	else {
-		return ErrorV("If block could not be evaluated to an acceptable type");
-	}
-	phi->addIncoming(ifEval, thenIf);
-	phi->addIncoming(elseEval, elseIf);
-	return phi;
+	//if(getValType(ifEval)->isDoubleTy()) {
+	//	phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
+	//	elseEval = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+	//}
+	//else if(getValType(ifEval)->isIntegerTy()) {
+	//	phi = builder->CreatePHI(llvm::Type::getInt64Ty(*context), 2);
+	//	elseEval = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+	//}
+	//else if(getValType(ifEval)->isVoidTy()) {
+	//	phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
+	//	elseEval = ifEval;
+	//}
+	//else if(getValType(ifEval)->isPointerTy()) {
+	//	if(getPointedType(ifEval)->isIntegerTy()) {
+	//		phi = builder->CreatePHI(llvm::Type::getInt64PtrTy(*context), 2);
+	//		elseEval = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context));
+	//	}
+	//	if(getPointedType(ifEval)->isDoubleTy()) {
+	//		phi = builder->CreatePHI(llvm::Type::getDoublePtrTy(*context), 2); 
+ 	//		elseEval = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
+	//	}
+	//}
+	//else {
+	//	return ErrorV("If block could not be evaluated to an acceptable type");
+	//}
+	//phi->addIncoming(ifEval, thenIf);
+	//phi->addIncoming(elseEval, elseIf);
+	return llvm::ReturnInst::Create(*context);
 }
 
 /*===============================ReferenceExpression================================*/
