@@ -150,6 +150,8 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
 	theModule->setDataLayout(forkJIT->getTargetMachine().createDataLayout());
 	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
+	voidValue = llvm::ReturnInst::Create(*context);
+	floatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
 }
 
 void CodeGenVisitor::executeMain() {
@@ -160,12 +162,12 @@ void CodeGenVisitor::executeMain() {
 		void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
 	    func();
 	    printf("main() returns: void\n");
+	    delete voidValue;
 	    forkJIT->removeModule(handle);
 	}
 	else {
 		printf("Main execution halted due to errors\n");
 	}
-
 }
 
 void CodeGenVisitor::printModule() {
@@ -214,7 +216,7 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 	if(*n->op == ';') {
 		//commit action //TODO
-		return llvm::ReturnInst::Create(*context);
+		return voidValue;
 	}
 	return ErrorV("Invalid nullary operator");
 }
@@ -345,8 +347,10 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 /*==================================Block===================================*/
 llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 	llvm::Value* lastVisited = nullptr;
-	for(size_t i = 0, end = b->statements->size(); i != end; ++i) {
-		lastVisited = b->statements->at(i)->acceptVisitor(this);
+	if(b->statements) {
+		for(size_t i = 0, end = b->statements->size(); i != end; ++i) {
+			lastVisited = b->statements->at(i)->acceptVisitor(this);
+		}
 	}
 	return lastVisited;
 }
@@ -409,10 +413,10 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 		}
 		else { //default value		
 			if(type == "int") {
-				val = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context)); //null address
+				val = intNullPointer; //null address
 			}
 			else if(type == "float") {
-				val = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
+				val = floatNullPointer;
 			}
 			else {
 				return ErrorV("Attempt to create variable of incorrect pointer type");
@@ -614,9 +618,9 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	builder->CreateCondBr(condition, thenIf, elseIf); //branch between blocks
 	//insert into then
 	builder->SetInsertPoint(thenIf);
-	llvm::Value* ifEval = i->block->acceptVisitor(this);
-	if(!ifEval) {
-		return ErrorV("If block could not be evaluated");
+	llvm::Value* ifEval = nullptr;
+	if(i->block) {
+		ifEval = i->block->acceptVisitor(this);
 	}
 	builder->CreateBr(mergeIf);
 	thenIf = builder->GetInsertBlock();
@@ -659,9 +663,9 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	//else {
 	//	return ErrorV("If block could not be evaluated to an acceptable type");
 	//}
-	//phi->addIncoming(ifEval, thenIf);
-	//phi->addIncoming(elseEval, elseIf);
-	return llvm::ReturnInst::Create(*context);
+	//phi->addIncoming(thenValue, thenIf);
+	//phi->addIncoming(elseValue, elseIf);
+	return voidValue;
 }
 
 /*===============================ReferenceExpression================================*/
