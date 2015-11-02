@@ -637,9 +637,14 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	builder->SetInsertPoint(elseIf);
 	llvm::Value* elseEval = nullptr;
 	if(i->else_block) {
+		justReturned = false;
 		elseEval = i->else_block->acceptVisitor(this);
 	}
-	builder->CreateBr(mergeIf);
+	if (!justReturned) { //Ugly again, but visitor pattern limits
+	  builder->CreateBr(mergeIf);
+	} else {
+	  justReturned = false;
+	}
 	elseIf = builder->GetInsertBlock();
 	func->getBasicBlockList().push_back(mergeIf);
 	//resolve then, else in mergeIf
