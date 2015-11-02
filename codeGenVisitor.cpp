@@ -153,6 +153,7 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
 	voidValue = llvm::ReturnInst::Create(*context);
 	floatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
+	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64Ty(*context));
 }
 
 void CodeGenVisitor::executeMain() {
@@ -710,7 +711,7 @@ llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
 	if(!func) {
 		return ErrorV("Invalid function signature");
 	}
-	return nullptr;
+	return voidValue;
 }
 
 
