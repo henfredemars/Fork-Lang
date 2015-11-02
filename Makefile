@@ -1,6 +1,6 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidoscope/include
 LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
-OPT_LVL := -O0
+OPT_LVL := -O0 -Wall -Wno-unused
 
 #export REQUIRES_RTTI = 1
 
@@ -44,7 +44,7 @@ CTest: .gc_built_marker
 	make -C ./Bench/C++
 
 .llvm_built_marker:
-	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-debug --enable-optimized --enable-shared --enable-targets=x86,x86_64;make;
+	touch .llvm_built_marker;mkdir ./llvm/build;cd ./llvm/build;../configure --enable-jit --enable-optimized --enable-shared --enable-targets=x86,x86_64;make;
 
 .bcleanup_marker:
 	touch .bcleanup_marker; rm -rf ./llvm/build/*.o ./llvm/build/*.lo ./llvm/build/*.a ./gc/*.o ./gc/*.lo ./gc/*.a ./gc/.libs/*.a ./gc/.libs/*.la ./gc/.libs/*.o

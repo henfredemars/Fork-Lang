@@ -144,6 +144,7 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	error = false;
+	justReturned = false;
 	populateSwitchMap();
 	context = &llvm::getGlobalContext();
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
@@ -505,6 +506,7 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 /*=============================ReturnStatement==============================*/
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
+	justReturned = true;
 	if(r->exp) {
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
 			if(getValType(retVal)->isVoidTy() && getFuncRetType(func)->isVoidTy()) {
@@ -620,9 +622,14 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	builder->SetInsertPoint(thenIf);
 	llvm::Value* ifEval = nullptr;
 	if(i->block) {
+		justReturned = false;
 		ifEval = i->block->acceptVisitor(this);
 	}
-	builder->CreateBr(mergeIf);
+        if (!justReturned) { //Ugly but at least it's ugly just here
+	  builder->CreateBr(mergeIf);
+        } else {
+	  justReturned = false;
+	}
 	thenIf = builder->GetInsertBlock();
 	func->getBasicBlockList().push_back(elseIf);
 	//insert into else
