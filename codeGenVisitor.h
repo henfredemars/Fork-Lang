@@ -65,6 +65,8 @@ private:
 	llvm::Value* castIntToBoolean(llvm::Value* val);
 	llvm::Value* castFloatToBoolean(llvm::Value* val);
 	llvm::Value* castBooleantoInt(llvm::Value* val);
+	llvm::Value* castPointerToInt(llvm::Value* val);
+	llvm::Value* castIntToPointer(llvm::Value* val);
 	llvm::Type* getValType(llvm::Value* val);
 	llvm::Type* getPointedType(llvm::Value* val);
 	llvm::Type* getFuncRetType(llvm::Function* func);
