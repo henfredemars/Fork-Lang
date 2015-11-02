@@ -44,6 +44,20 @@ extern "C" int64_t* malloc_int(int64_t s) {
   return allocd;
 }
 
+extern "C" float* calloc_float(int64_t s) {
+  malloc_mutex.lock();
+  float* allocd = (float*)calloc(s);
+  malloc_mutex.unlock();
+  return allocd;
+}
+
+extern "C" int64_t* calloc_int(int64_t s) {
+  malloc_mutex.lock();
+  int64_t* allocd = (int64_t*)calloc(s);
+  malloc_mutex.unlock();
+  return allocd;
+}
+
 extern "C" void free_float(float* f) {
   malloc_mutex.lock();
   free(f);
