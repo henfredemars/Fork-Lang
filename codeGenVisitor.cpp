@@ -226,7 +226,7 @@ llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
 	if(!expr) {
-		return ErrorV("Could not evaluate expression applied to unary operator");
+		expr = intNullPointer;
 	}
 	if(getValType(expr)->isVoidTy()) {
 		return ErrorV("Unary operator applied to void type");
@@ -262,8 +262,11 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	llvm::Value* left = b->left->acceptVisitor(this);
  	llvm::Value* right = b->right->acceptVisitor(this);
-	if (!left || !right) {
-		return ErrorV("Could not evaluate an operand applied to binary operator");
+	if (!left) {
+		left = intNullPointer;
+	}
+	if(!right) {
+		right = intNullPointer;
 	}
 	if(getValType(left)->isVoidTy() || getValType(right)->isVoidTy()) {
 		return ErrorV("Binary operator applied to void type");
@@ -368,6 +371,22 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
 		llvm::Value* argument = f->args->at(i)->acceptVisitor(this);
 		llvm::Argument* funcArgument = funcArgs++;
+		if(!argument) { //input NULL to functions
+			if(getValType(funcArgument)->isPointerTy()) {
+				if(getPointedType(funcArgument)->isIntegerTy()) {
+					argument = intNullPointer;
+				}
+				else if(getPointedType(funcArgument)->isDoubleTy()) {
+					argument = floatNullPointer;
+				}
+				else {
+					return ErrorV("Attempt to input pointer type to function argument of incorrect type");
+				}
+			}
+			else {
+				return ErrorV("Attempt to input NULL to function argument of incorrect type");
+			}
+		}
 		if(getValType(argument) != getValType(funcArgument)) {
 			if(getValType(argument)->isIntegerTy() && getValType(funcArgument)->isDoubleTy()) {
 				argument = castIntToFloat(argument);
@@ -403,7 +422,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	if(v->hasPointerType) {
 		if(v->exp) { //custom value
 			val = v->exp->acceptVisitor(this);
-			if(!val) {
+			if(!val) { //Assign Variable to NULL
 				if(type == "int") {
 					val = intNullPointer;
 				}
@@ -430,7 +449,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 		}
 		else { //default value		
 			if(type == "int") {
-				val = intNullPointer; //null address
+				val = intNullPointer;
 			}
 			else if(type == "float") {
 				val = floatNullPointer;
@@ -526,7 +545,7 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	justReturned = true;
-	if(r->exp) {
+	if(r->exp) { 
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
 			if(getValType(retVal)->isVoidTy() && getFuncRetType(func)->isVoidTy()) {
 				if(getFuncRetType(func)->isVoidTy()) {
@@ -568,7 +587,22 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 			return ErrorV("Unable to return bad void type from function");
 		}
 	}
-	return ErrorV("Unable to return unevaluated expression from function");
+	//return NULL
+	if(getFuncRetType(func)->isPointerTy()) {
+		llvm::Value* retVal = nullptr;
+		if(getFuncRetType(func)->getContainedType(0)->isIntegerTy()) {
+			retVal = builder->CreateRet(intNullPointer);
+		}
+		else if(getFuncRetType(func)->getContainedType(0)->isDoubleTy()) {
+			retVal = builder->CreateRet(floatNullPointer);
+		}
+		else {
+			return ErrorV("Unable to return bad pointer type from function");
+		}
+		verifyFunction(*func);
+		return retVal;
+	}
+	return ErrorV("Unable to return incorrect NULL type from function");
 }
 
 /*=============================AssignStatement==============================*/
@@ -583,7 +617,7 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	}
 	llvm::Value* right = a->valxp->acceptVisitor(this);
 	if(!right) {
-		if(getAllocaType(var)->isPointerTy()) {
+		if(getAllocaType(var)->isPointerTy()) { //assign to NULL
 			if(getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
 				right = floatNullPointer;
 			}
@@ -635,8 +669,11 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 /*===============================IfStatement================================*/
 llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	llvm::Value* condition = i->exp->acceptVisitor(this);
-	if(!condition) {
-		return ErrorV("Unable to evaluate if statement condition");
+	if(!condition) { //input NULL
+		condition = builder->CreatePtrToInt(intNullPointer, builder->getInt64Ty());
+	}
+	else if(getValType(condition)->isPointerTy()) { //input address
+		condition = builder->CreatePtrToInt(condition, builder->getInt64Ty());
 	}
 	if(getValType(condition)->isDoubleTy()) {
 		condition = castFloatToBoolean(condition);
