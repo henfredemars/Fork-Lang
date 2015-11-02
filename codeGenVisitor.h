@@ -17,8 +17,7 @@ enum Binops {
 	BOP_NEQ,
 	BOP_EQ,
 	BOP_OR,
-	BOP_AND,
-	BOP_DOT
+	BOP_AND
 };
 
 class ASTVisitor : public gc {
