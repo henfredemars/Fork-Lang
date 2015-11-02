@@ -20,7 +20,6 @@ void CodeGenVisitor::populateSwitchMap() {
 	switchMap.insert(std::make_pair("==", BOP_EQ));
 	switchMap.insert(std::make_pair("||", BOP_OR));
 	switchMap.insert(std::make_pair("&&", BOP_AND));
-	switchMap.insert(std::make_pair(".", BOP_DOT));
 }
 
 llvm::Value* CodeGenVisitor::castIntToFloat(llvm::Value* val) {
@@ -304,7 +303,6 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return castBooleantoInt(builder->CreateOr(castFloatToBoolean(left), castFloatToBoolean(right)));
 			case BOP_AND:
 			return castBooleantoInt(builder->CreateAnd(castFloatToBoolean(left), castFloatToBoolean(right)));
-			case BOP_DOT: //TODO
 			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			//assignment op separate
 			default:
@@ -337,7 +335,6 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return castBooleantoInt(builder->CreateOr(left, right));
 			case BOP_AND:
 			return castBooleantoInt(builder->CreateAnd(left, right));
-			case BOP_DOT: //TODO
 			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			default:
 			return ErrorV("Invalid binary operator found");
