@@ -45,6 +45,7 @@ public:
 	virtual llvm::Value* visitIfStatement(IfStatement* i) =0;
 	virtual llvm::Value* visitReferenceExpression(ReferenceExpression* e) =0;
 	virtual llvm::Value* visitExternStatement(ExternStatement* e) =0;
+	virtual llvm::Value* visitNullLiteral(NullLiteral* n) =0;
 };
 
 class CodeGenVisitor : public ASTVisitor {
@@ -97,8 +98,9 @@ public:
 	llvm::Value* visitReturnStatement(ReturnStatement* r);
 	llvm::Value* visitAssignStatement(AssignStatement* a);
 	llvm::Value* visitIfStatement(IfStatement* i);
-    llvm::Value* visitReferenceExpression(ReferenceExpression* r);
+	llvm::Value* visitReferenceExpression(ReferenceExpression* r);
 	llvm::Value* visitExternStatement(ExternStatement* e);
+	llvm::Value* visitNullLiteral(NullLiteral* n);
 };
 
 #endif

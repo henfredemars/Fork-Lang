@@ -240,6 +240,21 @@ llvm::Value* FunctionCall::acceptVisitor(ASTVisitor* v) {
 	return v->visitFunctionCall(this);
 }
 
+/*=================================NullLiteral==================================*/
+NullLiteral::NullLiteral() { }
+
+void NullLiteral::describe() const {
+	printf("---Found Null\n");
+}
+
+bool NullLiteral::identsDeclared() const {
+	return true;
+}
+
+llvm::Value* NullLiteral::acceptVisitor(ASTVisitor* v) {
+	return v->visitNullLiteral(this);
+}
+
 /*=================================Keyword==================================*/
 Keyword::Keyword(char* name) {
 	this->name = dup_char(name);

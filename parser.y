@@ -37,7 +37,7 @@
 %token <string> TIDENTIFIER TINTLIT TFLOATLIT TEQUAL TNEW 
 %token <string> TNEQUAL TLT TLTE TGT TGTE TLOR TLNOT TSAMPR
 %token <string> TPLUS TDASH TSTAR TSLASH TLAND TDOT TSCOLON
-%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET
+%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TSET TNULL
 %token <token> TLSBRACE TRSBRACE TENDL TCOMMA TELSE
 %token <token> TINT TFLOAT TVOID TSTRUCT TIF TEXTERN
 %token <token> TWHILE TRETURN UMINUS EMPTYFUNARGS
@@ -292,6 +292,7 @@ exp : exp binaryOperatorToken exp { if (!($1->identsDeclared()) || !($3->identsD
             | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); } %prec TCOMMIT
             | numeric { $$ = $1; }
             | rexp { if (!($1->identsDeclared())) YYERROR; $$ = $1; }
+	    | TNULL { $$ = new NullLiteral(); }
             | TLPAREN exp TRPAREN { $$ = $2; } //Consume pairs of parentheses
             | exp TEQUAL exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR; 
 		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }

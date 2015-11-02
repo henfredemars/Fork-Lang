@@ -383,6 +383,11 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	return builder->CreateCall(func, argVector);
 }
 
+/*===============================FunctionCall===============================*/
+llvm::Value* CodeGenVisitor::visitNullLiteral(NullLiteral* n) {
+	return nullptr;
+}
+
 /*=================================Keyword==================================*/
 llvm::Value* CodeGenVisitor::visitKeyword(Keyword* k) {
 	return ErrorV("Attempt to generate code for dangling keyword");
