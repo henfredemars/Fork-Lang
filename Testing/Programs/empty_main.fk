@@ -1,8 +1,6 @@
-//This is a comment
 
 void main() {
-	//comment
-	return;
-	//comment
+    return;
 }
+
 
