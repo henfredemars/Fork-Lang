@@ -42,6 +42,7 @@ class UnaryOperator;
 class BinaryOperator;
 class Block;
 class FunctionCall;
+class NullLiteral;
 class Keyword;
 class VariableDefinition;
 class StructureDefinition;
@@ -185,6 +186,15 @@ public:
 	Identifier* ident;
 	std::vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args);
+	virtual void describe() const;
+	virtual bool identsDeclared() const;
+	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+};
+
+/*===============================NullLiteral===============================*/
+class NullLiteral : public Expression {
+public:
+	NullLiteral();
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
