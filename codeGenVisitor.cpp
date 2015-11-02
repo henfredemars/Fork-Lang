@@ -152,7 +152,7 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
 	voidValue = llvm::ReturnInst::Create(*context);
 	floatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
-	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64Ty(*context));
+	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context));
 }
 
 void CodeGenVisitor::executeMain() {
@@ -381,7 +381,7 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	return builder->CreateCall(func, argVector);
 }
 
-/*===============================FunctionCall===============================*/
+/*===============================NullLiteral===============================*/
 llvm::Value* CodeGenVisitor::visitNullLiteral(NullLiteral* n) {
 	return nullptr;
 }
@@ -403,15 +403,28 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	if(v->hasPointerType) {
 		if(v->exp) { //custom value
 			val = v->exp->acceptVisitor(this);
-			if(!getValType(val)->isPointerTy()) {
-				return ErrorV("Attempt to assign non-pointer type to pointer type");
+			if(!val) {
+				if(type == "int") {
+					val = intNullPointer;
+				}
+				else if(type == "float") {
+					val = floatNullPointer;
+				}	
+				else {
+					return ErrorV("Attempt to create variable of incorrect pointer type");
+				}
 			}
 			else {
-				if(getPointedType(val)->isIntegerTy() && type != "int") {
-					return ErrorV("Attempt to assign incorrect pointer type to int*");
+				if(!getValType(val)->isPointerTy()) {
+					return ErrorV("Attempt to assign non-pointer type to pointer type");
 				}
-				else if(getPointedType(val)->isDoubleTy() && type != "float") {
-					return ErrorV("Attempt to assign incorrect pointer type to float*");
+				else {
+					if(getPointedType(val)->isIntegerTy() && type != "int") {
+						return ErrorV("Attempt to assign incorrect pointer type to int*");
+					}
+					else if(getPointedType(val)->isDoubleTy() && type != "float") {
+						return ErrorV("Attempt to assign incorrect pointer type to float*");
+					}
 				}
 			}
 		}
@@ -430,6 +443,9 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	else {
 		if(v->exp) {
 			val = v->exp->acceptVisitor(this);
+			if(!val) {
+				return ErrorV("Unable to assign expression evaluated to null");
+			}
 			if(getValType(val)->isPointerTy()) {
 				return ErrorV("Attempt to assign pointer type to non-pointer type");
 			}
@@ -561,13 +577,28 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	if(left->addressOfThis) {
 		return ErrorV("Unable to assign memory address of left operand");
 	}
-	llvm::Value* right = a->valxp->acceptVisitor(this);
-	if(!right) {
-		return ErrorV("Unable to evaluate right operand in assignment statement");
-	}
 	llvm::AllocaInst* var = namedValues[left->ident->name];
 	if(!var) {
 		return ErrorV("Unable to evaluate left operand in assignment statement");
+	}
+	llvm::Value* right = a->valxp->acceptVisitor(this);
+	if(!right) {
+		if(getAllocaType(var)->isPointerTy()) {
+			if(getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
+				right = floatNullPointer;
+			}
+			else if(getAllocaType(var)->getContainedType(0)->isIntegerTy()) {
+				right = intNullPointer;
+			}
+			else {
+				return ErrorV("Unable to assign to unknown pointer type");
+			}
+			builder->CreateStore(right, var);
+			return right;
+		}
+		else {
+			return ErrorV("Unable to assign evaluated null right operand to non pointer type");
+		}
 	}
 	if(left->hasPointerType) {
 		llvm::Value* offset = left->offsetExpression->acceptVisitor(this);
