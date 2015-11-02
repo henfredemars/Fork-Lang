@@ -50,6 +50,7 @@ public:
 class CodeGenVisitor : public ASTVisitor {
 private:
 	bool error;
+	bool justReturned;
 	llvm::LLVMContext* context;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;

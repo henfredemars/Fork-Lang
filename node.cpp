@@ -307,8 +307,10 @@ std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> StructureDefi
 bool StructureDefinition::validate() {
 	if (user_type_table.check(ident->name)) {
 	  printf("User type already exists!\n");
+	  return false;
 	}
 	user_type_table.insert(ident->name);
+	return true;
 }
 
 void StructureDefinition::describe() const {
