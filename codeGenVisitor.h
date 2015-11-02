@@ -76,7 +76,7 @@ public:
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
 	void executeMain();
-	void printModule();
+	void printModule() const;
 	llvm::Value* visitNode(Node* n);
 	llvm::Value* visitExpression(Expression* e);
 	llvm::Value* visitStatement(Statement* s);

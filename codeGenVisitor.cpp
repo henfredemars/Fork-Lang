@@ -171,7 +171,7 @@ void CodeGenVisitor::executeMain() {
 	}
 }
 
-void CodeGenVisitor::printModule() {
+void CodeGenVisitor::printModule() const {
 	if(!error) {
 		theModule->dump();
 	}
