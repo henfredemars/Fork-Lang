@@ -36,7 +36,7 @@ def main():
       print("Please ignore GC_INIT() uninitialized memory.")
       os.system("valgrind --vgdb=no ./parser {}".format(file))
     else:
-      os.system("./parser {}".format(file))
+      os.system("""echo "./parser {0} 3>&1 1>&2 2>&3 | tee {1}.llvm" | /bin/bash """.format(file,file[0:-20]))
   #Postprocessing
   for file in temp_files:
     os.remove(file)
