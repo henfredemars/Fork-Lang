@@ -76,8 +76,8 @@
 //A program is a collection of statements in a block
 program : statements { program = $1; program->describe();
 		       ast_root = program;
-	  	       printf("Parser: start symbol\n");}
-        ;
+	  	       printf("Parser: start symbol\n\n");
+	} ;
 
 //Statements can be collected together to form blocks
 statements : statement { 
