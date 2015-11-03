@@ -17,6 +17,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "KaleidoscopeJIT.h"
 #include <map>
+#include <iterator>
 #include <cctype>
 #include <cstdio>
 #include <cassert>
