@@ -6,8 +6,8 @@ OPT_LVL := -O0 -Wall -Wno-unused
 
 all: parser CTest
 
-parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o statementVisitor.o main.o parser.hpp lib.o .bcleanup_marker
-	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -rdynamic -o parser parser.o lex.o node.o codeGenVisitor.o statementVisitor.o lib.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc
+parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o statementVisitor.o main.o parser.hpp lib.so .bcleanup_marker
+	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -Wl,-rpath=. -o parser parser.o lex.o node.o codeGenVisitor.o statementVisitor.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc -l :lib.so
 #`$(LLVM_BIN) --libfiles`
 
 parser.cpp: parser.y node.h
@@ -22,8 +22,8 @@ lex.cpp: lex.l node.h
 lex.o: lex.cpp
 	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c lex.cpp -o lex.o $(LLVM_INC)
 
-lib.o: lib.cpp
-	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -shared -c lib.cpp -o lib.o
+lib.so: lib.cpp
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fPIC -c lib.cpp -o lib.o; g++ -shared -o lib.so lib.o
 
 node.o: node.h node.cpp
 	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c node.cpp -o node.o $(LLVM_INC)
@@ -50,12 +50,13 @@ CTest: .gc_built_marker
 	touch .bcleanup_marker; rm -rf ./llvm/build/*.o ./llvm/build/*.lo ./llvm/build/*.a ./gc/*.o ./gc/*.lo ./gc/*.a ./gc/.libs/*.a ./gc/.libs/*.la ./gc/.libs/*.o
 
 clean:
-	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
-	rm -f parser.tab.c
+	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output *.so;
+	rm -f parser.tab.c ./Testing/Programs/*.o ./Testing/Programs/*.bin ./Testing/Programs/*.s ./Testing/Programs/*.ll
 
 distclean:
-	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
+	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output *.so;
 	rm -f parser.tab.c .llvm_built_marker .gc_built_marker .bcleanup_marker;
+	rm -f ./Testing/Programs/*.o ./Testing/Programs/*.bin ./Testing/Programs/*.s /Testing/Programs/*.ll
 	make -C ./gc clean
 	make -C ./Bench/C++ clean
 	rm -rf ./llvm/build
