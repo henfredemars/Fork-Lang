@@ -38,7 +38,6 @@ def main():
       os.system("valgrind --vgdb=no ./parser {}".format(file))
     else:
       basename = file[0:-20]
-      os.system("./parser {0}".format(file,basename))
       if args.c:
         os.system("""echo "./parser {0} 3>&1 1>&2 2>&3 | tee {1}.ll" | bash """.format(file,basename))
         print("Attemping to compile and link IR statically.")
