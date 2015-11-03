@@ -21,3 +21,7 @@ void StatementVisitor::visitVariableDefinition(VariableDefinition* v) {
         varList.push_back(v);
 }
 
+void StatementVisitor::visitStructureDeclaration(StructureDeclaration* s) {
+	structList.push_back(s);
+}
+
