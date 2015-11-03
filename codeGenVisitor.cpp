@@ -592,6 +592,7 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 				return ErrorV("Attempt to evaluate recursive struct with no pointer");
 			}
 			else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
+				std::cout << "gahhhh" << std::endl;
 				types.push_back(tempStruct);
 			}
 			else {
