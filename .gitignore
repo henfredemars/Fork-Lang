@@ -3,6 +3,8 @@
 *.lo
 *.o
 *.obj
+*.s
+*.ll
 
 # Precompiled Headers
 *.gch
@@ -45,5 +47,4 @@ gc/cord/.deps
 parser
 Bench/C++/CTest
 Testing/Programs/practice.fk
-Testing/Programs/*.llvm
 

@@ -51,11 +51,12 @@ CTest: .gc_built_marker
 
 clean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
-	rm -f parser.tab.c
+	rm -f parser.tab.c ./Testing/Programs/*.o ./Testing/Programs/*.bin ./Testing/Programs/*.s ./Testing/Programs/*.ll
 
 distclean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output;
 	rm -f parser.tab.c .llvm_built_marker .gc_built_marker .bcleanup_marker;
+	rm -f ./Testing/Programs/*.o ./Testing/Programs/*.bin ./Testing/Programs/*.s /Testing/Programs/*.ll
 	make -C ./gc clean
 	make -C ./Bench/C++ clean
 	rm -rf ./llvm/build

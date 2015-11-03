@@ -161,8 +161,9 @@ void CodeGenVisitor::executeMain() {
 		auto mainSymbol = forkJIT->findSymbol("main");
 		assert(mainSymbol && "No code to execute, include a main function");
 		void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
+	    printf("\nExecuting main function...\n");
 	    func();
-	    printf("main() returns: void\n");
+	    printf("---> main() returns: void\n");
 	    delete voidValue;
 	    forkJIT->removeModule(handle);
 	}
