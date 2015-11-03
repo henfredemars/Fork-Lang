@@ -182,6 +182,9 @@ void CodeGenVisitor::executeMain() {
 
 void CodeGenVisitor::printModule() const {
 	if(!error) {
+		for(auto iterator = structTypes.begin(); iterator != structTypes.end(); iterator++) {
+			iterator->second->dump();
+		}
 		theModule->dump();
 	}
 	else {
@@ -555,34 +558,34 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> vars = s->getVariables();
 	llvm::StructType* currStruct = llvm::StructType::create(*context, s->ident->name);
-	llvm::Type** types = new llvm::Type*[vars.size()];
+	std::vector<llvm::Type*> types;
 	for(size_t i = 0, end = vars.size(); i != end; ++i) {
 		std::string type = vars.at(i)->type->name;
 		if(type == "int") {
-			types[i] = builder->getInt64Ty();
+			types.push_back(builder->getInt64Ty());
 		}
 		else if(type == "float") {
-			types[i] = builder->getDoubleTy();
+			types.push_back(builder->getDoubleTy());
 		}
 		else if(type == s->ident->name) { //if struct is inside itself
 			if(!vars.at(i)->hasPointerType) {
 				return ErrorV("Attempt to evaluate recursive struct with no pointer");
 			}
-			types[i] = llvm::PointerType::getUnqual(currStruct);
+			types.push_back(llvm::PointerType::getUnqual(currStruct));
 		}
 		else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
 			if(!vars.at(i)->hasPointerType) {
-				types[i] = tempStruct;
+				types.push_back(tempStruct);
 			}
 			else {
-				types[i] = llvm::PointerType::getUnqual(tempStruct);
+				types.push_back(llvm::PointerType::getUnqual(tempStruct));
 			}
 		}
 		else {
 			return ErrorV("Attempt to create type within struct that is not previously declared");
 		}
 	}
-	currStruct->setBody(llvm::ArrayRef<llvm::Type*>(types, vars.size()));
+	currStruct->setBody(types);
 	structTypes.insert(std::make_pair(s->ident->name, currStruct)); //add struct to struct list
 	return voidValue;
 }
@@ -613,12 +616,15 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 
 /*==========================StructureDeclaration============================*/
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
-	//llvm::Function* func = builder->GetInsertBlock()->getParent();
-	//llvm::ConstantAggregateZero* structInit = llvm::ConstantAggregateZero::get(structTypes[s->ident->name]);
-	//llvm::AllocaInst* alloca = createAlloca(func, structDec->getType(), s->ident->name);
-	//llvm::Value* structDec = structInit;
-	//return builder->CreateStore(structDec, alloca);
-	return ErrorV("Attempt to evaluate not yet implemented structure declaration");//TODO
+	llvm::Function* func = builder->GetInsertBlock()->getParent();
+	llvm::StructType* tempStruct = structTypes[s->type->name];
+	if(!tempStruct) {
+		return ErrorV("Unable to instantiate struct that is not previously declared");
+	}
+	llvm::ConstantAggregateZero* structInit = llvm::ConstantAggregateZero::get(tempStruct);
+	llvm::AllocaInst* alloca = createAlloca(func, tempStruct, s->ident->name);
+	llvm::Value* structDec = structInit;
+	return builder->CreateStore(structDec, alloca);
 }
 
 
