@@ -1,11 +1,19 @@
+struct structy {
+	int a;
+	int* b;
+	float c;
+	float* d;
+};
+
 struct classy {
 	int* a;
 	int b;
 	float c;
-	//classy* d;
+	structy d;
 };
 
 void main() {
+	structy a;
 	classy b;
 	//b.a;
 	//b.a = 5;
