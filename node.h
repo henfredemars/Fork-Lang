@@ -261,8 +261,9 @@ class StructureDeclaration : public Statement {
 public:
 	Identifier* type;
 	Identifier* ident;
-	StructureDeclaration(Identifier* type,Identifier* ident);
+	StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType);
 	bool validate();
+	bool hasPointerType;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
