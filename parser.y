@@ -24,6 +24,7 @@
     Expression* exp;
     ReferenceExpression* rexp;
     Statement* statement;
+    StructureDefinition* structureDeclaration;
     Identifier* identifier;
     Block* block;
     Keyword* keyword;
@@ -46,8 +47,9 @@
 %type <identifier> ident
 %type <exp> exp numeric
 %type <rexp> rexp
-%type <statement> statement variableDec functionDec structDec
+%type <statement> statement variableDec functionDec structDec_f
 %type <statement> if_statement externStatement
+%type <structureDeclaration> structDec_b
 %type <block> block statements program
 %type <keyword> var_keyword struct_keyword
 %type <variableVec> functionArgs
@@ -100,7 +102,7 @@ statement : variableDec TSCOLON TENDL {
 	       $$=$1; printf("Parser: variableDec becomes statement\n");
 	     } 
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
-             | structDec TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
+             | structDec_f TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
 	     | if_statement TENDL {$$=$1;}
 	     | externStatement TENDL {$$=$1;printf("Parser: externStatement becomes statement\n");}
 	     |
@@ -191,7 +193,12 @@ variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr,fals
 	     var_keyword TSTAR ident { $$ = new VariableDefinition($1,$3,nullptr,true);
                 $$->describe();
              } |
-	     ident ident { StructureDeclaration* sd = new StructureDeclaration($1,$2);
+	     ident ident { StructureDeclaration* sd = new StructureDeclaration($1,$2,false);
+		if (!(sd->validate())) YYERROR;
+		$$ = sd; //Place on stack
+                $$->describe(); //Assume ident ident is a structure dec
+             } |
+	     ident TSTAR ident { StructureDeclaration* sd = new StructureDeclaration($1,$3,true);
 		if (!(sd->validate())) YYERROR;
 		$$ = sd; //Place on stack
                 $$->describe(); //Assume ident ident is a structure dec
@@ -204,11 +211,19 @@ variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr,fals
              } ;
 
 //Definition of a structure
-structDec : struct_keyword ident block TSCOLON {
-	      StructureDefinition* sd = new StructureDefinition($2,$3);
-	      if (!(sd->validate())) YYERROR;
+structDec_f : structDec_b block TSCOLON {
+	      StructureDefinition* sd = $1;
+	      sd->block = $2;
 	      $$ = sd; //Place on stack
 	      $$->describe();
+	    } ;
+
+//(Forward) decl of structure
+structDec_b : struct_keyword ident {
+	      StructureDefinition* sd = new StructureDefinition($2,nullptr);
+	      if (!(sd->validate())) YYERROR;
+              $$ = sd; //Place on stack
+	      printf("Early structure declaration of: %s\n",$2->name);
 	    } ;
 
 //A function definition is made of a var_keyword, identifier, arguments, and a function body block
