@@ -59,6 +59,7 @@ private:
 	llvm::Value* intNullPointer;
 	llvm::Value* floatNullPointer;
 	std::map<std::string, llvm::AllocaInst*> namedValues;
+	std::map<std::string, llvm::StructType*> structTypes;
 	std::map<std::string, Binops> switchMap;
 	void populateSwitchMap();
 	llvm::Value* castIntToFloat(llvm::Value* val);
