@@ -358,9 +358,10 @@ llvm::Value* FunctionDefinition::acceptVisitor(ASTVisitor* v) {
 }
 
 /*==========================StructureDeclaration============================*/
-StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident) {
+StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType) {
 	this->type = type;
 	this->ident = ident;
+	this->hasPointerType = hasPointerType;
 }
 
 bool StructureDeclaration::validate() {

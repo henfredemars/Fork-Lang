@@ -2,7 +2,7 @@ struct classy {
 	int* a;
 	int b;
 	float c;
-	//classy* d;
+	classy* d;
 };
 
 void main() {
