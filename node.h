@@ -26,6 +26,7 @@
 #include "./gc/include/gc.h"
 #include "./gc/include/gc_cpp.h"
 #include "./gc/include/gc_allocator.h"
+#include "lib.h"
 
 //Externs
 extern void yyerror(const char *s);

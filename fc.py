@@ -40,13 +40,15 @@ def main():
       basename = file[0:-20]
       if args.c:
         os.system("""echo "./parser {0} 3>&1 1>&2 2>&3 | tee {1}.ll" | bash """.format(file,basename))
-        print("Attemping to compile and link IR statically.")
+        print("Attempting to compile and link IR statically.")
         print("Compile LLVM IR to local architecture assembly...")
         os.system("llvm/build/Release+Asserts/bin/llc -O2 {0}.ll; echo ; cat {0}.s".format(basename))
         print("\nInvoking GCC assembler for static compilation...")
         os.system("gcc -c {0}.s -o {0}.o".format(basename))
         print("Linking executable...")
-        os.system("g++ -std=c++11 -fomit-frame-pointer -rdynamic -fvisibility-inlines-hidden -fno-exceptions -fno-rtti -fPIC -ffunction-sections -fdata-sections -Wl,-rpath=. -o {0}.bin {0}.o lib.o".format(basename))
+        os.system("g++ -std=c++11 -fomit-frame-pointer -fvisibility-inlines-hidden -fno-exceptions -fno-rtti -fPIC -ffunction-sections -fdata-sections -Wl,-rpath=../.. -o {0}.bin {0}.o -l :lib.so".format(basename))
+      else:
+        os.system("./parser {}".format(file))
   #Postprocessing
   for file in temp_files:
     os.remove(file)

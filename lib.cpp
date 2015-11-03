@@ -1,8 +1,6 @@
 //Fork standard library
 
-#include <mutex>
-#include <stdint.h>
-#include <stdio.h>
+#include "lib.h"
 
 //extern "C" disables C++ name mangling
 
