@@ -38,6 +38,14 @@ llvm::Value* CodeGenVisitor::castBooleantoInt(llvm::Value* val) {
 	return builder->CreateZExtOrBitCast(val, builder->getInt64Ty());
 }
 
+llvm::Value* CodeGenVisitor::castPointerToInt(llvm::Value* val) {
+	return builder->CreatePtrToInt(val, builder->getInt64Ty());
+}
+
+llvm::Value* CodeGenVisitor::castIntToPointer(llvm::Value* val) {
+	return builder->CreateIntToPtr(val, llvm::Type::getInt64PtrTy(*context));
+}
+
 llvm::Type* CodeGenVisitor::getValType(llvm::Value* val) {
 	return val->getType();
 }
@@ -227,21 +235,28 @@ llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
 	if(!expr) {
-		return ErrorV("Could not evaluate expression applied to unary operator");
+		expr = intNullPointer;
 	}
 	if(getValType(expr)->isVoidTy()) {
 		return ErrorV("Unary operator applied to void type");
 	}
-	if(getValType(expr)->isPointerTy()) {
-		return ErrorV("Unary operator applied to pointer type");
+	else if(getValType(expr)->isPointerTy()) {
+		expr = castPointerToInt(expr);
+		switch(*u->op) {
+			case '-':
+			return castIntToPointer(builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr));
+			case '!':
+			return castIntToPointer(castBooleantoInt(builder->CreateNot(castIntToBoolean(expr))));
+			default:
+			return ErrorV("Invalid unary operator found");
+		}	
 	}
-	if(getValType(expr)->isDoubleTy()) {
+	else if(getValType(expr)->isDoubleTy()) {
 		switch(*u->op) {
 			case '-':
 			return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(castFloatToBoolean(expr)));
-			//* and & operator included within referenceExpression
 			default:
 			return ErrorV("Invalid unary operator found");
 		}
@@ -251,7 +266,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			case '-':
 			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
 			case '!':
-			return castBooleantoInt(builder->CreateNot(expr));
+			return castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)));
 			default:
 			return ErrorV("Invalid unary operator found");
 		}	
@@ -263,14 +278,14 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	llvm::Value* left = b->left->acceptVisitor(this);
  	llvm::Value* right = b->right->acceptVisitor(this);
-	if (!left || !right) {
-		return ErrorV("Could not evaluate an operand applied to binary operator");
+	if (!left) {
+		left = intNullPointer;
+	}
+	if(!right) {
+		right = intNullPointer;
 	}
 	if(getValType(left)->isVoidTy() || getValType(right)->isVoidTy()) {
 		return ErrorV("Binary operator applied to void type");
-	}
-	if(getValType(left)->isPointerTy() || getValType(right)->isPointerTy()) {
-		return ErrorV("Binary operator applied to pointer type");
 	}
 	if(getValType(left)->isIntegerTy() && getValType(right)->isDoubleTy()) {
 		left = castIntToFloat(left);
@@ -278,7 +293,47 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	else if(getValType(left)->isDoubleTy() && getValType(right)->isIntegerTy()) {
 		right = castIntToFloat(right);
 	}
-	if(getValType(left)->isDoubleTy()) { //both operands are floats
+	if(getValType(left)->isPointerTy() || getValType(right)->isPointerTy()) { //at least one operand is a pointer
+		if(getValType(left)->isPointerTy()) {
+			left = castPointerToInt(left);
+		}
+		if(getValType(right)->isPointerTy()) {
+			right = castPointerToInt(right);
+		}
+		if(getValType(left)->getTypeID() != getValType(right)->getTypeID()) { //if both operands are not now integers
+			return ErrorV("Binary operator applied to pointer and incorrect non-integer type");
+		}
+		switch (switchMap.find(b->op)->second) {
+			case BOP_PLUS:
+			return castIntToPointer(builder->CreateAdd(left, right));
+			case BOP_MINUS:
+			return castIntToPointer(builder->CreateSub(left, right));
+			case BOP_MULT:
+			return castIntToPointer(builder->CreateMul(left, right));
+			case BOP_DIV:
+			return castIntToPointer(builder->CreateSDiv(left, right));
+			case BOP_NEQ:
+			return castIntToPointer(castBooleantoInt(builder->CreateICmpNE(left, right)));
+			case BOP_EQ:
+			return castIntToPointer(castBooleantoInt(builder->CreateICmpEQ(left, right)));
+			case BOP_GTE:
+			return castIntToPointer(castBooleantoInt(builder->CreateICmpSGE(left, right)));
+			case BOP_LTE:
+			return castIntToPointer(castBooleantoInt(builder->CreateICmpSLE(left, right)));
+			case BOP_GT:
+			return castIntToPointer(castBooleantoInt(builder->CreateICmpSGT(left, right)));
+			case BOP_LT:
+			return castIntToPointer(castBooleantoInt(builder->CreateICmpSLT(left, right)));
+			case BOP_OR:
+			return castIntToPointer(builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right)));
+			case BOP_AND:
+			return castIntToPointer(builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right)));
+			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
+			default:
+			return ErrorV("Invalid binary operator found");
+		}
+	}
+	else if(getValType(left)->isDoubleTy()) { //both operands are floats
 		switch (switchMap.find(b->op)->second) {
 			case BOP_PLUS:
 			return builder->CreateFAdd(left, right);
@@ -305,12 +360,11 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_AND:
 			return castBooleantoInt(builder->CreateAnd(castFloatToBoolean(left), castFloatToBoolean(right)));
 			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
-			//assignment op separate
 			default:
 			return ErrorV("Invalid binary operator found");
 		}
 	}
-	else if (getValType(left)->isIntegerTy()) { //both operands are ints
+	else if(getValType(left)->isIntegerTy()) { //both operands are ints
 		switch (switchMap.find(b->op)->second) {
 			case BOP_PLUS:
 			return builder->CreateAdd(left, right);
@@ -333,9 +387,9 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_LT:
 			return castBooleantoInt(builder->CreateICmpSLT(left, right));
 			case BOP_OR:
-			return castBooleantoInt(builder->CreateOr(left, right));
+			return builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right));
 			case BOP_AND:
-			return castBooleantoInt(builder->CreateAnd(left, right));
+			return builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right));
 			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			default:
 			return ErrorV("Invalid binary operator found");
@@ -369,6 +423,22 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
 		llvm::Value* argument = f->args->at(i)->acceptVisitor(this);
 		llvm::Argument* funcArgument = funcArgs++;
+		if(!argument) { //input NULL to functions
+			if(getValType(funcArgument)->isPointerTy()) {
+				if(getPointedType(funcArgument)->isIntegerTy()) {
+					argument = intNullPointer;
+				}
+				else if(getPointedType(funcArgument)->isDoubleTy()) {
+					argument = floatNullPointer;
+				}
+				else {
+					return ErrorV("Attempt to input pointer type to function argument of incorrect type");
+				}
+			}
+			else {
+				return ErrorV("Attempt to input NULL to function argument of incorrect type");
+			}
+		}
 		if(getValType(argument) != getValType(funcArgument)) {
 			if(getValType(argument)->isIntegerTy() && getValType(funcArgument)->isDoubleTy()) {
 				argument = castIntToFloat(argument);
@@ -404,7 +474,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	if(v->hasPointerType) {
 		if(v->exp) { //custom value
 			val = v->exp->acceptVisitor(this);
-			if(!val) {
+			if(!val) { //Assign Variable to NULL
 				if(type == "int") {
 					val = intNullPointer;
 				}
@@ -431,7 +501,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 		}
 		else { //default value		
 			if(type == "int") {
-				val = intNullPointer; //null address
+				val = intNullPointer;
 			}
 			else if(type == "float") {
 				val = floatNullPointer;
@@ -527,7 +597,7 @@ llvm::Value* CodeGenVisitor::visitExpressionStatement(ExpressionStatement* e) {
 llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	justReturned = true;
-	if(r->exp) {
+	if(r->exp) { 
 		if(llvm::Value* retVal = r->exp->acceptVisitor(this)) {
 			if(getValType(retVal)->isVoidTy() && getFuncRetType(func)->isVoidTy()) {
 				if(getFuncRetType(func)->isVoidTy()) {
@@ -569,7 +639,22 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 			return ErrorV("Unable to return bad void type from function");
 		}
 	}
-	return ErrorV("Unable to return unevaluated expression from function");
+	//return NULL
+	if(getFuncRetType(func)->isPointerTy()) {
+		llvm::Value* retVal = nullptr;
+		if(getFuncRetType(func)->getContainedType(0)->isIntegerTy()) {
+			retVal = builder->CreateRet(intNullPointer);
+		}
+		else if(getFuncRetType(func)->getContainedType(0)->isDoubleTy()) {
+			retVal = builder->CreateRet(floatNullPointer);
+		}
+		else {
+			return ErrorV("Unable to return bad pointer type from function");
+		}
+		verifyFunction(*func);
+		return retVal;
+	}
+	return ErrorV("Unable to return incorrect NULL type from function");
 }
 
 /*=============================AssignStatement==============================*/
@@ -584,7 +669,7 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	}
 	llvm::Value* right = a->valxp->acceptVisitor(this);
 	if(!right) {
-		if(getAllocaType(var)->isPointerTy()) {
+		if(getAllocaType(var)->isPointerTy()) { //assign to NULL
 			if(getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
 				right = floatNullPointer;
 			}
@@ -636,8 +721,11 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 /*===============================IfStatement================================*/
 llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	llvm::Value* condition = i->exp->acceptVisitor(this);
-	if(!condition) {
-		return ErrorV("Unable to evaluate if statement condition");
+	if(!condition) { //input NULL
+		condition = castPointerToInt(intNullPointer);
+	}
+	else if(getValType(condition)->isPointerTy()) { //input address
+		condition = castPointerToInt(condition);
 	}
 	if(getValType(condition)->isDoubleTy()) {
 		condition = castFloatToBoolean(condition);
@@ -752,5 +840,3 @@ llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
 	}
 	return voidValue;
 }
-
-
