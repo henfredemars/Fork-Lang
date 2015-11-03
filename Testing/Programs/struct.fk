@@ -10,6 +10,7 @@ struct classy {
 	int b;
 	float c;
 	structy d;
+	classy* d;
 };
 
 void main() {
