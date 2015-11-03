@@ -56,8 +56,8 @@ private:
 	std::unique_ptr<llvm::Module> theModule;
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
 	llvm::Value* voidValue;
-	llvm::Value* intNullPointer;
-	llvm::Value* floatNullPointer;
+	llvm::Constant* intNullPointer;
+	llvm::Constant* floatNullPointer;
 	std::map<std::string, llvm::AllocaInst*> namedValues;
 	std::map<std::string, llvm::StructType*> structTypes;
 	std::map<std::string, Binops> switchMap;

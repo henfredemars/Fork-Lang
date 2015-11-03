@@ -146,7 +146,10 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 			return tempBuilder.CreateAlloca(llvm::Type::getDoublePtrTy(*context), 0, name);
 		}
 	}
-	return nullptr;
+	else if(type->isStructTy()) {
+		return tempBuilder.CreateAlloca(type, 0, name);
+	}
+	return (llvm::AllocaInst*)ErrorV("Unable to create alloca of incorrect type");
 }
 
 CodeGenVisitor::CodeGenVisitor(std::string name) {
@@ -182,9 +185,6 @@ void CodeGenVisitor::executeMain() {
 
 void CodeGenVisitor::printModule() const {
 	if(!error) {
-		for(auto iterator = structTypes.begin(); iterator != structTypes.end(); iterator++) {
-			iterator->second->dump();
-		}
 		theModule->dump();
 	}
 	else {
@@ -561,28 +561,42 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<llvm::Type*> types;
 	for(size_t i = 0, end = vars.size(); i != end; ++i) {
 		std::string type = vars.at(i)->type->name;
-		if(type == "int") {
-			types.push_back(builder->getInt64Ty());
+		if(vars.at(i)->exp) {
+			return ErrorV("Attempt to instantiate types within structs that can only be declared");
 		}
-		else if(type == "float") {
-			types.push_back(builder->getDoubleTy());
-		}
-		else if(type == s->ident->name) { //if struct is inside itself
-			if(!vars.at(i)->hasPointerType) {
-				return ErrorV("Attempt to evaluate recursive struct with no pointer");
+		if(vars.at(i)->hasPointerType) {
+			if(type == "int") {
+				types.push_back(llvm::Type::getInt64PtrTy(*context));
 			}
-			types.push_back(llvm::PointerType::getUnqual(currStruct));
-		}
-		else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
-			if(!vars.at(i)->hasPointerType) {
-				types.push_back(tempStruct);
+			else if(type == "float") {
+				types.push_back(llvm::Type::getDoublePtrTy(*context));
+			}
+			else if(type == s->ident->name) { //if struct is inside itself
+				types.push_back(llvm::PointerType::getUnqual(currStruct));
+			}
+			else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
+				types.push_back(llvm::PointerType::getUnqual(tempStruct));
 			}
 			else {
-				types.push_back(llvm::PointerType::getUnqual(tempStruct));
+				return ErrorV("Attempt to create type within struct that is not previously declared");
 			}
 		}
 		else {
-			return ErrorV("Attempt to create type within struct that is not previously declared");
+			if(type == "int") {
+				types.push_back(builder->getInt64Ty());
+			}
+			else if(type == "float") {
+				types.push_back(builder->getDoubleTy());
+			}
+			else if(type == s->ident->name) { //if struct is inside itself
+				return ErrorV("Attempt to evaluate recursive struct with no pointer");
+			}
+			else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
+				types.push_back(tempStruct);
+			}
+			else {
+				return ErrorV("Attempt to create type within struct that is not previously declared");
+			}
 		}
 	}
 	currStruct->setBody(types);
@@ -617,13 +631,15 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 /*==========================StructureDeclaration============================*/
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
-	llvm::StructType* tempStruct = structTypes[s->type->name];
-	if(!tempStruct) {
+	llvm::StructType* currStruct = structTypes[s->type->name];
+	if(!currStruct) {
 		return ErrorV("Unable to instantiate struct that is not previously declared");
 	}
-	llvm::ConstantAggregateZero* structInit = llvm::ConstantAggregateZero::get(tempStruct);
-	llvm::AllocaInst* alloca = createAlloca(func, tempStruct, s->ident->name);
-	llvm::Value* structDec = structInit;
+	llvm::AllocaInst* alloca = createAlloca(func, currStruct, s->ident->name);
+	if(!alloca) {
+		return ErrorV("Unable to create alloca of struct type");
+	}
+	llvm::Constant* structDec = llvm::ConstantAggregateZero::get(currStruct);
 	return builder->CreateStore(structDec, alloca);
 }
 
