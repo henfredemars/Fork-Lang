@@ -319,6 +319,12 @@ std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> StructureDefi
 	return sv->varList;
 }
 
+std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> StructureDefinition::getStructs() const {
+	StatementVisitor* sv = new StatementVisitor();
+	block->acceptVisitor(sv);
+	return sv->structList;
+}
+
 bool StructureDefinition::validate() {
 	if (user_type_table.check(ident->name)) {
 	  printf("User type already exists!\n");
