@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
 	llvm::InitializeNativeTarget();
 	llvm::InitializeNativeTargetAsmPrinter();
 	llvm::InitializeNativeTargetAsmParser();
+	free_int(malloc_int(1)); //Force lib.so linkage
 	//yydebug = 1;
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");

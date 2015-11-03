@@ -8,6 +8,7 @@ def main():
   #Parse arguments
   parser = argparse.ArgumentParser(description='Fork toolchain command line parser...')
   parser.add_argument('-v',action='store_true',help='Use valgrind')
+  parser.add_argument('-c',action='store_true',help='Compile and link static binary')
   parser.add_argument('files',metavar='filename',type=str,nargs='+',help='files to process')
   regex_delete = re.compile("(^\s*//.*)|(^\s*$)")
   args = parser.parse_args()
@@ -30,13 +31,24 @@ def main():
         f_out.write(line)
     f_in.close()
     f_out.close()
-  #Call parser on temp_files
+  #Build temp_files
   for file in temp_files:
     if args.v:
       print("Please ignore GC_INIT() uninitialized memory.")
       os.system("valgrind --vgdb=no ./parser {}".format(file))
     else:
-      os.system("""echo "./parser {0} 3>&1 1>&2 2>&3 | tee {1}.llvm" | bash """.format(file,file[0:-20]))
+      basename = file[0:-20]
+      if args.c:
+        os.system("""echo "./parser {0} 3>&1 1>&2 2>&3 | tee {1}.ll" | bash """.format(file,basename))
+        print("Attempting to compile and link IR statically.")
+        print("Compile LLVM IR to local architecture assembly...")
+        os.system("llvm/build/Release+Asserts/bin/llc -O2 {0}.ll; echo ; cat {0}.s".format(basename))
+        print("\nInvoking GCC assembler for static compilation...")
+        os.system("gcc -c {0}.s -o {0}.o".format(basename))
+        print("Linking executable...")
+        os.system("g++ -std=c++11 -fomit-frame-pointer -fvisibility-inlines-hidden -fno-exceptions -fno-rtti -fPIC -ffunction-sections -fdata-sections -Wl,-rpath=../.. -o {0}.bin {0}.o -l :lib.so".format(basename))
+      else:
+        os.system("./parser {}".format(file))
   #Postprocessing
   for file in temp_files:
     os.remove(file)
