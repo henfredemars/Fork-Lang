@@ -260,6 +260,9 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 			return ErrorV("Invalid unary operator found");
 		}	
 	}
+	else if(getValType(expr)->isStructTy()) {
+		return ErrorV("Unable to evaluate unary operator applied to struct type");
+	}
 	return ErrorV("Unexpected type found for evaluated expression applied to unary operator");
 }
 
@@ -289,7 +292,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		if(getValType(right)->isPointerTy()) {
 			right = castPointerToInt(right);
 		}
-		if(getValType(left)->getTypeID() != getValType(right)->getTypeID()) { //if both operands are not now integers
+		if(getValType(left) != getValType(right)) { //if both operands are not now integers
 			return ErrorV("Binary operator applied to pointer and incorrect non-integer type");
 		}
 		switch (switchMap.find(b->op)->second) {
@@ -348,7 +351,6 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return castBooleantoInt(builder->CreateOr(castFloatToBoolean(left), castFloatToBoolean(right)));
 			case BOP_AND:
 			return castBooleantoInt(builder->CreateAnd(castFloatToBoolean(left), castFloatToBoolean(right)));
-			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			default:
 			return ErrorV("Invalid binary operator found");
 		}
@@ -379,10 +381,12 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right));
 			case BOP_AND:
 			return builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right));
-			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			default:
 			return ErrorV("Invalid binary operator found");
 		}
+	}
+	else if(getValType(left)->isStructTy() || getValType(right)->isStructTy()) {
+		return ErrorV("Unable to evaluate binary operator applied to struct type");
 	}
 	return ErrorV("Unexpected type found for evaluated operand applied to binary operator");
 }
@@ -682,9 +686,9 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 					return ErrorV("Unable to return bad void type from function");
 				}
 			}
-			else if(getFuncRetType(func)->getTypeID() == getValType(retVal)->getTypeID()) {
+			else if(getFuncRetType(func) == getValType(retVal)) {
 				if(getFuncRetType(func)->isPointerTy()) {
-					if(getFuncRetType(func)->getContainedType(0)->getTypeID() != getPointedType(retVal)->getTypeID()) {
+					if(getFuncRetType(func)->getContainedType(0) != getPointedType(retVal)) {
 						return ErrorV("Unable to return bad pointer type from function");
 					}
 				}
@@ -779,11 +783,11 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	if(getAllocaType(var)->isDoubleTy() && getValType(right)->isIntegerTy()) {
 		right = castIntToFloat(right);
 	}
-	else if(getAllocaType(var)->getTypeID() != getValType(right)->getTypeID()) {
+	else if(getAllocaType(var) != getValType(right)) {
 		return ErrorV("Unable to assign evaluated right operand of bad type to left operand");
 	}
 	else if(getAllocaType(var)->isPointerTy()) {
-		if(getAllocaType(var)->getContainedType(0)->getTypeID() != getPointedType(right)->getTypeID()) {
+		if(getAllocaType(var)->getContainedType(0) != getPointedType(right)) {
 			return ErrorV("Unable to assign evaluated right operand of bad pointer type to left operand");
 		}
 	}
@@ -885,10 +889,14 @@ llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 		return ErrorV("Unable to evaluate variable");
 	}
 	if(r->hasStructureType) { //get struct values
-		if(structTypes.find(r->ident->name) == structTypes.end()) {
-			return ErrorV("Unable to instantiate struct that is not previously declared");
+		if(!getAllocaType(var)->isStructTy()) {
+			return ErrorV("Unable to use dot operator on non-struct type");
 		}
-		auto structTuple = structTypes.find(r->ident->name)->second;
+		std::string type = getAllocaType(var)->getStructName();
+		if(structTypes.find(type) == structTypes.end()) {
+			return ErrorV("Unable to access undeclared struct with dot operator");
+		}
+		auto structTuple = structTypes.find(type)->second;
 		bool found = false;
 		size_t index = 0;
 		std::string varName = ((Identifier*)r->offsetExpression)->name;
@@ -905,6 +913,7 @@ llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 		llvm::StructType* currStruct = std::get<0>(structTuple);
 		auto varptr = builder->CreateLoad(var)->getPointerOperand();
 		return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index));
+		return nullptr;
 	}
 	if(r->hasPointerType) {  //dereference via [] or * operators
 		llvm::Value* offset = r->offsetExpression->acceptVisitor(this);
