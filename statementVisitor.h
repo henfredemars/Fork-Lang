@@ -13,6 +13,7 @@ public:
 	void visitBlock(Block* b);
 	void visitStatement(Statement* s);
 	void visitVariableDefinition(VariableDefinition* v);
+	void visitStructureDefinition(StructureDefinition* s);
 	void visitStructureDeclaration(StructureDeclaration* s);
 };
 
