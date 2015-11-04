@@ -23,7 +23,6 @@ void StatementVisitor::visitVariableDefinition(VariableDefinition* v) {
 }
 
 void StatementVisitor::visitStructureDeclaration(StructureDeclaration* s) {
-	std::cout << "Found struct" << std::endl;
 	structList.push_back(s);
 }
 
