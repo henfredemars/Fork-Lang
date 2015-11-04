@@ -342,6 +342,10 @@ llvm::Value* StructureDefinition::acceptVisitor(ASTVisitor* v) {
 	return v->visitStructureDefinition(this);
 }
 
+void StructureDefinition::acceptVisitor(StatementVisitor* v) {
+	return v->visitStructureDefinition(this);
+}
+
 
 /*============================FunctionDefinition============================*/
 FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
@@ -389,6 +393,10 @@ void StructureDeclaration::describe() const {
 
 llvm::Value* StructureDeclaration::acceptVisitor(ASTVisitor* v) {
 	return v->visitStructureDeclaration(this);
+}
+
+void StructureDeclaration::acceptVisitor(StatementVisitor* v) {
+	v->visitStructureDeclaration(this);
 }
 
 /*===========================ExpressionStatement============================*/

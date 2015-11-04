@@ -27,3 +27,7 @@ void StatementVisitor::visitStructureDeclaration(StructureDeclaration* s) {
 	structList.push_back(s);
 }
 
+void StatementVisitor::visitStructureDefinition(StructureDefinition* s) {
+	return;
+}
+

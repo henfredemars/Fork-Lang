@@ -239,6 +239,7 @@ public:
 	bool validate(); //Not const!
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+	virtual void acceptVisitor(StatementVisitor* v);
 };
 
 /*============================FunctionDefinition============================*/
@@ -267,6 +268,7 @@ public:
 	bool hasPointerType;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+	virtual void acceptVisitor(StatementVisitor* v);
 };
 
 /*===========================ExpressionStatement============================*/
