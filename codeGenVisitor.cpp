@@ -559,13 +559,16 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> vars = s->getVariables();
 	std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> structs = s->getStructs();
 	llvm::StructType* currStruct = llvm::StructType::create(*context, s->ident->name);
+	size_t index = 0;
 	std::vector<llvm::Type*> types;
+	std::vector<std::string> stringVec;
 	for(auto it = vars.begin(), end = vars.end(); it != end; ++it) {
-		std::string type = (*it)->type->name;
-		if((*it)->exp) {
+		VariableDefinition* var = *it;
+		std::string type = var->type->name;
+		if(var->exp) {
 			return ErrorV("Attempt to instantiate types within structs that can only be declared");
 		}
-		if((*it)->hasPointerType) {
+		if(var->hasPointerType) {
 			if(type == "int") {
 				types.push_back(llvm::Type::getInt64PtrTy(*context));
 			}
@@ -587,15 +590,16 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 				return ErrorV("Attempt to create type within struct that is not previously declared");
 			}
 		}
+		stringVec.push_back(var->ident->name);
 	}
 	for(auto it = structs.begin(), end = structs.end(); it != end; ++it) {
-		std::string type = (*it)->type->name;
-		std::cout << type << std::endl;
-		if((*it)->hasPointerType) {	
+		StructureDeclaration* strct = *it;
+		std::string type = strct->type->name;
+		if(!strct->hasPointerType) {	
 			if(type == s->ident->name) { //if struct is inside itself
 				return ErrorV("Attempt to evaluate recursive struct with no pointer");
 			}
-			else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
+			else if(llvm::StructType* tempStruct = std::get<0>(structTypes[type])) { //getStructType retrieves struct from struct map
 				types.push_back(tempStruct);
 			}
 			else {
@@ -606,16 +610,17 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 			if(type == s->ident->name) { //if struct is inside itself
 				types.push_back(llvm::PointerType::getUnqual(currStruct));
 			}
-			else if(llvm::StructType* tempStruct = structTypes[type]) { //getStructType retrieves struct from struct map
+			else if(llvm::StructType* tempStruct = std::get<0>(structTypes[type])) { //getStructType retrieves struct from struct map
 				types.push_back(llvm::PointerType::getUnqual(tempStruct));
 			}
 			else {
 				return ErrorV("Attempt to create struct type within struct that is not previously declared");
 			}
 		}
+		stringVec.push_back(strct->ident->name);
 	}
 	currStruct->setBody(types);
-	structTypes.insert(std::make_pair(s->ident->name, currStruct)); //add struct to struct list
+	structTypes.insert(std::make_pair(s->ident->name, std::make_tuple(currStruct, stringVec))); //add struct to struct list
 	return voidValue;
 }
 
@@ -646,7 +651,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 /*==========================StructureDeclaration============================*/
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
-	llvm::StructType* currStruct = structTypes[s->type->name];
+	llvm::StructType* currStruct = std::get<0>(structTypes[s->type->name]);
 	if(!currStruct) {
 		return ErrorV("Unable to instantiate struct that is not previously declared");
 	}
