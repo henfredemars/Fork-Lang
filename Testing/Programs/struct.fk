@@ -1,3 +1,4 @@
+extern void print_int(int x);
 
 struct classy {
 	int* a;
@@ -15,7 +16,12 @@ struct structy {
 
 void main() {
 	structy a;
-	classy b;
+	structy b;
+	structy* c;
+	if(c) {
+		print_int(4);
+	}
+	classy* d;
 	//b.a;
 	//b.a = 5;
 	//b.b = 7
