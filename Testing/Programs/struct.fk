@@ -1,16 +1,16 @@
-struct structy {
-	int a;
-	int* b;
-	float c;
-	float* d;
-};
 
 struct classy {
 	int* a;
 	int b;
 	float c;
-	structy d;
-	classy* d;
+};
+
+struct structy {
+	int a;
+	int* b;
+	float c;
+	float* d;
+	classy* e;
 };
 
 void main() {

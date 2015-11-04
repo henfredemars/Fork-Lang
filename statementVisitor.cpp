@@ -1,4 +1,5 @@
 #include "statementVisitor.h"
+#include <iostream>
 
 StatementVisitor::StatementVisitor() {
 
@@ -18,10 +19,11 @@ void StatementVisitor::visitStatement(Statement* s) {
 }
 
 void StatementVisitor::visitVariableDefinition(VariableDefinition* v) {
-        varList.push_back(v);
+    varList.push_back(v);
 }
 
 void StatementVisitor::visitStructureDeclaration(StructureDeclaration* s) {
+	std::cout << "Found struct" << std::endl;
 	structList.push_back(s);
 }
 
