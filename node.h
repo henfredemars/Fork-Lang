@@ -59,8 +59,10 @@ class StatementVisitor;
 class CodeGenVisitor;
 class SymbolTable;
 class TypeTable;
-class ReferenceExpression;
 class ExternStatement;
+class PointerExpression;
+class AddressOfExpression;
+class StructureExpression;
 
 //Symbol Table
 enum IdentType {
@@ -295,9 +297,9 @@ public:
 //C-like assignment of a variable
 class AssignStatement : public Statement {
 public:
-	ReferenceExpression* target;
+	Expression* target;
 	Expression* valxp;
-	AssignStatement(ReferenceExpression* target,Expression* valxp);
+	AssignStatement(Expression* target,Expression* valxp);
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
@@ -356,22 +358,38 @@ private:
 	std::vector<std::string> types;
 };
 
-/*===============================ReferenceExpression================================*/
-//Assignable l-expressions
-class ReferenceExpression : public Expression {
+/*===============================PointerExpression================================*/
+class PointerExpression : public Expression {
 public:
 	Expression* offsetExpression;
-	Identifier* ident;
-	bool hasPointerType; //Identifier must be a pointer
-	bool hasStructureType; //Identifier must be a structure
-	bool addressOfThis; //Address of operator
-	bool usesDirectValue() const;
-	ReferenceExpression(Identifier* ident, Expression* offsetExpression, bool hasPointerType,
-		bool addressOfThis, bool hasStructureType);
+	Identifier* ident; //Ident is always a pointer type
+	bool usesDirectValue() const; //Not referenceing
+	PointerExpression(Identifier* ident, Expression* offsetExpression);
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
+/*===============================AddressOfExpression================================*/
+class AddressOfExpression : public Expression {
+public:
+	Expression* offsetExpression; //&ident[offsetExpression]
+	Identifier* ident; //Always acting on the direct value of ident
+	AddressOfExpression(Identifier* ident, Expression* offsetExpression);
+	virtual void describe() const;
+	virtual bool identsDeclared() const;
+	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+};
+
+/*===============================StructureExpression================================*/
+class StructureExpression : public Expression {
+public:
+	Identifier* field;
+	Identifier* ident; //structure ident
+	StructureExpression(Identifier* ident,Identifier* field);
+	virtual void describe() const;
+	virtual bool identsDeclared() const;
+	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+};
 
 #endif

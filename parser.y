@@ -22,7 +22,6 @@
 %union {
     Node* node;
     Expression* exp;
-    ReferenceExpression* rexp;
     Statement* statement;
     StructureDefinition* structureDeclaration;
     Identifier* identifier;
@@ -45,8 +44,7 @@
 
 //Types of grammar targets
 %type <identifier> ident
-%type <exp> exp numeric
-%type <rexp> rexp
+%type <exp> exp numeric rexp
 %type <statement> statement variableDec functionDec structDec_f
 %type <statement> if_statement externStatement
 %type <structureDeclaration> structDec_b
@@ -109,19 +107,11 @@ statement : variableDec TSCOLON TENDL {
 	     rexp TSET exp {
 		$$ = new AssignStatement($1,$3);
 		if(!($1->identsDeclared())) YYERROR;
-		if($1->addressOfThis) {
-		  printf("Attempt to assign to constant address\n");
-		  YYERROR;
-		}
 		$$->describe();
 	     } |
 	     rexp TSET exp TENDL {
                 $$ = new AssignStatement($1,$3);
 		if(!($1->identsDeclared())) YYERROR;
-		if($1->addressOfThis) {
-		  printf("Attempt to assign to constant address\n");
-		  YYERROR;
-		}
                 $$->describe();
              } |
              exp TENDL {
@@ -284,14 +274,10 @@ callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expressio
 		printf("Parser: callArgs additional argument found\n");}
               ;
 
-rexp : ident { $$ = new ReferenceExpression($1,nullptr,false,false,false); $$->describe(); }
-	    | TSTAR ident { $$ = new ReferenceExpression($2,new Integer(0),true,false,false); $$->describe(); }
-	    | TSAMPR ident { $$ = new ReferenceExpression($2,new Integer(0),false,true,false); $$->describe(); }
-	    | TSAMPR ident TLSBRACE exp TRSBRACE { 
-		$$ = new ReferenceExpression($2,$4,false,true,false); $$->describe(); }
-	    | ident TLSBRACE rexp TRSBRACE  { $$ = new ReferenceExpression($1,$3,true,false,false); $$->describe(); }
-	    | ident TDOT ident { $$ = new ReferenceExpression($1,new ReferenceExpression($3,nullptr,false,false,false),
-		false,false,true); }
+rexp : ident { $$ = $1; $$->describe(); }
+	    | TSTAR ident { $$ = new PointerExpression($2,new Integer(0)); $$->describe(); }
+	    | ident TLSBRACE rexp TRSBRACE  { $$ = new PointerExpression($1,$3); $$->describe(); }
+	    | ident TDOT ident { $$ = new StructureExpression($1,$3); $$->describe(); }
 	    ;
 
 //An identifier comes from the corresponding token string
@@ -312,6 +298,9 @@ exp : exp binaryOperatorToken exp { if (!($1->identsDeclared()) || !($3->identsD
             | exp TEQUAL exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR; 
 		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); $$->describe(); }
+	    | TSAMPR ident { $$ = new AddressOfExpression($2,new Integer(0)); $$->describe(); }
+	    | TSAMPR ident TLSBRACE exp TRSBRACE { 
+		$$ = new AddressOfExpression($2,$4); $$->describe(); }
             ;
 
 numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
