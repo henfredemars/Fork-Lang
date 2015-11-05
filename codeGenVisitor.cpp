@@ -728,65 +728,13 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	/*IdentExpression* left = a->target; //TODO fix assignment
-	//if(left->addressOfThis) {
-	//	return ErrorV("Unable to assign memory address of left operand");
-	//}
-	llvm::AllocaInst* var = namedValues[left->ident->name];
-	if(!var) {
-		return ErrorV("Unable to evaluate left operand in assignment statement");
-	}
 	llvm::Value* right = a->valxp->acceptVisitor(this);
-	if(!right) {
-		if(getAllocaType(var)->isPointerTy()) { //assign to NULL
-			if(getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
-				right = floatNullPointer;
-			}
-			else if(getAllocaType(var)->getContainedType(0)->isIntegerTy()) {
-				right = intNullPointer;
-			}
-			else if(getAllocaType(var)->getContainedType(0)->isStructTy()) {
-				right = getNullPointer(getAllocaType(var)->getContainedType(0)->getStructName());
-			}
-			else {
-				return ErrorV("Unable to assign to unknown pointer type");
-			}
-			builder->CreateStore(right, var);
-			return right;
-		}
-		else {
-			return ErrorV("Unable to assign evaluated null right operand to non pointer type");
-		}
+	HelperVisitor* h = new HelperVisitor(this, right);
+	llvm::Value* retVal = a->target->acceptVisitor(h);
+	if(!retVal) {
+		return ErrorV("Unable to evaluate assignment statement");
 	}
-	//if(left->hasPointerType) {
-	//	llvm::Value* offset = left->offsetExpression->acceptVisitor(this);
-	//	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
-	//	if(getValType(right) != getPointedType(varPtr)->getContainedType(0)) {
-	//		if(getValType(right)->isIntegerTy() && getPointedType(varPtr)->getContainedType(0)->isDoubleTy()) {
-	//			right = castIntToFloat(right);
-	//		}
-	//		else {
-	//			return ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
-	//		}
-	//	}
-	//	llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateGEP(varPtr, offset));
-	//	builder->CreateStore(right, derefVar);
-	//	return right;	
-	//}
-	if(getAllocaType(var)->isDoubleTy() && getValType(right)->isIntegerTy()) {
-		right = castIntToFloat(right);
-	}
-	else if(getAllocaType(var) != getValType(right)) {
-		return ErrorV("Unable to assign evaluated right operand of bad type to left operand");
-	}
-	else if(getAllocaType(var)->isPointerTy()) {
-		if(getAllocaType(var)->getContainedType(0) != getPointedType(right)) {
-			return ErrorV("Unable to assign evaluated right operand of bad pointer type to left operand");
-		}
-	}
-	builder->CreateStore(right, var); //store value for right in var
-	return right; //allows chained assignment X = ( Y = 4 + 1);*/
-	return ErrorV("Assignment currently broken");
+	return retVal;
 }
 
 /*===============================IfStatement================================*/
@@ -931,3 +879,104 @@ llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
 	}
 	return voidValue;
 }
+
+/*=================================HelperVisitor================================*/
+
+CodeGenVisitor::HelperVisitor::HelperVisitor(CodeGenVisitor* c, llvm::Value* right) {
+	this->c = c;
+	this->right = right;
+}
+
+llvm::Value* CodeGenVisitor::HelperVisitor::visitExpression(Expression* e) {
+	return c->ErrorV("Unable to left operand general expression");
+}
+
+llvm::Value* CodeGenVisitor::HelperVisitor::visitIdentifier(Identifier* i) {
+	llvm::AllocaInst* var = c->namedValues[i->name];
+	if(!right) {
+		if(c->getAllocaType(var)->isPointerTy()) { //assign to NULL
+			if(c->getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
+				right = c->floatNullPointer;
+			}
+			else if(c->getAllocaType(var)->getContainedType(0)->isIntegerTy()) {
+				right = c->intNullPointer;
+			}
+			else if(c->getAllocaType(var)->getContainedType(0)->isStructTy()) {
+				right = c->getNullPointer(c->getAllocaType(var)->getContainedType(0)->getStructName());
+			}
+			else {
+				return c->ErrorV("Unable to assign to unknown pointer type");
+			}
+			c->builder->CreateStore(right, var);
+			return right;
+		}
+		else {
+			return c->ErrorV("Unable to assign evaluated null right operand to non pointer type");
+		}
+	}
+	if(c->getAllocaType(var)->isDoubleTy() && c->getValType(right)->isIntegerTy()) {
+		right = c->castIntToFloat(right);
+	}
+	else if(c->getAllocaType(var) != c->getValType(right)) {
+		return c->ErrorV("Unable to assign evaluated right operand of bad type to left operand");
+	}
+	else if(c->getAllocaType(var)->isPointerTy()) {
+		if(c->getAllocaType(var)->getContainedType(0) != c->getPointedType(right)) {
+			return c->ErrorV("Unable to assign evaluated right operand of bad pointer type to left operand");
+		}
+	}
+	c->builder->CreateStore(right, var); //store value for right in var	
+	return right;
+}
+
+llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpression* e) { 
+	llvm::AllocaInst* var = c->namedValues[e->ident->name];
+	if(!right) {
+		return c->ErrorV("Unable to assign to left operand");
+	}
+	if(!var) {
+		return c->ErrorV("Unable to evaluate left operand in assignment statement");
+	}
+	llvm::Value* offset = e->offsetExpression->acceptVisitor(c);
+	auto varPtr = c->builder->CreateLoad(var)->getPointerOperand();
+	llvm::LoadInst* derefVar = c->builder->CreateLoad(c->builder->CreateGEP(varPtr, offset));
+	if(c->getValType(right) != c->getPointedType(varPtr)->getContainedType(0)) {
+		if(c->getValType(right)->isIntegerTy() && c->getPointedType(varPtr)->getContainedType(0)->isDoubleTy()) {
+			right = c->castIntToFloat(right);
+		}
+		else {
+			return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+		}
+	}
+	c->builder->CreateStore(right, derefVar);
+	return right;	
+}
+
+llvm::Value* CodeGenVisitor::HelperVisitor::visitAddressOfExpression(AddressOfExpression* e) {
+	return c->ErrorV("Unable to evaluate assignment to address");
+}
+
+llvm::Value* CodeGenVisitor::HelperVisitor::visitStructureExpression(StructureExpression* e) {
+	return nullptr;
+}
+
+llvm::Value* CodeGenVisitor::HelperVisitor::visitNode(Node* n) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitStatement(Statement* s) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitInteger(Integer* i) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitFloat(Float* f) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitNullaryOperator(NullaryOperator* n) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitUnaryOperator(UnaryOperator* u) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitBinaryOperator(BinaryOperator* b) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitBlock(Block* b) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitFunctionCall(FunctionCall* f) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitKeyword(Keyword* k) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitVariableDefinition(VariableDefinition* v) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitStructureDefinition(StructureDefinition* s) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitFunctionDefinition(FunctionDefinition* f) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitStructureDeclaration(StructureDeclaration* s) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitExpressionStatement(ExpressionStatement* e) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitReturnStatement(ReturnStatement* r) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitAssignStatement(AssignStatement* a) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitIfStatement(IfStatement* i) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitExternStatement(ExternStatement* e) {return nullptr;}
+llvm::Value* CodeGenVisitor::HelperVisitor::visitNullLiteral(NullLiteral* n) {return nullptr;}
