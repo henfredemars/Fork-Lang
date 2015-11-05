@@ -51,6 +51,38 @@ public:
 
 class CodeGenVisitor : public ASTVisitor {
 private:
+	class HelperVisitor : public ASTVisitor {
+	private:
+		CodeGenVisitor* c;
+		llvm::Value* right;
+	public:
+		HelperVisitor(CodeGenVisitor* c, llvm::Value* right);
+		llvm::Value* visitNode(Node* n);
+		llvm::Value* visitExpression(Expression* e);
+		llvm::Value* visitStatement(Statement* s);
+		llvm::Value* visitInteger(Integer* i);
+		llvm::Value* visitFloat(Float* f);
+		llvm::Value* visitIdentifier(Identifier* i);
+		llvm::Value* visitNullaryOperator(NullaryOperator* n);
+		llvm::Value* visitUnaryOperator(UnaryOperator* u);
+		llvm::Value* visitBinaryOperator(BinaryOperator* b);
+		llvm::Value* visitBlock(Block* b);
+		llvm::Value* visitFunctionCall(FunctionCall* f);
+		llvm::Value* visitKeyword(Keyword* k);
+		llvm::Value* visitVariableDefinition(VariableDefinition* v);
+		llvm::Value* visitStructureDefinition(StructureDefinition* s);
+		llvm::Value* visitFunctionDefinition(FunctionDefinition* f);
+		llvm::Value* visitStructureDeclaration(StructureDeclaration* s);
+		llvm::Value* visitExpressionStatement(ExpressionStatement* e);
+		llvm::Value* visitReturnStatement(ReturnStatement* r);
+		llvm::Value* visitAssignStatement(AssignStatement* a);
+		llvm::Value* visitIfStatement(IfStatement* i);
+		llvm::Value* visitPointerExpression(PointerExpression* e);
+		llvm::Value* visitAddressOfExpression(AddressOfExpression* e);
+		llvm::Value* visitStructureExpression(StructureExpression* e);
+		llvm::Value* visitExternStatement(ExternStatement* e);
+		llvm::Value* visitNullLiteral(NullLiteral* n);
+	};
 	bool error;
 	bool justReturned;
 	llvm::LLVMContext* context;
@@ -63,6 +95,7 @@ private:
 	std::map<std::string, llvm::AllocaInst*> namedValues;
 	std::map<std::string, std::tuple<llvm::StructType*, std::vector<std::string>>> structTypes;
 	std::map<std::string, Binops> switchMap;
+	llvm::Value* ErrorV(const char* str);
 	void populateSwitchMap();
 	llvm::Value* castIntToFloat(llvm::Value* val);
 	llvm::Value* castIntToBoolean(llvm::Value* val);
@@ -76,7 +109,6 @@ private:
 	llvm::Type* getAllocaType(llvm::AllocaInst* alloca);
 	llvm::Constant* getNullPointer(std::string typeName);
 	llvm::Type* getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid);
-	llvm::Value* ErrorV(const char* str);
 	llvm::Function* generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
