@@ -736,7 +736,7 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	ReferenceExpression* left = a->target;
+	/*ReferenceExpression* left = a->target;
 	if(left->addressOfThis) {
 		return ErrorV("Unable to assign memory address of left operand");
 	}
@@ -792,7 +792,8 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 		}
 	}
 	builder->CreateStore(right, var); //store value for right in var
-	return right; //allows chained assignment X = ( Y = 4 + 1);
+	return right; //allows chained assignment X = ( Y = 4 + 1);*/
+	return ErrorV("AssignmentStatement needs update from changes to ReferenceExpression (removal)");
 }
 
 /*===============================IfStatement================================*/
@@ -881,7 +882,7 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 }
 
 /*===============================ReferenceExpression================================*/
-llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
+/*llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 	if(!r)
 		return ErrorV("Unable to evaluate reference Expression");
 	llvm::AllocaInst* var = namedValues[r->ident->name];
@@ -930,6 +931,21 @@ llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
 		return builder->CreateLoad(builder->CreateConstGEP1_64(builder->CreateLoad(var)->getPointerOperand(), 0))->getPointerOperand();
 	}
 	return r->ident->acceptVisitor(this);
+}*/
+
+/*===============================PointerExpression================================*/
+llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
+	return ErrorV("PointerExpression unimplemented");
+}
+
+/*===============================AddressOfExpression================================*/
+llvm::Value* CodeGenVisitor::visitAddressOfExpression(AddressOfExpression* e) {
+	return ErrorV("AddressOfExpression unimplemented");
+}
+
+/*===============================StructureExpression================================*/
+llvm::Value* CodeGenVisitor::visitStructureExpression(StructureExpression* e) {
+	return ErrorV("StructureExpression unimplemented");
 }
 
 /*===============================ExternStatement================================*/

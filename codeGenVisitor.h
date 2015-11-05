@@ -42,7 +42,9 @@ public:
 	virtual llvm::Value* visitReturnStatement(ReturnStatement* r) =0;
 	virtual llvm::Value* visitAssignStatement(AssignStatement* a) =0;
 	virtual llvm::Value* visitIfStatement(IfStatement* i) =0;
-	virtual llvm::Value* visitReferenceExpression(ReferenceExpression* e) =0;
+	virtual llvm::Value* visitPointerExpression(PointerExpression* e) =0;
+	virtual llvm::Value* visitAddressOfExpression(AddressOfExpression* e) =0;
+	virtual llvm::Value* visitStructureExpression(StructureExpression* e) =0;
 	virtual llvm::Value* visitExternStatement(ExternStatement* e) =0;
 	virtual llvm::Value* visitNullLiteral(NullLiteral* n) =0;
 };
@@ -100,7 +102,9 @@ public:
 	llvm::Value* visitReturnStatement(ReturnStatement* r);
 	llvm::Value* visitAssignStatement(AssignStatement* a);
 	llvm::Value* visitIfStatement(IfStatement* i);
-	llvm::Value* visitReferenceExpression(ReferenceExpression* r);
+	llvm::Value* visitPointerExpression(PointerExpression* r);
+	llvm::Value* visitAddressOfExpression(AddressOfExpression* r);
+	llvm::Value* visitStructureExpression(StructureExpression* r);
 	llvm::Value* visitExternStatement(ExternStatement* e);
 	llvm::Value* visitNullLiteral(NullLiteral* n);
 };
