@@ -248,6 +248,7 @@ public:
 class FunctionDefinition : public Statement {
 public:
 	Keyword* type;
+	Identifier* user_type;
 	Identifier* ident;
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args;
 	Block* block;
@@ -255,6 +256,10 @@ public:
 	FunctionDefinition(Keyword* type, Identifier* ident, std::vector<VariableDefinition*,
 		gc_allocator<VariableDefinition*>>* args,
 	Block* block, bool hasPointerType);
+	FunctionDefinition(Identifier* user_type, Identifier* ident, std::vector<VariableDefinition*,
+		gc_allocator<VariableDefinition*>>* args,
+	Block* block, bool hasPointerType);
+	bool validate() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
