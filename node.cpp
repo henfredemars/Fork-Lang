@@ -430,7 +430,7 @@ llvm::Value* ReturnStatement::acceptVisitor(ASTVisitor* v) {
 }
 
 /*=============================AssignStatement==============================*/
-AssignStatement::AssignStatement(ReferenceExpression* target,Expression* valxp) {
+AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
 	this->target = target;
 	this->valxp = valxp;
 }
@@ -570,31 +570,66 @@ bool TypeTable::check(const char* ident) const {
 	return std::find(types.begin(), types.end(), std::string(ident)) != types.end();
 }
 
-
-/*===============================ReferenceExpression================================*/
-ReferenceExpression::ReferenceExpression(Identifier* ident,Expression* offsetExpression,
-	bool hasPointerType, bool addressOfThis, bool hasStructureType) {
+/*===============================PointerExpression================================*/
+PointerExpression::PointerExpression(Identifier* ident,Expression* offsetExpression) {
 	this->ident = ident;
 	this->offsetExpression = offsetExpression;
-	this->hasPointerType = hasPointerType;
-	this->addressOfThis = addressOfThis;
-	this->hasStructureType = hasStructureType;
+	assert(ident && "No identifier given for PointerExpression");
 }
 
-bool ReferenceExpression::usesDirectValue() const {
-	return (offsetExpression == nullptr);
+bool PointerExpression::usesDirectValue() const {
+	return offsetExpression == nullptr;
 }
 
-bool ReferenceExpression::identsDeclared() const {
-	return (ident->declaredAsVar() && (!offsetExpression || hasStructureType ||
-		offsetExpression->identsDeclared()));
+void PointerExpression::describe() const {
+	printf("---Found PointerExpression for: %s\n",ident->name);
 }
 
-void ReferenceExpression::describe() const {
-	printf("---Found ReferenceExpression for ident: %s\n",ident->name);
+bool PointerExpression::identsDeclared() const {
+	return sym_table.check(ident->name,VARIABLE) && offsetExpression->identsDeclared();
 }
 
-llvm::Value* ReferenceExpression::acceptVisitor(ASTVisitor* v) {
-	return v->visitReferenceExpression(this);
+llvm::Value* PointerExpression::acceptVisitor(ASTVisitor* v) {
+	return v->visitPointerExpression(this);
+}
+
+/*===============================AddressOfExpression================================*/
+AddressOfExpression::AddressOfExpression(Identifier* ident,Expression* offsetExpression) {
+	this->ident = ident;
+	this->offsetExpression = offsetExpression;
+	assert(ident && "No identifier given for AddressOfExpression");
+}
+
+void AddressOfExpression::describe() const {
+	printf("---Found AddressOfExpression for: %s\n",ident->name);
+}
+
+bool AddressOfExpression::identsDeclared() const {
+	return sym_table.check(ident->name,VARIABLE) && (!offsetExpression || offsetExpression->identsDeclared());
+}
+
+llvm::Value* AddressOfExpression::acceptVisitor(ASTVisitor* v) {
+	return v->visitAddressOfExpression(this);
+}
+
+/*===============================StructureExpression================================*/
+StructureExpression::StructureExpression(Identifier* ident,Identifier* field) {
+	this->ident = ident;
+	this->field = field;
+	assert(ident && "No structure identifier given for StructureExpression");
+	assert(field && "No field given for StructureExpression");
+}
+
+void StructureExpression::describe() const {
+	printf("---Found StructureExpression for: %s, field: %s\n",ident->name,field->name);
+}
+
+bool StructureExpression::identsDeclared() const {
+	//TODO Check if field is valid field name?
+	return sym_table.check(ident->name,VARIABLE);
+}
+
+llvm::Value* StructureExpression::acceptVisitor(ASTVisitor* v) {
+	return v->visitStructureExpression(this);
 }
 
