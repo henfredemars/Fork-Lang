@@ -72,6 +72,7 @@ private:
 	llvm::Type* getPointedType(llvm::Value* val);
 	llvm::Type* getFuncRetType(llvm::Function* func);
 	llvm::Type* getAllocaType(llvm::AllocaInst* alloca);
+	llvm::Type* getTypeFromString(std::string typeString, bool isPointer, bool allowsVoid);
 	llvm::Value* ErrorV(const char* str);
 	llvm::Function* generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);

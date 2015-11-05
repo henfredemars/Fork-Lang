@@ -62,65 +62,53 @@ llvm::Type* CodeGenVisitor::getAllocaType(llvm::AllocaInst* alloca) {
 	return alloca->getAllocatedType();
 }
 
+llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeString, bool isPointer, bool allowsVoid) {
+	if(isPointer) {
+		if(typeString == "float") {
+			return llvm::Type::getDoublePtrTy(*context);
+		}
+		else if(typeString == "int") {
+			return llvm::Type::getInt64PtrTy(*context);
+		}
+		else {
+			return (llvm::Type*) ErrorV("Invalid pointer type detected");
+		}
+	}
+	else {
+		if(typeString == "float") {
+			return builder->getDoubleTy(); 
+		}
+		else if(typeString == "int") {
+			return builder->getInt64Ty();
+		}
+		else if(typeString == "void") {
+			if(allowsVoid) {
+				return builder->getVoidTy();
+			}
+			return (llvm::Type*) ErrorV("Invalid type void detected");
+		}
+	}
+	return (llvm::Type*) ErrorV("Invalid type detected");
+}
+
 llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments) {
 	llvm::FunctionType* funcType = nullptr;
 	llvm::Function* func = nullptr;
 	std::vector<llvm::Type*> inputArgs; //set input args as float or int
 	for(auto it = arguments->begin(), end = arguments->end(); it < end; ++it) {
-		std::string type = (*it)->type->name;
-		if((*it)->hasPointerType) {
-			if(type == "float") {
-				inputArgs.push_back(llvm::Type::getDoublePtrTy(*context));
-			}
-			else if(type == "int") {
-				inputArgs.push_back(llvm::Type::getInt64PtrTy(*context));
-			}
-			else {
-				return (llvm::Function*) ErrorV("Invalid argument pointer type for function definition");
-			}
+		auto argument = *it;
+		std::string typeString = argument->type->name;
+		llvm::Type* type = getTypeFromString(typeString, argument->hasPointerType, false);
+		if(!type) {
+			return (llvm::Function*) ErrorV("Invalid argument for function definition");
 		}
-		else {
-			if(type == "float") {
-				inputArgs.push_back(builder->getDoubleTy());
-			}
-			else if(type == "int") {
-				inputArgs.push_back(builder->getInt64Ty());
-			}
-			else {
-				return (llvm::Function*) ErrorV("Invalid argument type for function definition");
-			}
-		}
+		inputArgs.push_back(type);
 	}
-	if(hasPointerType) { //set function return type
-		if(returnType == "float") {
-			funcType = llvm::FunctionType::get(llvm::Type::getDoublePtrTy(*context), inputArgs, false);
-		}
-
-		else if(returnType == "int") {
-			funcType = llvm::FunctionType::get(llvm::Type::getInt64PtrTy(*context), inputArgs, false);
-		}
-		else if(returnType == "void") {
-			return (llvm::Function*) ErrorV("Invalid return type of void* for function definition");
-		}
-		else {
-			return (llvm::Function*) ErrorV("Invalid return pointer type for function definition");
-		}
+	llvm::Type* type = getTypeFromString(returnType, hasPointerType, true);
+	if(!type) {
+		return (llvm::Function*) ErrorV("Invalid return for function definition");
 	}
-	else {
-		if(returnType == "float") {
-			funcType = llvm::FunctionType::get(builder->getDoubleTy(), inputArgs, false);
-		}
-
-		else if(returnType == "int") {
-			funcType = llvm::FunctionType::get(builder->getInt64Ty(), inputArgs, false);
-		}
-		else if(returnType == "void") {
-			funcType = llvm::FunctionType::get(builder->getVoidTy(), inputArgs, false); 
-		}
-		else {
-			return (llvm::Function*) ErrorV("Invalid return type for function definition");
-		}
-	}
+	funcType = llvm::FunctionType::get(type, inputArgs, false);
 	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, theModule.get());
 	{ //set names for func args
 	size_t i = 0;
@@ -553,54 +541,39 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<std::string> stringVec;
 	for(auto it = vars.begin(), end = vars.end(); it != end; ++it) {
 		VariableDefinition* var = *it;
-		std::string type = var->type->name;
+		std::string stringType = var->type->name;
 		if(var->exp) {
 			return ErrorV("Attempt to instantiate types within structs that can only be declared");
 		}
-		if(var->hasPointerType) {
-			if(type == "int") {
-				types.push_back(llvm::Type::getInt64PtrTy(*context));
-			}
-			else if(type == "float") {
-				types.push_back(llvm::Type::getDoublePtrTy(*context));
-			}
-			else {
-				return ErrorV("Attempt to create pointer type within struct that is not previously declared");
-			}
+		llvm::Type* type = getTypeFromString(stringType, var->hasPointerType, false);
+		if(!type) {
+			return ErrorV("Invalid type for struct definition");
 		}
-		else {
-			if(type == "int") {
-				types.push_back(builder->getInt64Ty());
-			}
-			else if(type == "float") {
-				types.push_back(builder->getDoubleTy());
-			}
-			else {
-				return ErrorV("Attempt to create type within struct that is not previously declared");
-			}
-		}
+		types.push_back(type);
 		stringVec.push_back(var->ident->name);
 	}
 	for(auto it = structs.begin(), end = structs.end(); it != end; ++it) {
 		StructureDeclaration* strct = *it;
-		std::string type = strct->type->name;
+		std::string stringType = strct->type->name;
 		if(!strct->hasPointerType) {	
-			if(type == s->ident->name) { //same struct type inside itself
+			if(stringType == s->ident->name) { //same struct type inside itself
 				return ErrorV("Attempt to evaluate recursive struct with no pointer");
 			}
-			else if(structTypes.find(type) != structTypes.end()) { //getStructType retrieves struct from struct map
-				types.push_back(std::get<0>(structTypes.find(type)->second));
+			else if(structTypes.find(stringType) != structTypes.end()) { //getStructType retrieves struct from struct map
+				llvm::StructType* tempStruct = std::get<0>(structTypes.find(stringType)->second);
+				types.push_back(tempStruct);
 			}
 			else {
 				return ErrorV("Attempt to create struct pointer type within struct that is not previously declared");
 			}
 		} 
 		else {
-			if(type == s->ident->name) {
+			if(stringType == s->ident->name) {
 				types.push_back(llvm::PointerType::getUnqual(currStruct));
 			}
-			else if(structTypes.find(type) != structTypes.end()) {
-				types.push_back(llvm::PointerType::getUnqual(std::get<0>(structTypes.find(type)->second)));
+			else if(structTypes.find(stringType) != structTypes.end()) {
+				llvm::StructType* tempStruct = std::get<0>(structTypes.find(stringType)->second);
+				types.push_back(llvm::PointerType::getUnqual(tempStruct));
 			}
 			else {
 				return ErrorV("Attempt to create struct type within struct that is not previously declared");

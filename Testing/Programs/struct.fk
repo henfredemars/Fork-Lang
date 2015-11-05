@@ -14,10 +14,6 @@ struct structy {
 	structy* e;
 };
 
-//void function(structy x) {
-//	return;
-//}
-//
 //structy function() {
 //	structy a;
 //	return a;
@@ -28,6 +24,7 @@ void main() {
 	classy b;
 	classy* c;
 	c = &b;
+	*c = b;
 	//structy* c;
 	//if(c) {
 	//	print_int(4);
