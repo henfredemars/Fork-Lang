@@ -61,31 +61,45 @@ llvm::Type* CodeGenVisitor::getFuncRetType(llvm::Function* func) {
 llvm::Type* CodeGenVisitor::getAllocaType(llvm::AllocaInst* alloca) {
 	return alloca->getAllocatedType();
 }
+llvm::Constant* CodeGenVisitor::getNullPointer(std::string typeName) {
+	if(structTypes.find(typeName) != structTypes.end()) {
+		llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
+		return llvm::Constant::getNullValue(llvm::PointerType::getUnqual(tempStruct));
+	}
+	return (llvm::Constant*)ErrorV("Attempt to create null pointer of undeclared struct type");
+}
 
-llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeString, bool isPointer, bool allowsVoid) {
-	if(isPointer) {
-		if(typeString == "float") {
+llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid) {
+	if(isPointer) { 
+		if(typeName == "float") {
 			return llvm::Type::getDoublePtrTy(*context);
 		}
-		else if(typeString == "int") {
+		else if(typeName == "int") {
 			return llvm::Type::getInt64PtrTy(*context);
+		}
+		else if(structTypes.find(typeName) != structTypes.end()) {
+			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
+			return llvm::PointerType::getUnqual(tempStruct);
 		}
 		else {
 			return (llvm::Type*) ErrorV("Invalid pointer type detected");
 		}
 	}
 	else {
-		if(typeString == "float") {
+		if(typeName == "float") {
 			return builder->getDoubleTy(); 
 		}
-		else if(typeString == "int") {
+		else if(typeName == "int") {
 			return builder->getInt64Ty();
 		}
-		else if(typeString == "void") {
+		else if(typeName == "void") {
 			if(allowsVoid) {
 				return builder->getVoidTy();
 			}
 			return (llvm::Type*) ErrorV("Invalid type void detected");
+		}
+		else if(structTypes.find(typeName) != structTypes.end()) {
+			return std::get<0>(structTypes.find(typeName)->second);
 		}
 	}
 	return (llvm::Type*) ErrorV("Invalid type detected");
@@ -94,17 +108,17 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeString, bool isPoi
 llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments) {
 	llvm::FunctionType* funcType = nullptr;
 	llvm::Function* func = nullptr;
-	std::vector<llvm::Type*> inputArgs; //set input args as float or int
+	std::vector<llvm::Type*> inputArgs;
 	for(auto it = arguments->begin(), end = arguments->end(); it < end; ++it) {
 		auto argument = *it;
 		std::string typeString = argument->type->name;
-		llvm::Type* type = getTypeFromString(typeString, argument->hasPointerType, false);
+		llvm::Type* type = getTypeFromString(typeString, argument->hasPointerType, false); //TODO test struct args
 		if(!type) {
 			return (llvm::Function*) ErrorV("Invalid argument for function definition");
 		}
 		inputArgs.push_back(type);
 	}
-	llvm::Type* type = getTypeFromString(returnType, hasPointerType, true);
+	llvm::Type* type = getTypeFromString(returnType, hasPointerType, true); //TODO test struct return
 	if(!type) {
 		return (llvm::Function*) ErrorV("Invalid return for function definition");
 	}
@@ -193,7 +207,7 @@ llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
 
 /*================================Identifier================================*/
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
-  llvm::Value* val = namedValues[i->name];
+  llvm::AllocaInst* val = namedValues[i->name];
   if (!val)
     return ErrorV("Attempt to generate code for not previously defined variable");
   return builder->CreateLoad(val, i->name);
@@ -412,6 +426,9 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 				else if(getPointedType(funcArgument)->isDoubleTy()) {
 					argument = floatNullPointer;
 				}
+				else if(getPointedType(funcArgument)->isStructTy()) {
+					argument = getNullPointer(getPointedType(funcArgument)->getStructName());
+				}
 				else {
 					return ErrorV("Attempt to input pointer type to function argument of incorrect type");
 				}
@@ -541,11 +558,11 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<std::string> stringVec;
 	for(auto it = vars.begin(), end = vars.end(); it != end; ++it) {
 		VariableDefinition* var = *it;
-		std::string stringType = var->type->name;
+		std::string typeName = var->type->name;
 		if(var->exp) {
 			return ErrorV("Attempt to instantiate types within structs that can only be declared");
 		}
-		llvm::Type* type = getTypeFromString(stringType, var->hasPointerType, false);
+		llvm::Type* type = getTypeFromString(typeName, var->hasPointerType, false);
 		if(!type) {
 			return ErrorV("Invalid type for struct definition");
 		}
@@ -554,13 +571,13 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	}
 	for(auto it = structs.begin(), end = structs.end(); it != end; ++it) {
 		StructureDeclaration* strct = *it;
-		std::string stringType = strct->type->name;
+		std::string typeName = strct->type->name;
 		if(!strct->hasPointerType) {	
-			if(stringType == s->ident->name) { //same struct type inside itself
+			if(typeName == s->ident->name) { //same struct type inside itself
 				return ErrorV("Attempt to evaluate recursive struct with no pointer");
 			}
-			else if(structTypes.find(stringType) != structTypes.end()) { //getStructType retrieves struct from struct map
-				llvm::StructType* tempStruct = std::get<0>(structTypes.find(stringType)->second);
+			else if(structTypes.find(typeName) != structTypes.end()) { //getStructType retrieves struct from struct map
+				llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
 				types.push_back(tempStruct);
 			}
 			else {
@@ -568,11 +585,11 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 			}
 		} 
 		else {
-			if(stringType == s->ident->name) {
+			if(typeName == s->ident->name) {
 				types.push_back(llvm::PointerType::getUnqual(currStruct));
 			}
-			else if(structTypes.find(stringType) != structTypes.end()) {
-				llvm::StructType* tempStruct = std::get<0>(structTypes.find(stringType)->second);
+			else if(structTypes.find(typeName) != structTypes.end()) {
+				llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
 				types.push_back(llvm::PointerType::getUnqual(tempStruct));
 			}
 			else {
@@ -618,8 +635,7 @@ llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) 
 	}
 	auto structTuple = structTypes.find(s->type->name)->second;
 	if(s->hasPointerType) {
-		llvm::PointerType* pointerStruct = llvm::PointerType::getUnqual(std::get<0>(structTuple));
-		llvm::Constant* structPtrDec = llvm::Constant::getNullValue(pointerStruct);
+		llvm::Constant* structPtrDec = getNullPointer(s->type->name);
 		llvm::AllocaInst* alloca = createAlloca(func, structPtrDec->getType(), s->ident->name);
 		if(!alloca) {
 			return ErrorV("Unable to create alloca of pointer to struct type");
@@ -698,6 +714,9 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 		else if(getFuncRetType(func)->getContainedType(0)->isDoubleTy()) {
 			retVal = builder->CreateRet(floatNullPointer);
 		}
+		else if(getFuncRetType(func)->getContainedType(0)->isStructTy()) {
+			retVal = builder->CreateRet(getNullPointer(getFuncRetType(func)->getContainedType(0)->getStructName()));
+		}
 		else {
 			return ErrorV("Unable to return bad pointer type from function");
 		}
@@ -709,10 +728,10 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	/*ReferenceExpression* left = a->target;
-	if(left->addressOfThis) {
-		return ErrorV("Unable to assign memory address of left operand");
-	}
+	/*IdentExpression* left = a->target; //TODO fix assignment
+	//if(left->addressOfThis) {
+	//	return ErrorV("Unable to assign memory address of left operand");
+	//}
 	llvm::AllocaInst* var = namedValues[left->ident->name];
 	if(!var) {
 		return ErrorV("Unable to evaluate left operand in assignment statement");
@@ -726,6 +745,9 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 			else if(getAllocaType(var)->getContainedType(0)->isIntegerTy()) {
 				right = intNullPointer;
 			}
+			else if(getAllocaType(var)->getContainedType(0)->isStructTy()) {
+				right = getNullPointer(getAllocaType(var)->getContainedType(0)->getStructName());
+			}
 			else {
 				return ErrorV("Unable to assign to unknown pointer type");
 			}
@@ -736,23 +758,21 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 			return ErrorV("Unable to assign evaluated null right operand to non pointer type");
 		}
 	}
-	if(left->hasPointerType) {
-		llvm::Value* offset = left->offsetExpression->acceptVisitor(this);
-		//dereference left
-		auto varPtr = builder->CreateLoad(var)->getPointerOperand();
-		if(getValType(right) != getPointedType(varPtr)->getContainedType(0)) {
-			if(getValType(right)->isIntegerTy() && getPointedType(varPtr)->getContainedType(0)->isDoubleTy()) {
-				right = castIntToFloat(right);
-			}
-			else {
-				return ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
-			}
-		}
-		llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateGEP(varPtr, offset));
-		//store value for right in dereferenced left
-		builder->CreateStore(right, derefVar);
-		return right;	
-	}
+	//if(left->hasPointerType) {
+	//	llvm::Value* offset = left->offsetExpression->acceptVisitor(this);
+	//	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
+	//	if(getValType(right) != getPointedType(varPtr)->getContainedType(0)) {
+	//		if(getValType(right)->isIntegerTy() && getPointedType(varPtr)->getContainedType(0)->isDoubleTy()) {
+	//			right = castIntToFloat(right);
+	//		}
+	//		else {
+	//			return ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+	//		}
+	//	}
+	//	llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateGEP(varPtr, offset));
+	//	builder->CreateStore(right, derefVar);
+	//	return right;	
+	//}
 	if(getAllocaType(var)->isDoubleTy() && getValType(right)->isIntegerTy()) {
 		right = castIntToFloat(right);
 	}
@@ -766,7 +786,7 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	}
 	builder->CreateStore(right, var); //store value for right in var
 	return right; //allows chained assignment X = ( Y = 4 + 1);*/
-	return ErrorV("AssignmentStatement needs update from changes to ReferenceExpression (removal)");
+	return ErrorV("Assignment currently broken");
 }
 
 /*===============================IfStatement================================*/
@@ -822,110 +842,89 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 	func->getBasicBlockList().push_back(mergeIf);
 	//resolve then, else in mergeIf
 	builder->SetInsertPoint(mergeIf);
-	//llvm::PHINode* phi = nullptr;
-	//evaluate phi node
-	//if(getValType(ifEval)->isDoubleTy()) {
-	//	phi = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2);
-	//	elseEval = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
-	//}
-	//else if(getValType(ifEval)->isIntegerTy()) {
-	//	phi = builder->CreatePHI(llvm::Type::getInt64Ty(*context), 2);
-	//	elseEval = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
-	//}
-	//else if(getValType(ifEval)->isVoidTy()) {
-	//	phi = builder->CreatePHI(llvm::Type::getVoidTy(*context), 2);
-	//	elseEval = ifEval;
-	//}
-	//else if(getValType(ifEval)->isPointerTy()) {
-	//	if(getPointedType(ifEval)->isIntegerTy()) {
-	//		phi = builder->CreatePHI(llvm::Type::getInt64PtrTy(*context), 2);
-	//		elseEval = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context));
-	//	}
-	//	if(getPointedType(ifEval)->isDoubleTy()) {
-	//		phi = builder->CreatePHI(llvm::Type::getDoublePtrTy(*context), 2); 
- 	//		elseEval = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
-	//	}
-	//}
-	//else {
-	//	return ErrorV("If block could not be evaluated to an acceptable type");
-	//}
-	//phi->addIncoming(thenValue, thenIf);
-	//phi->addIncoming(elseValue, elseIf);
 	return voidValue;
 }
 
-/*===============================ReferenceExpression================================*/
-/*llvm::Value* CodeGenVisitor::visitReferenceExpression(ReferenceExpression* r) {
-	if(!r)
-		return ErrorV("Unable to evaluate reference Expression");
-	llvm::AllocaInst* var = namedValues[r->ident->name];
+/*===============================PointerExpression================================*/
+llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
+	if(!e)
+		return ErrorV("Unable to evaluate Pointer Expression");
+	llvm::AllocaInst* var = namedValues[e->ident->name];
 	if(!var) {
 		return ErrorV("Unable to evaluate variable");
 	}
-	if(r->hasStructureType) { //get struct values
-		if(!getAllocaType(var)->isStructTy()) {
-			return ErrorV("Unable to use dot operator on non-struct type");
-		}
-		std::string type = getAllocaType(var)->getStructName();
-		if(structTypes.find(type) == structTypes.end()) {
-			return ErrorV("Unable to access undeclared struct with dot operator");
-		}
-		auto structTuple = structTypes.find(type)->second;
-		bool found = false;
-		size_t index = 0;
-		std::string varName = ((Identifier*)r->offsetExpression)->name;
-		std::vector<std::string> varList = std::get<1>(structTuple);
-		for(size_t end = varList.size(); index != end; ++index) {
-			if(varName == varList.at(index)) {
-				found = true;
-				break;
-			}
-		}
-		if(!found) {
-			return ErrorV("Unable to express variable that does not belong to struct");
-		}
-		llvm::StructType* currStruct = std::get<0>(structTuple);
-		auto varptr = builder->CreateLoad(var)->getPointerOperand();
-		return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index));
-		return nullptr;
+	if(e->usesDirectValue()) {
+		return e->ident->acceptVisitor(this);
 	}
-	if(r->hasPointerType) {  //dereference via [] or * operators
-		llvm::Value* offset = r->offsetExpression->acceptVisitor(this);
-		if(!getValType(offset)->isIntegerTy()) {
-			return ErrorV("Unable to access relative address as a non-integer type");
-		}
-		auto varPtr = builder->CreateLoad(var)->getPointerOperand();
-		if(r->addressOfThis) { 
-			return builder->CreateLoad(builder->CreateGEP(varPtr, offset))->getPointerOperand();
-		}
-		return builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
+	llvm::Value* offset = e->offsetExpression->acceptVisitor(this);
+	if(!offset) {
+		return ErrorV("Unable to evaluate offset for Pointer Expression");
 	}
-	if(r->addressOfThis) { //get pointer
-		return builder->CreateLoad(builder->CreateConstGEP1_64(builder->CreateLoad(var)->getPointerOperand(), 0))->getPointerOperand();
+	if(!getValType(offset)->isIntegerTy()) {
+		return ErrorV("Unable to access relative address as a non-integer type");
 	}
-	return r->ident->acceptVisitor(this);
-}*/
-
-/*===============================PointerExpression================================*/
-llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
-	return ErrorV("PointerExpression unimplemented");
+	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
+	return builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
 }
 
 /*===============================AddressOfExpression================================*/
 llvm::Value* CodeGenVisitor::visitAddressOfExpression(AddressOfExpression* e) {
-	return ErrorV("AddressOfExpression unimplemented");
+	if(!e)
+		return ErrorV("Unable to evaluate Address Expression");
+	llvm::AllocaInst* var = namedValues[e->ident->name];
+	if(!var) {
+		return ErrorV("Unable to evaluate variable");
+	}
+	llvm::Value* offset = e->offsetExpression->acceptVisitor(this);
+	if(!offset) {
+		return ErrorV("Unable to evaluate offset for Address Expression");
+	}
+	if(!getValType(offset)->isIntegerTy()) {
+		return ErrorV("Unable to access relative address as a non-integer type");
+	}
+	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
+	return builder->CreateLoad(builder->CreateGEP(varPtr, offset))->getPointerOperand();
 }
 
 /*===============================StructureExpression================================*/
 llvm::Value* CodeGenVisitor::visitStructureExpression(StructureExpression* e) {
-	return ErrorV("StructureExpression unimplemented");
+	if(!e)
+		return ErrorV("Unable to evaluate Structure Expression");
+	llvm::AllocaInst* var = namedValues[e->ident->name];
+	if(!var) {
+		return ErrorV("Unable to evaluate variable");
+	}
+	if(!getAllocaType(var)->isStructTy()) {
+		return ErrorV("Unable to use dot operator on non-struct type");
+	}
+	std::string type = getAllocaType(var)->getStructName();
+	if(structTypes.find(type) == structTypes.end()) {
+		return ErrorV("Unable to access undeclared struct with dot operator");
+	}
+	auto structTuple = structTypes.find(type)->second;
+	bool found = false;
+	size_t index = 0;
+	std::string varName = e->field->name;
+	std::vector<std::string> varList = std::get<1>(structTuple);
+	for(size_t end = varList.size(); index != end; ++index) {
+		if(varName == varList.at(index)) {
+			found = true;
+			break;
+		}
+	}
+	if(!found) {
+		return ErrorV("Unable to evaluate variable that does not belong to struct");
+	}
+	auto varptr = builder->CreateLoad(var)->getPointerOperand();
+	llvm::StructType* currStruct = std::get<0>(structTuple);
+	return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index));
 }
 
 /*===============================ExternStatement================================*/
 llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
 	llvm::Function* func = theModule->getFunction(e->ident->name);
 	if(!func) {
-		func = generateFunction(e->hasPointerType, e->type->name, e->ident->name, e->args); //create function object with type|ident|args
+		func = generateFunction(e->hasPointerType, e->type->name, e->ident->name, e->args);
 	}
 	if(!func) {
 		return ErrorV("Invalid function signature");
