@@ -352,15 +352,34 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
 	std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
 	Block* block, bool hasPointerType) {
 	this->type = type;
+	this->user_type = nullptr;
 	this->ident = ident;
 	this->args = args;
 	this->block = block;
 	this->hasPointerType = hasPointerType;
+	assert(type && "Missing return type");
+        sym_table.insert(ident->name,FUNCTION);
+}
+
+FunctionDefinition::FunctionDefinition(Identifier* user_type, Identifier* ident,
+	std::vector<VariableDefinition*, gc_allocator<VariableDefinition*>>* args,
+	Block* block, bool hasPointerType) {
+	this->type = nullptr;
+	this->user_type = user_type;
+	this->ident = ident;
+	this->args = args;
+	this->block = block;
+	this->hasPointerType = hasPointerType;
+	assert(user_type && "Missing user-defined return type");
         sym_table.insert(ident->name,FUNCTION);
 }
 
 void FunctionDefinition::describe() const {
 	printf("---Found Function Definition: %s\n",ident->name);
+}
+
+bool FunctionDefinition::validate() const {
+	return (!user_type || user_type_table.check(user_type->name));
 }
 
 llvm::Value* FunctionDefinition::acceptVisitor(ASTVisitor* v) {
@@ -376,7 +395,7 @@ StructureDeclaration::StructureDeclaration(Identifier* type,Identifier* ident,bo
 
 bool StructureDeclaration::validate() {
         if (sym_table.check(ident->name)) {
-                printf("Variable name already exists in the symbol table\n");
+                printf("Variable name '%s' already exists in the symbol table\n",ident->name);
 		return false;
         } else if (!user_type_table.check(type->name)) {
                 yyerror("Type was not a declared in the structure table");
