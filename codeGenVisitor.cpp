@@ -78,6 +78,7 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 			return llvm::Type::getInt64PtrTy(*context);
 		}
 		else if(structTypes.find(typeName) != structTypes.end()) {
+			std::cout << "call me dammit" << std::endl;
 			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
 			return llvm::PointerType::getUnqual(tempStruct);
 		}
