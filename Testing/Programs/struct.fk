@@ -40,7 +40,6 @@ void main() {
 	a.e;
 	c = d;
 	c = &b;
-	*c = b;
 	print_int(a.a);
 	a.a = 15;
 	print_int(a.a);
@@ -49,6 +48,8 @@ void main() {
 	a.b = delta;
 	int r = *delta;
 	print_int(r)
+	*c.b = 4;
+	print_int(*c.b);
 	return;
 }
 
