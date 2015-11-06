@@ -223,6 +223,7 @@ public:
 	bool hasPointerType;
 	VariableDefinition();
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
+	virtual const char* stringType() const;
 	virtual void insertIntoSymbolTable();
 	virtual bool alreadyExistsInSymbolTable() const;
 	virtual bool alreadyExistsInLocalSymbolTable() const;
@@ -232,7 +233,7 @@ public:
 };
 
 /*===========================StructureDefinition============================*/
-class StructureDefinition : public VariableDefinition {
+class StructureDefinition : public Statement {
 public:
 	Identifier* ident;
 	Block* block;
@@ -240,6 +241,7 @@ public:
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> getVariables() const;
 	std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> getStructs() const;
 	bool validate(); //Not const!
+	virtual const char* stringType() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
@@ -273,6 +275,7 @@ public:
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType);
 	bool validate();
+	virtual const char* stringType() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
