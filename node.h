@@ -266,7 +266,7 @@ public:
 
 /*==========================StructureDeclaration============================*/
 //C-like declaration (not definition) of a structure
-class StructureDeclaration : public VariableDefinitions {
+class StructureDeclaration : public VariableDefinition {
 public:
 	Identifier* user_type; //Keyword type is always null
 	Identifier* ident;
