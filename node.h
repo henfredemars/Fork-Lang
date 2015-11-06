@@ -240,7 +240,7 @@ public:
 	StructureDefinition(Identifier* ident,Block* block);
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> getVariables() const;
 	std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> getStructs() const;
-	bool validate(); //Not const!
+	bool validate() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
@@ -271,9 +271,8 @@ public:
 class StructureDeclaration : public VariableDefinition {
 public:
 	Identifier* user_type; //Keyword type is always null
-	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType);
-	bool validate();
+	bool validate() const;
 	virtual const char* stringType() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);

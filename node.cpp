@@ -275,6 +275,7 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->ident = ident;
 	this->exp = exp;
 	this->hasPointerType = isPointer;
+	assert(ident);
 }
 
 VariableDefinition::VariableDefinition() {
@@ -336,7 +337,7 @@ std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> Structure
 	return sv->structList;
 }
 
-bool StructureDefinition::validate() {
+bool StructureDefinition::validate() const {
 	if (user_type_table.check(ident->name)) {
 	  printf("User type already exists!\n");
 	  return false;
@@ -405,7 +406,7 @@ StructureDeclaration::StructureDeclaration(Identifier* user_type,Identifier* ide
 	this->hasPointerType = hasPointerType;
 }
 
-bool StructureDeclaration::validate() {
+bool StructureDeclaration::validate() const {
         if (sym_table.check(ident->name)) {
                 printf("Variable name '%s' already exists in the symbol table\n",ident->name);
 		return false;
@@ -413,7 +414,6 @@ bool StructureDeclaration::validate() {
                 yyerror("Type was not a declared in the structure table");
 		return false;
 	}
-	sym_table.insert(ident->name,VARIABLE);
 	return true;
 }
 
