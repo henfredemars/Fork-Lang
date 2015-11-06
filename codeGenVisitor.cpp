@@ -840,8 +840,8 @@ llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
 	if(!getValType(offset)->isIntegerTy()) {
 		return ErrorV("Unable to access relative address as a non-integer type");
 	}
-	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
-	llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
+	auto varPtr = builder->CreateLoad(builder->CreateLoad(var))->getPointerOperand();
+	llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateGEP(varPtr, offset));
 	if(e->field) {
 		llvm::Type* type = getPointedType(derefVar->getPointerOperand());
 		if(type->isStructTy()) {
@@ -964,10 +964,10 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpres
 		return c->ErrorV("Unable to assign to left operand");
 	}
 	llvm::Value* offset = e->offsetExpression->acceptVisitor(c);
-	auto varPtr = c->builder->CreateLoad(var)->getPointerOperand();
+	auto varPtr = c->builder->CreateLoad(c->builder->CreateLoad(var))->getPointerOperand();
 	llvm::LoadInst* derefVar = c->builder->CreateLoad(c->builder->CreateGEP(varPtr, offset));
 	if(e->field) {
-		llvm::Type* type = c->getPointedType(derefVar->getPointerOperand())->getContainedType(0);
+		llvm::Type* type = c->getPointedType(derefVar->getPointerOperand());
 		if(type->isStructTy()) {
 			std::string typeString = type->getStructName();
 			std::string fieldName = e->field->name;
@@ -987,15 +987,15 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpres
 		}
 	}
 	else {
-		if(c->getValType(right) != c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)) {
-			if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)->isDoubleTy()) {
+		if(c->getValType(right) != c->getPointedType(derefVar->getPointerOperand())) {
+			if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefVar->getPointerOperand())->isDoubleTy()) {
 				right = c->castIntToFloat(right);
 			}
 			else {
 				return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
 			}
 		}
-		c->builder->CreateStore(right, derefVar);
+		c->builder->CreateStore(right, derefVar->getPointerOperand());
 	}
 	return right;	
 }
