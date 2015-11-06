@@ -636,12 +636,12 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 /*==========================StructureDeclaration============================*/
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
-	if(structTypes.find(s->type->name) == structTypes.end()) {
+	if(structTypes.find(s->user_type->name) == structTypes.end()) {
 		return ErrorV("Unable to instantiate struct that is not previously declared");
 	}
-	auto structTuple = structTypes.find(s->type->name)->second;
+	auto structTuple = structTypes.find(s->user_type->name)->second;
 	if(s->hasPointerType) {
-		llvm::Constant* structPtrDec = getNullPointer(s->type->name);
+		llvm::Constant* structPtrDec = getNullPointer(s->user_type->name);
 		llvm::AllocaInst* alloca = createAlloca(func, structPtrDec->getType(), s->ident->name);
 		if(!alloca) {
 			return ErrorV("Unable to create alloca of pointer to struct type");
