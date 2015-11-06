@@ -864,6 +864,9 @@ llvm::Value* CodeGenVisitor::visitAddressOfExpression(AddressOfExpression* e) {
 	if(!var) {
 		return ErrorV("Unable to evaluate variable");
 	}
+	if(!e->offsetExpression) {
+		return builder->CreateLoad(var)->getPointerOperand();
+	}
 	llvm::Value* offset = e->offsetExpression->acceptVisitor(this);
 	if(!offset) {
 		return ErrorV("Unable to evaluate offset for Address Expression");
@@ -871,7 +874,7 @@ llvm::Value* CodeGenVisitor::visitAddressOfExpression(AddressOfExpression* e) {
 	if(!getValType(offset)->isIntegerTy()) {
 		return ErrorV("Unable to access relative address as a non-integer type");
 	}
-	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
+	auto varPtr = builder->CreateLoad(builder->CreateLoad(var))->getPointerOperand();
 	return builder->CreateLoad(builder->CreateGEP(varPtr, offset))->getPointerOperand();
 }
 
