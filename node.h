@@ -221,6 +221,7 @@ public:
 	Identifier* ident;
 	Expression* exp;
 	bool hasPointerType;
+	VariableDefinition();
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
 	virtual void insertIntoSymbolTable();
 	virtual bool alreadyExistsInSymbolTable() const;
