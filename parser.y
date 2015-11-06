@@ -8,7 +8,7 @@
     Block *program;
 
     extern int yylex();
-    extern int yydebug;
+    //extern int yydebug;
     extern int yylineno;
     extern SymbolTable sym_table;
     extern TypeTable user_type_table;

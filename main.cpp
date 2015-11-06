@@ -4,7 +4,7 @@
 #include "gc/include/gc.h"
 
 extern int yyparse();
-extern int yydebug;
+//extern int yydebug;
 extern FILE* yyin;
 
 Block* ast_root = NULL;
@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	llvm::InitializeNativeTargetAsmPrinter();
 	llvm::InitializeNativeTargetAsmParser();
 	free_int(malloc_int(1)); //Force lib.so linkage
-	yydebug = 1;
+	//yydebug = 1;
 	if(argc == 2) {
 		yyin = fopen(argv[1], "r");
 		if(yyin) {
