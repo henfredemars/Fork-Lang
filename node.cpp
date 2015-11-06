@@ -590,14 +590,19 @@ bool TypeTable::check(const char* ident) const {
 }
 
 /*===============================PointerExpression================================*/
-PointerExpression::PointerExpression(Identifier* ident,Expression* offsetExpression) {
+PointerExpression::PointerExpression(Identifier* ident,Expression* offsetExpression, Identifier* field) {
 	this->ident = ident;
 	this->offsetExpression = offsetExpression;
+	this->field = field;
 	assert(ident && "No identifier given for PointerExpression");
 }
 
 bool PointerExpression::usesDirectValue() const {
 	return offsetExpression == nullptr;
+}
+
+bool PointerExpression::referencingStruct() const {
+	return !(!field);
 }
 
 void PointerExpression::describe() const {
