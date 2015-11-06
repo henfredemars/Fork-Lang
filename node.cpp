@@ -296,6 +296,10 @@ bool VariableDefinition::alreadyExistsInLocalSymbolTable() const {
 	return sym_table.checkLocal(ident->name,VARIABLE);
 }
 
+const char* VariableDefinition::stringType() const {
+	return ident->name;
+}
+
 void VariableDefinition::describe() const {
 	if (hasPointerType) {
 		printf("---Found Variable Declaration: type='%s*' identifier='%s'\n",
@@ -411,6 +415,10 @@ bool StructureDeclaration::validate() {
 	}
 	sym_table.insert(ident->name,VARIABLE);
 	return true;
+}
+
+const char* StructureDeclaration::stringType() const {
+	return user_type->name;
 }
 
 void StructureDeclaration::describe() const {
