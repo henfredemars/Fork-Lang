@@ -112,8 +112,7 @@ llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::strin
 	std::vector<llvm::Type*> inputArgs;
 	for(auto it = arguments->begin(), end = arguments->end(); it < end; ++it) {
 		auto argument = *it;
-		std::string typeString = argument->type->name;
-		llvm::Type* type = getTypeFromString(typeString, argument->hasPointerType, false); //TODO test struct args
+		llvm::Type* type = getTypeFromString(argument->stringType(), argument->hasPointerType, false); //TODO test struct args
 		if(!type) {
 			return (llvm::Function*) ErrorV("Invalid argument for function definition");
 		}
@@ -468,7 +467,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 		return ErrorV("Attempt to redefine variable");
 	}
 	llvm::Function* func = builder->GetInsertBlock()->getParent(); //future optimizations include memgen
-	std::string type = v->type->name;
+	std::string type = v->stringType();
 	llvm::Value* val = nullptr;
 	if(v->hasPointerType) {
 		if(v->exp) { //custom value
@@ -636,26 +635,28 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 /*==========================StructureDeclaration============================*/
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
-	if(structTypes.find(s->user_type->name) == structTypes.end()) {
+	std::string type = s->stringType();
+	std::string name = s->ident->name;
+	if(structTypes.find(type) == structTypes.end()) {
 		return ErrorV("Unable to instantiate struct that is not previously declared");
 	}
-	auto structTuple = structTypes.find(s->user_type->name)->second;
+	auto structTuple = structTypes.find(type)->second;
 	if(s->hasPointerType) {
-		llvm::Constant* structPtrDec = getNullPointer(s->user_type->name);
-		llvm::AllocaInst* alloca = createAlloca(func, structPtrDec->getType(), s->ident->name);
+		llvm::Constant* structPtrDec = getNullPointer(type);
+		llvm::AllocaInst* alloca = createAlloca(func, structPtrDec->getType(), name);
 		if(!alloca) {
 			return ErrorV("Unable to create alloca of pointer to struct type");
 		}
-		namedValues.insert(std::make_pair(s->ident->name, alloca));
+		namedValues.insert(std::make_pair(name, alloca));
 		return builder->CreateStore(structPtrDec, alloca);
 	}
 	llvm::StructType* currStruct = std::get<0>(structTuple);
-	llvm::AllocaInst* alloca = createAlloca(func, currStruct, s->ident->name);
+	llvm::AllocaInst* alloca = createAlloca(func, currStruct, name);
 	if(!alloca) {
 		return ErrorV("Unable to create alloca of struct type");
 	}
 	llvm::Constant* structDec = llvm::ConstantAggregateZero::get(currStruct);
-	namedValues.insert(std::make_pair(s->ident->name, alloca));
+	namedValues.insert(std::make_pair(name, alloca));
 	return builder->CreateStore(structDec, alloca);
 }
 
