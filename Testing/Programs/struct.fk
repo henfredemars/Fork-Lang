@@ -49,14 +49,6 @@ void main() {
 	a.b = delta;
 	int r = *delta;
 	print_int(r)
-	//structy* c;
-	//if(c) {
-	//	print_int(4);
-	//}
-	//classy* d;
-	//b.a = 5;
-	//b.b = 7
-	//b.c = 4.0;
 	return;
 }
 
