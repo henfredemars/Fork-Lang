@@ -14,24 +14,41 @@ struct structy {
 	structy* e;
 };
 
-//structy function(structy x) {
-//	structy a;
-//	return a;
-//}
+classy function(structy x, classy y, structy* z, int* q) {
+	classy* a;
+	classy b;
+	a = &b;
+	return *a;
+}
 
 void main() {
-	//structy a;
+	int w = 7;
+	int* x;
+	x = &w;
+	*x = 14;
+	print_int(*x);
+	structy a;
 	classy b;
 	classy* c;
 	classy* d;
-	//a.a;
-	//a.b;
-	//a.c;
-	//a.d;
-	//a.e;
+	structy* e;
+	//function(a, b, e);
+	a.a;
+	a.b;
+	a.c;
+	a.d;
+	a.e;
 	c = d;
 	c = &b;
 	*c = b;
+	print_int(a.a);
+	a.a = 15;
+	print_int(a.a);
+	int q = 27;
+	int* delta = &q;
+	a.b = delta;
+	int r = *delta;
+	print_int(r)
 	//structy* c;
 	//if(c) {
 	//	print_int(4);
