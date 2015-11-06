@@ -998,7 +998,7 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpres
 			}
 		}
 	}
-	c->builder->CreateStore(right, refVar;
+	c->builder->CreateStore(right, refVar);
 	return right;	
 }
 
