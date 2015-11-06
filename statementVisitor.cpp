@@ -1,5 +1,4 @@
 #include "statementVisitor.h"
-#include <iostream>
 
 StatementVisitor::StatementVisitor() {
 

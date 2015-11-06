@@ -655,4 +655,3 @@ bool StructureExpression::identsDeclared() const {
 llvm::Value* StructureExpression::acceptVisitor(ASTVisitor* v) {
 	return v->visitStructureExpression(this);
 }
-
