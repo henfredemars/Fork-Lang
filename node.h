@@ -368,8 +368,9 @@ class PointerExpression : public Expression {
 public:
 	Expression* offsetExpression;
 	Identifier* ident; //Ident is always a pointer type
+	Identifier* field;
 	bool usesDirectValue() const; //Not referenceing
-	PointerExpression(Identifier* ident, Expression* offsetExpression);
+	PointerExpression(Identifier* ident, Expression* offsetExpression, Identifier* field);
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
