@@ -8,7 +8,7 @@
     Block *program;
 
     extern int yylex();
-    extern int yydebug;
+    //extern int yydebug;
     extern int yylineno;
     extern SymbolTable sym_table;
     extern TypeTable user_type_table;
@@ -287,7 +287,7 @@ callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expressio
 
 rexp : ident { $$ = $1; $$->describe(); }
 	    | TSTAR ident { $$ = new PointerExpression($2,new Integer(0),nullptr); $$->describe(); }
-	    | ident TLSBRACE rexp TRSBRACE  { $$ = new PointerExpression($1,$3,nullptr); $$->describe(); }
+	    | ident TLSBRACE exp TRSBRACE  { $$ = new PointerExpression($1,$3,nullptr); $$->describe(); }
 	    | ident TDOT ident { $$ = new StructureExpression($1,$3); $$->describe(); }
 	    | TSTAR ident TDOT ident { $$ = new PointerExpression($2,new Integer(0),$4); $$->describe(); }
 	    ;
