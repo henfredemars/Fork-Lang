@@ -602,7 +602,8 @@ bool PointerExpression::usesDirectValue() const {
 }
 
 bool PointerExpression::referencingStruct() const {
-	return !field;
+	return !(!field);
+}
 
 void PointerExpression::describe() const {
 	printf("---Found PointerExpression for: %s\n",ident->name);

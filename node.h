@@ -370,6 +370,7 @@ public:
 	Identifier* ident; //Ident is always a pointer type
 	Identifier* field;
 	bool usesDirectValue() const; //Not referenceing
+	bool referencingStruct() const;
 	PointerExpression(Identifier* ident, Expression* offsetExpression, Identifier* field);
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
