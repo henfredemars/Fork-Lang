@@ -310,7 +310,7 @@ exp : exp binaryOperatorToken exp { if (!($1->identsDeclared()) || !($3->identsD
             | exp TEQUAL exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR; 
 		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); $$->describe(); }
-	    | TSAMPR ident { $$ = new AddressOfExpression($2,new Integer(0)); $$->describe(); }
+	    | TSAMPR ident { $$ = new AddressOfExpression($2,nullptr); $$->describe(); }
 	    | TSAMPR ident TLSBRACE exp TRSBRACE { 
 		$$ = new AddressOfExpression($2,$4); $$->describe(); }
             ;
