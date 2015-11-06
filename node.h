@@ -231,7 +231,7 @@ public:
 };
 
 /*===========================StructureDefinition============================*/
-class StructureDefinition : public Statement {
+class StructureDefinition : public VariableDefinition {
 public:
 	Identifier* ident;
 	Block* block;
@@ -266,13 +266,12 @@ public:
 
 /*==========================StructureDeclaration============================*/
 //C-like declaration (not definition) of a structure
-class StructureDeclaration : public Statement {
+class StructureDeclaration : public VariableDefinitions {
 public:
-	Identifier* type;
+	Identifier* user_type; //Keyword type is always null
 	Identifier* ident;
 	StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType);
 	bool validate();
-	bool hasPointerType;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
