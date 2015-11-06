@@ -607,7 +607,12 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	llvm::Function* func = theModule->getFunction(f->ident->name);
 	if(!func) {
-		func = generateFunction(f->hasPointerType, f->type->name, f->ident->name, f->args); //create function object with type|ident|args
+		if(!f->type) {
+			func = generateFunction(f->hasPointerType, f->user_type->name, f->ident->name, f->args); //struct return type
+		} 
+		else {
+			func = generateFunction(f->hasPointerType, f->type->name, f->ident->name, f->args); //keyword return type
+		}
 	}
 	if(!func) {//generateFunction returned nullptr
 		return ErrorV("Invalid function signature");
@@ -621,7 +626,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	for (auto &arg : func->args()) {
 		llvm::AllocaInst* alloca = createAlloca(func, arg.getType(), arg.getName());
     	builder->CreateStore(&arg, alloca); // Store init value into alloca
-		namedValues[arg.getName()] = alloca; //setup map
+		namedValues.insert(std::make_pair(arg.getName(), alloca)); //setup map
 	} //create alloca for each argument
 	llvm::Value* retVal = f->block->acceptVisitor(this);
 	return retVal;
@@ -861,7 +866,7 @@ llvm::Value* CodeGenVisitor::visitStructureExpression(StructureExpression* e) {
 		}
 	}
 	if(!found) {
-		return ErrorV("Unable to evaluate variable that does not belong to struct");
+		return ErrorV("Unable to evaluate field that does not belong to struct");
 	}
 	auto varptr = builder->CreateLoad(var)->getPointerOperand();
 	llvm::StructType* currStruct = std::get<0>(structTuple);
@@ -893,6 +898,9 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitExpression(Expression* e) {
 
 llvm::Value* CodeGenVisitor::HelperVisitor::visitIdentifier(Identifier* i) {
 	llvm::AllocaInst* var = c->namedValues[i->name];
+	if(!var) {
+		return c->ErrorV("Unable to evaluate identifier left operand in assignment statement");
+	}
 	if(!right) {
 		if(c->getAllocaType(var)->isPointerTy()) { //assign to NULL
 			if(c->getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
@@ -931,17 +939,17 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitIdentifier(Identifier* i) {
 
 llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpression* e) { 
 	llvm::AllocaInst* var = c->namedValues[e->ident->name];
+	if(!var) {
+		return c->ErrorV("Unable to evaluate dereferenced identifier left operand in assignment statement");
+	}
 	if(!right) {
 		return c->ErrorV("Unable to assign to left operand");
-	}
-	if(!var) {
-		return c->ErrorV("Unable to evaluate left operand in assignment statement");
 	}
 	llvm::Value* offset = e->offsetExpression->acceptVisitor(c);
 	auto varPtr = c->builder->CreateLoad(var)->getPointerOperand();
 	llvm::LoadInst* derefVar = c->builder->CreateLoad(c->builder->CreateGEP(varPtr, offset));
-	if(c->getValType(right) != c->getPointedType(varPtr)->getContainedType(0)) {
-		if(c->getValType(right)->isIntegerTy() && c->getPointedType(varPtr)->getContainedType(0)->isDoubleTy()) {
+	if(c->getValType(right) != c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)) {
+		if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)->isDoubleTy()) {
 			right = c->castIntToFloat(right);
 		}
 		else {
@@ -953,11 +961,48 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpres
 }
 
 llvm::Value* CodeGenVisitor::HelperVisitor::visitAddressOfExpression(AddressOfExpression* e) {
-	return c->ErrorV("Unable to evaluate assignment to address");
+	return c->ErrorV("Unable to assign a value to the reference of an identifier");
 }
 
 llvm::Value* CodeGenVisitor::HelperVisitor::visitStructureExpression(StructureExpression* e) {
-	return nullptr;
+	llvm::AllocaInst* var = c->namedValues[e->ident->name];
+	if(!var) {
+		return c->ErrorV("Unable to evaluate accessed field of struct for left operand in assignment statement");
+	}
+	if(!c->getAllocaType(var)->isStructTy()) {
+		return c->ErrorV("Unable to use dot operator on non-struct type");
+	}
+	std::string type = c->getAllocaType(var)->getStructName();
+	if(c->structTypes.find(type) == c->structTypes.end()) {
+		return c->ErrorV("Unable to access undeclared struct with dot operator");
+	}
+	auto structTuple = c->structTypes.find(type)->second;
+	bool found = false;
+	size_t index = 0;
+	std::string varName = e->field->name;
+	std::vector<std::string> varList = std::get<1>(structTuple);
+	for(size_t end = varList.size(); index != end; ++index) {
+		if(varName == varList.at(index)) {
+			found = true;
+			break;
+		}
+	}
+	if(!found) {
+		return c->ErrorV("Unable to evaluate field that does not belong to struct");
+	}
+	auto varptr = c->builder->CreateLoad(var)->getPointerOperand();
+	llvm::StructType* currStruct = std::get<0>(structTuple);
+	llvm::LoadInst* structField = c->builder->CreateLoad(c->builder->CreateStructGEP(currStruct, varptr, index));
+	if(c->getValType(right) != c->getPointedType(structField->getPointerOperand())) {
+		if(c->getValType(right)->isIntegerTy() && c->getPointedType(structField->getPointerOperand())->isDoubleTy()) {
+			right = c->castIntToFloat(right);
+		}
+		else {
+			return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+		}
+	}
+	c->builder->CreateStore(right, structField->getPointerOperand());
+	return right;
 }
 
 llvm::Value* CodeGenVisitor::HelperVisitor::visitNode(Node* n) {return nullptr;}
