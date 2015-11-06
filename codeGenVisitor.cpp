@@ -840,7 +840,7 @@ llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
 	if(!getValType(offset)->isIntegerTy()) {
 		return ErrorV("Unable to access relative address as a non-integer type");
 	}
-	auto varPtr = builder->CreateLoad(builder->CreateLoad(var))->getPointerOperand();
+	auto varPtr = builder->CreateLoad(var);
 	llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateGEP(varPtr, offset));
 	if(e->field) {
 		llvm::Type* type = getPointedType(derefVar->getPointerOperand());
@@ -865,7 +865,7 @@ llvm::Value* CodeGenVisitor::visitAddressOfExpression(AddressOfExpression* e) {
 		return ErrorV("Unable to evaluate variable");
 	}
 	if(!e->offsetExpression) {
-		return builder->CreateLoad(var)->getPointerOperand();
+		return var;
 	}
 	llvm::Value* offset = e->offsetExpression->acceptVisitor(this);
 	if(!offset) {
@@ -874,8 +874,8 @@ llvm::Value* CodeGenVisitor::visitAddressOfExpression(AddressOfExpression* e) {
 	if(!getValType(offset)->isIntegerTy()) {
 		return ErrorV("Unable to access relative address as a non-integer type");
 	}
-	auto varPtr = builder->CreateLoad(builder->CreateLoad(var))->getPointerOperand();
-	return builder->CreateLoad(builder->CreateGEP(varPtr, offset))->getPointerOperand();
+	auto varPtr = builder->CreateLoad(var);
+	return builder->CreateGEP(varPtr, offset);
 }
 
 /*===============================StructureExpression================================*/
@@ -967,39 +967,38 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpres
 		return c->ErrorV("Unable to assign to left operand");
 	}
 	llvm::Value* offset = e->offsetExpression->acceptVisitor(c);
-	auto varPtr = c->builder->CreateLoad(c->builder->CreateLoad(var))->getPointerOperand();
-	llvm::LoadInst* derefVar = c->builder->CreateLoad(c->builder->CreateGEP(varPtr, offset));
+	auto varPtr = c->builder->CreateLoad(var);
+	llvm::Value* refVar = c->builder->CreateLoad(c->builder->CreateGEP(varPtr, offset))->getPointerOperand();
 	if(e->field) {
-		llvm::Type* type = c->getPointedType(derefVar->getPointerOperand());
+		llvm::Type* type = c->getPointedType(refVar);
 		if(type->isStructTy()) {
 			std::string typeString = type->getStructName();
 			std::string fieldName = e->field->name;
-			llvm::Value* derefStruct = c->getStructField(typeString, fieldName, derefVar)->getPointerOperand();
-			if(c->getValType(right) != c->getPointedType(derefStruct)) {
-				if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefStruct)->isDoubleTy()) {
+			refVar = c->getStructField(typeString, fieldName, refVar)->getPointerOperand();
+			if(c->getValType(right) != c->getPointedType(refVar)) {
+				if(c->getValType(right)->isIntegerTy() && c->getPointedType(refVar)->isDoubleTy()) {
 					right = c->castIntToFloat(right);
 				}
 				else {
 					return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
 				}
 			}
-			c->builder->CreateStore(right, derefStruct);
 		}
 		else {
 			return c->ErrorV("Unable to use dot operator on dereferenced non-struct type");
 		}
 	}
 	else {
-		if(c->getValType(right) != c->getPointedType(derefVar->getPointerOperand())) {
-			if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefVar->getPointerOperand())->isDoubleTy()) {
+		if(c->getValType(right) != c->getPointedType(refVar)) {
+			if(c->getValType(right)->isIntegerTy() && c->getPointedType(refVar)->isDoubleTy()) {
 				right = c->castIntToFloat(right);
 			}
 			else {
 				return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
 			}
 		}
-		c->builder->CreateStore(right, derefVar->getPointerOperand());
 	}
+	c->builder->CreateStore(right, refVar;
 	return right;	
 }
 
@@ -1017,16 +1016,16 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitStructureExpression(StructureEx
 	}
 	std::string typeString = c->getAllocaType(var)->getStructName();
 	std::string fieldName = e->field->name;
-	llvm::Value* structField = c->getStructField(typeString, fieldName, var)->getPointerOperand();
-	if(c->getValType(right) != c->getPointedType(structField)) {
-		if(c->getValType(right)->isIntegerTy() && c->getPointedType(structField)->isDoubleTy()) {
+	llvm::Value* structFieldRef = c->getStructField(typeString, fieldName, var)->getPointerOperand();
+	if(c->getValType(right) != c->getPointedType(structFieldRef)) {
+		if(c->getValType(right)->isIntegerTy() && c->getPointedType(structFieldRef)->isDoubleTy()) {
 			right = c->castIntToFloat(right);
 		}
 		else {
 			return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
 		}
 	}
-	c->builder->CreateStore(right, structField);
+	c->builder->CreateStore(right, structFieldRef);
 	return right;
 }
 
