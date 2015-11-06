@@ -398,7 +398,7 @@ bool StructureDeclaration::validate() {
         if (sym_table.check(ident->name)) {
                 printf("Variable name '%s' already exists in the symbol table\n",ident->name);
 		return false;
-        } else if (!user_type_table.check(type->name)) {
+        } else if (!user_type_table.check(user_type->name)) {
                 yyerror("Type was not a declared in the structure table");
 		return false;
 	}
@@ -408,7 +408,7 @@ bool StructureDeclaration::validate() {
 
 void StructureDeclaration::describe() const {
 	printf("---Found Structure Declaration: type='%s' identifier='%s'\n",
-		type->name,ident->name);
+		user_type->name,ident->name);
 }
 
 llvm::Value* StructureDeclaration::acceptVisitor(ASTVisitor* v) {
