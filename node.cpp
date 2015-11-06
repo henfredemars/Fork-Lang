@@ -298,7 +298,7 @@ bool VariableDefinition::alreadyExistsInLocalSymbolTable() const {
 }
 
 const char* VariableDefinition::stringType() const {
-	return ident->name;
+	return type->name;
 }
 
 void VariableDefinition::describe() const {

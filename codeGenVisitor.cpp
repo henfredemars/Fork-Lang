@@ -69,6 +69,28 @@ llvm::Constant* CodeGenVisitor::getNullPointer(std::string typeName) {
 	return (llvm::Constant*)ErrorV("Attempt to create null pointer of undeclared struct type");
 }
 
+llvm::LoadInst* CodeGenVisitor::getStructField(std::string typeString, std::string fieldName, llvm::Value* var) {
+	if(structTypes.find(typeString) == structTypes.end()) {
+		return (llvm::LoadInst*)ErrorV("Unable to access undeclared struct with dot operator");
+	}
+	auto structTuple = structTypes.find(typeString)->second;
+	bool found = false;
+	size_t index = 0;
+	std::vector<std::string> varList = std::get<1>(structTuple);
+	for(size_t end = varList.size(); index != end; ++index) {
+		if(fieldName == varList.at(index)) {
+			found = true;
+			break;
+		}
+	}
+	if(!found) {
+		return (llvm::LoadInst*)ErrorV("Unable to evaluate field that does not belong to struct");
+	}
+	llvm::StructType* currStruct = std::get<0>(structTuple);
+	auto varptr = builder->CreateLoad(var)->getPointerOperand();
+	return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index));
+}
+
 llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid) {
 	if(isPointer) { 
 		if(typeName == "float") {
@@ -78,7 +100,6 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 			return llvm::Type::getInt64PtrTy(*context);
 		}
 		else if(structTypes.find(typeName) != structTypes.end()) {
-			std::cout << "call me dammit" << std::endl;
 			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
 			return llvm::PointerType::getUnqual(tempStruct);
 		}
@@ -558,7 +579,7 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<std::string> stringVec;
 	for(auto it = vars.begin(), end = vars.end(); it != end; ++it) {
 		VariableDefinition* var = *it;
-		std::string typeName = var->type->name;
+		std::string typeName = var->stringType();
 		if(var->exp) {
 			return ErrorV("Attempt to instantiate types within structs that can only be declared");
 		}
@@ -571,7 +592,7 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	}
 	for(auto it = structs.begin(), end = structs.end(); it != end; ++it) {
 		StructureDeclaration* strct = *it;
-		std::string typeName = strct->type->name;
+		std::string typeName = strct->stringType();
 		if(!strct->hasPointerType) {	
 			if(typeName == s->ident->name) { //same struct type inside itself
 				return ErrorV("Attempt to evaluate recursive struct with no pointer");
@@ -802,8 +823,9 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 
 /*===============================PointerExpression================================*/
 llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
-	if(!e)
+	if(!e) {
 		return ErrorV("Unable to evaluate Pointer Expression");
+	}
 	llvm::AllocaInst* var = namedValues[e->ident->name];
 	if(!var) {
 		return ErrorV("Unable to evaluate variable");
@@ -819,7 +841,19 @@ llvm::Value* CodeGenVisitor::visitPointerExpression(PointerExpression* e) {
 		return ErrorV("Unable to access relative address as a non-integer type");
 	}
 	auto varPtr = builder->CreateLoad(var)->getPointerOperand();
-	return builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
+	llvm::LoadInst* derefVar = builder->CreateLoad(builder->CreateLoad(builder->CreateGEP(varPtr, offset)));
+	if(e->field) {
+		llvm::Type* type = getPointedType(derefVar->getPointerOperand());
+		if(type->isStructTy()) {
+			std::string typeString = type->getStructName();
+			std::string fieldName = e->field->name;
+			return getStructField(typeString, fieldName, derefVar->getPointerOperand());
+		}
+		else {
+			return ErrorV("Unable to use dot operator on dereferenced non-struct type");
+		}
+	}
+	return derefVar;
 }
 
 /*===============================AddressOfExpression================================*/
@@ -852,27 +886,9 @@ llvm::Value* CodeGenVisitor::visitStructureExpression(StructureExpression* e) {
 	if(!getAllocaType(var)->isStructTy()) {
 		return ErrorV("Unable to use dot operator on non-struct type");
 	}
-	std::string type = getAllocaType(var)->getStructName();
-	if(structTypes.find(type) == structTypes.end()) {
-		return ErrorV("Unable to access undeclared struct with dot operator");
-	}
-	auto structTuple = structTypes.find(type)->second;
-	bool found = false;
-	size_t index = 0;
-	std::string varName = e->field->name;
-	std::vector<std::string> varList = std::get<1>(structTuple);
-	for(size_t end = varList.size(); index != end; ++index) {
-		if(varName == varList.at(index)) {
-			found = true;
-			break;
-		}
-	}
-	if(!found) {
-		return ErrorV("Unable to evaluate field that does not belong to struct");
-	}
-	auto varptr = builder->CreateLoad(var)->getPointerOperand();
-	llvm::StructType* currStruct = std::get<0>(structTuple);
-	return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index));
+	std::string fieldName = e->field->name;
+	std::string typeString = getAllocaType(var)->getStructName();
+	return getStructField(typeString, fieldName, var);
 }
 
 /*===============================ExternStatement================================*/
@@ -882,7 +898,7 @@ llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
 		func = generateFunction(e->hasPointerType, e->type->name, e->ident->name, e->args);
 	}
 	if(!func) {
-		return ErrorV("Invalid function signature");
+		return ErrorV("Invalid extern function signature");
 	}
 	return voidValue;
 }
@@ -950,15 +966,37 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitPointerExpression(PointerExpres
 	llvm::Value* offset = e->offsetExpression->acceptVisitor(c);
 	auto varPtr = c->builder->CreateLoad(var)->getPointerOperand();
 	llvm::LoadInst* derefVar = c->builder->CreateLoad(c->builder->CreateGEP(varPtr, offset));
-	if(c->getValType(right) != c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)) {
-		if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)->isDoubleTy()) {
-			right = c->castIntToFloat(right);
+	if(e->field) {
+		llvm::Type* type = c->getPointedType(derefVar->getPointerOperand())->getContainedType(0);
+		if(type->isStructTy()) {
+			std::string typeString = type->getStructName();
+			std::string fieldName = e->field->name;
+			llvm::Value* derefStruct = c->getStructField(typeString, fieldName, derefVar)->getPointerOperand();
+			if(c->getValType(right) != c->getPointedType(derefStruct)) {
+				if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefStruct)->isDoubleTy()) {
+					right = c->castIntToFloat(right);
+				}
+				else {
+					return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+				}
+			}
+			c->builder->CreateStore(right, derefStruct);
 		}
 		else {
-			return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+			return c->ErrorV("Unable to use dot operator on dereferenced non-struct type");
 		}
 	}
-	c->builder->CreateStore(right, derefVar);
+	else {
+		if(c->getValType(right) != c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)) {
+			if(c->getValType(right)->isIntegerTy() && c->getPointedType(derefVar->getPointerOperand())->getContainedType(0)->isDoubleTy()) {
+				right = c->castIntToFloat(right);
+			}
+			else {
+				return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
+			}
+		}
+		c->builder->CreateStore(right, derefVar);
+	}
 	return right;	
 }
 
@@ -974,36 +1012,18 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitStructureExpression(StructureEx
 	if(!c->getAllocaType(var)->isStructTy()) {
 		return c->ErrorV("Unable to use dot operator on non-struct type");
 	}
-	std::string type = c->getAllocaType(var)->getStructName();
-	if(c->structTypes.find(type) == c->structTypes.end()) {
-		return c->ErrorV("Unable to access undeclared struct with dot operator");
-	}
-	auto structTuple = c->structTypes.find(type)->second;
-	bool found = false;
-	size_t index = 0;
-	std::string varName = e->field->name;
-	std::vector<std::string> varList = std::get<1>(structTuple);
-	for(size_t end = varList.size(); index != end; ++index) {
-		if(varName == varList.at(index)) {
-			found = true;
-			break;
-		}
-	}
-	if(!found) {
-		return c->ErrorV("Unable to evaluate field that does not belong to struct");
-	}
-	auto varptr = c->builder->CreateLoad(var)->getPointerOperand();
-	llvm::StructType* currStruct = std::get<0>(structTuple);
-	llvm::LoadInst* structField = c->builder->CreateLoad(c->builder->CreateStructGEP(currStruct, varptr, index));
-	if(c->getValType(right) != c->getPointedType(structField->getPointerOperand())) {
-		if(c->getValType(right)->isIntegerTy() && c->getPointedType(structField->getPointerOperand())->isDoubleTy()) {
+	std::string typeString = c->getAllocaType(var)->getStructName();
+	std::string fieldName = e->field->name;
+	llvm::Value* structField = c->getStructField(typeString, fieldName, var)->getPointerOperand();
+	if(c->getValType(right) != c->getPointedType(structField)) {
+		if(c->getValType(right)->isIntegerTy() && c->getPointedType(structField)->isDoubleTy()) {
 			right = c->castIntToFloat(right);
 		}
 		else {
 			return c->ErrorV("Dereferenced left operand is assigned to right operand of incorrect type");
 		}
 	}
-	c->builder->CreateStore(right, structField->getPointerOperand());
+	c->builder->CreateStore(right, structField);
 	return right;
 }
 
