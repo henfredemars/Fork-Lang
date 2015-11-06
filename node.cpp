@@ -277,6 +277,13 @@ VariableDefinition::VariableDefinition(Keyword* type, Identifier* ident, Express
 	this->hasPointerType = isPointer;
 }
 
+VariableDefinition::VariableDefinition() {
+	this->type = nullptr;
+	this->ident = nullptr;
+	this->exp = nullptr;
+	this->hasPointerType = false;
+}
+
 void VariableDefinition::insertIntoSymbolTable() {
         sym_table.insert(ident->name,VARIABLE);
 }
@@ -388,7 +395,7 @@ llvm::Value* FunctionDefinition::acceptVisitor(ASTVisitor* v) {
 
 /*==========================StructureDeclaration============================*/
 StructureDeclaration::StructureDeclaration(Identifier* user_type,Identifier* ident,bool hasPointerType) {
-	this->user_type = type;
+	this->user_type = user_type;
 	this->type = nullptr;
 	this->ident = ident;
 	this->hasPointerType = hasPointerType;

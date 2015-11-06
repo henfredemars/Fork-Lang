@@ -221,6 +221,7 @@ public:
 	Identifier* ident;
 	Expression* exp;
 	bool hasPointerType;
+	VariableDefinition();
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
 	virtual void insertIntoSymbolTable();
 	virtual bool alreadyExistsInSymbolTable() const;
@@ -266,7 +267,7 @@ public:
 
 /*==========================StructureDeclaration============================*/
 //C-like declaration (not definition) of a structure
-class StructureDeclaration : public VariableDefinitions {
+class StructureDeclaration : public VariableDefinition {
 public:
 	Identifier* user_type; //Keyword type is always null
 	Identifier* ident;
