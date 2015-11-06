@@ -241,7 +241,6 @@ public:
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> getVariables() const;
 	std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> getStructs() const;
 	bool validate(); //Not const!
-	virtual const char* stringType() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
