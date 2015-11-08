@@ -10,7 +10,7 @@ std::mutex malloc_mutex;
 
 //Parallism data structures
 int64_t thread_count = 0;
-int64_t max_threads = 0;
+int64_t max_threads = -1;
 std::map<int,std::future<int64_t>> int_future_id_map;
 std::map<int,std::future<double>> float_future_id_map;
 std::map<int,std::future<int64_t*>> intptr_future_id_map;
@@ -78,13 +78,13 @@ extern "C" void free_int(int64_t* i) {
 //They are not intended to be called by user code
 
 void set_max_threads() {
-  if (max_threads) return;
-  unsigned long dth = std::thread::hardware_concurrency();
-  printf("Detected %d compute elements.\n",(int)dth);
-  if (dth < 1) max_threads = 1;
-  else if (dth > 4) max_threads = 4;
+  if (max_threads != -1) return;
+  unsigned long dth = std::thread::hardware_concurrency()-1;
+  printf("Detected %d additional compute elements.\n",(int)dth);
+  if (dth < 0) max_threads = 0;
+  else if (dth > 3) max_threads = 3;
   else max_threads = dth;
-  printf("Setting max_threads = %d\n",(int)max_threads);
+  printf("Setting max execution threads = %d\n",(int)max_threads+1);
 }
 
 extern "C"  void __fork_sched_int(int64_t (*statement)(void),int64_t id) {
