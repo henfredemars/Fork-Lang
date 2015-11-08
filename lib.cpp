@@ -88,6 +88,7 @@ void set_max_threads() {
   printf("Setting max execution threads to: %d\n",(int)max_threads+1);
 }
 
+// id - zero-indexed number of the statement being scheduled for the commit
 extern "C"  void __fork_sched_int(int64_t (*statement)(void),int64_t id) {
   set_max_threads();
   std::future<int64_t> promise;
