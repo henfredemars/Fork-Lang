@@ -173,6 +173,14 @@ extern "C"  void __fork_sched_void(void (*statement)(void),int64_t id) {
   map_mutex.unlock();
 }
 
+//Description of function parameters:
+//  original - value before the parallel execution
+//  known - original value parameter is valid
+//  update - value of previous recon statement, original if known, else any value accepted
+//  id - index of statement being reconned in this commit, starting at zero
+//  max - maximum valid index of statements in this commit
+//Conflict resolution scheme: none, always return value of the statement
+//Right now, none of the function parameters are used
 extern "C" int64_t __recon_int(int64_t original,int64_t known,int64_t update,int64_t id,int64_t max) {
   std::chrono::milliseconds span(0);
   map_mutex.lock();
