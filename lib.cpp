@@ -84,7 +84,7 @@ void set_max_threads() {
   if (dth < 0) max_threads = 0;
   else if (dth > 3) max_threads = 3;
   else max_threads = dth;
-  printf("Setting max execution threads = %d\n",(int)max_threads+1);
+  printf("Setting max execution threads to: %d\n",(int)max_threads+1);
 }
 
 extern "C"  void __fork_sched_int(int64_t (*statement)(void),int64_t id) {
