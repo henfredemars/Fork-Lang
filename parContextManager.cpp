@@ -9,77 +9,67 @@ StatementContext::StatementContext() {
 
 /*=================================StatementContext=================================*/
 void StatementContext::addIntFuture(std::future<int64_t>& f, const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   assert(int_future_id_map.count(id)==0 && "Statement id already exists");
   int_future_id_map.insert(std::pair<int64_t,std::future<int64_t>>(id,std::move(f)));
-  map_mutex.unlock();
 }
 
 void StatementContext::addFloatFuture(std::future<double>& f, const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   assert(float_future_id_map.count(id)==0 && "Statement id already exists");
   float_future_id_map.insert(std::pair<int64_t,std::future<double>>(id,std::move(f)));
-  map_mutex.unlock();
 }
 
 void StatementContext::addIntptrFuture(std::future<int64_t*>& f, const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   assert(intptr_future_id_map.count(id)==0 && "Statement id already exists");
   intptr_future_id_map.insert(std::pair<int64_t,std::future<int64_t*>>(id,std::move(f)));
-  map_mutex.unlock();
 }
 
 void StatementContext::addFloatptrFuture(std::future<double*>& f, const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   assert(floatptr_future_id_map.count(id)==0 && "Statement id already exists");
   floatptr_future_id_map.insert(std::pair<int64_t,std::future<double*>>(id,std::move(f)));
-  map_mutex.unlock();
 }
 
 void StatementContext::addVoidFuture(std::future<void>& f, const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   assert(void_future_id_map.count(id)==0 && "Statement id already exists");
   void_future_id_map.insert(std::pair<int64_t,std::future<void>>(id,std::move(f)));
-  map_mutex.unlock();
 }
 
 std::future<int64_t> StatementContext::getIntFuture(const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   auto f = std::move(int_future_id_map.at(id));
   int_future_id_map.erase(id);
-  map_mutex.unlock();
   return f;
 }
 
 std::future<double> StatementContext::getFloatFuture(const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   auto f = std::move(float_future_id_map.at(id));
   float_future_id_map.erase(id);
-  map_mutex.unlock();
   return f;
 }
 
 std::future<int64_t*> StatementContext::getIntptrFuture(const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   auto f = std::move(intptr_future_id_map.at(id));
   intptr_future_id_map.erase(id);
-  map_mutex.unlock();
   return f;
 }
 
 std::future<double*> StatementContext::getFloatptrFuture(const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   auto f = std::move(floatptr_future_id_map.at(id));
   floatptr_future_id_map.erase(id);
-  map_mutex.unlock();
   return f;
 }
 
 std::future<void> StatementContext::getVoidFuture(const int64_t id) {
-  map_mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(map_mutex);
   auto f = std::move(void_future_id_map.at(id));
   void_future_id_map.erase(id);
-  map_mutex.unlock();
   return f;
 }
 
@@ -91,21 +81,19 @@ ParContextManager::ParContextManager() {
 }
 
 int64_t ParContextManager::make_context() {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   int64_t cid = next_cid++;
-  mutex.unlock();
   return cid;
 }
 
 void ParContextManager::destroy_context(const int64_t cid) {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   assert(context_map.count(cid)==1);
   context_map.erase(cid);
-  mutex.unlock();
 }
 
 void ParContextManager::sched_int(int64_t (*statement)(void),const int64_t id,const int64_t cid) {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<int64_t> promise;
   if (thread_count >= max_threads) {
     promise = std::async(std::launch::deferred,statement);
@@ -114,11 +102,10 @@ void ParContextManager::sched_int(int64_t (*statement)(void),const int64_t id,co
     thread_count++;
   }
   context_map.at(cid).addIntFuture(promise,id);
-  mutex.unlock();
 }
 
 void ParContextManager::sched_float(double (*statement)(void),const int64_t id,const int64_t cid) {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<double> promise;
   if (thread_count >= max_threads) {
     promise = std::async(std::launch::deferred,statement);
@@ -127,11 +114,10 @@ void ParContextManager::sched_float(double (*statement)(void),const int64_t id,c
     thread_count++;
   }
   context_map.at(cid).addFloatFuture(promise,id);
-  mutex.unlock();
 }
 
 void ParContextManager::sched_intptr(int64_t* (*statement)(void),int64_t id,const int64_t cid) {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<int64_t*> promise;
   if (thread_count >= max_threads) {
     promise = std::async(std::launch::deferred,statement);
@@ -140,11 +126,10 @@ void ParContextManager::sched_intptr(int64_t* (*statement)(void),int64_t id,cons
     thread_count++;
   }
   context_map.at(cid).addIntptrFuture(promise,id);
-  mutex.unlock();
 }
 
 void ParContextManager::sched_floatptr(double* (*statement)(void),int64_t id,const int64_t cid) {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<double*> promise;
   if (thread_count >= max_threads) {
     promise = std::async(std::launch::deferred,statement);
@@ -153,11 +138,10 @@ void ParContextManager::sched_floatptr(double* (*statement)(void),int64_t id,con
     thread_count++;
   }
   context_map.at(cid).addFloatptrFuture(promise,id);
-  mutex.unlock();
 }
 
 void ParContextManager::sched_void(void (*statement)(void),int64_t id,const int64_t cid) {
-  mutex.lock();
+  std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<void> promise;
   if (thread_count >= max_threads) {
     promise = std::async(std::launch::deferred,statement);
@@ -166,7 +150,6 @@ void ParContextManager::sched_void(void (*statement)(void),int64_t id,const int6
     thread_count++;
   }
   context_map.at(cid).addVoidFuture(promise,id);
-  mutex.unlock();
 }
 
 int64_t ParContextManager::recon_int(const int64_t original,const int64_t known,const int64_t update,
