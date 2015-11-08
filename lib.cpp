@@ -76,6 +76,7 @@ extern "C" void free_int(int64_t* i) {
 
 //Hidden funcitons implement parallism
 //They are not intended to be called by user code
+//Only the main thread may call these functions
 
 void set_max_threads() {
   if (max_threads != -1) return;
