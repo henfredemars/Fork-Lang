@@ -7,6 +7,14 @@ StatementContext::StatementContext() {
   //Do nothing
 }
 
+StatementContext::StatementContext(StatementContext&& sc) {
+  this->int_future_id_map = std::move(sc.int_future_id_map);
+  this->float_future_id_map = std::move(sc.float_future_id_map);
+  this->intptr_future_id_map = std::move(sc.intptr_future_id_map);
+  this->floatptr_future_id_map = std::move(sc.floatptr_future_id_map);
+  this->void_future_id_map = std::move(sc.void_future_id_map);
+}
+
 /*=================================StatementContext=================================*/
 void StatementContext::addIntFuture(std::future<int64_t>& f, const int64_t id) {
   std::lock_guard<std::mutex> section_monitor(map_mutex);
@@ -83,6 +91,7 @@ ParContextManager::ParContextManager() {
 int64_t ParContextManager::make_context() {
   std::lock_guard<std::mutex> section_monitor(mutex);
   int64_t cid = next_cid++;
+  context_map.insert(std::pair<int64_t,StatementContext>(cid,std::move(StatementContext())));
   return cid;
 }
 

@@ -22,6 +22,7 @@
 class StatementContext : public gc {
 public:
 	StatementContext();
+	StatementContext(StatementContext&& sc);
 	void addIntFuture(std::future<int64_t>& f, const int64_t id);
 	void addFloatFuture(std::future<double>& f, const int64_t id);
 	void addIntptrFuture(std::future<int64_t*>& f, const int64_t id);
