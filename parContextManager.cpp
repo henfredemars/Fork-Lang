@@ -252,11 +252,11 @@ void ParContextManager::recon_void(const int64_t id,const int64_t max,const int6
 }
 
 void ParContextManager::set_max_threads() {
-  unsigned long dth = std::thread::hardware_concurrency()-1;
-  printf("Detected %d additional compute elements.\n",(int)dth);
-  if (dth < 0) max_threads = 0;
-  else if (dth > 3) max_threads = 3;
+  unsigned long dth = std::thread::hardware_concurrency();
+  printf("Detected %d compute elements.\n",(int)dth);
+  if (dth < 2) max_threads = 2;
+  else if (dth > 4) max_threads = 4;
   else max_threads = dth;
-  printf("Setting max execution threads to: %d\n",(int)max_threads+1);
+  printf("Setting max execution threads to: %d\n",(int)max_threads);
 }
 
