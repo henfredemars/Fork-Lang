@@ -22,8 +22,14 @@ lex.cpp: lex.l node.h
 lex.o: lex.cpp
 	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c lex.cpp -o lex.o $(LLVM_INC)
 
-lib.so: lib.cpp
-	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fPIC -c lib.cpp -o lib.o; g++ -shared -o lib.so lib.o
+lib.so: lib.o parContextManager.o
+	g++ -shared -o lib.so lib.o parContextManager.o
+
+lib.o: lib.cpp lib.h parContextManager.h
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fPIC -c lib.cpp -o lib.o
+
+parContextManager.o: parContextManager.cpp parContextManager.h
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fPIC -c parContextManager.cpp -o parContextManager.o
 
 node.o: node.h node.cpp
 	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c node.cpp -o node.o $(LLVM_INC)
