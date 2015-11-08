@@ -175,11 +175,12 @@ int64_t ParContextManager::recon_int(const int64_t original,const int64_t known,
   std::chrono::milliseconds span(0);
   std::future<int64_t> fv = context_map.at(cid).getIntFuture(id);
   int64_t v;
+  mutex.unlock();
   if (fv.wait_for(span)==std::future_status::deferred) {
-    mutex.unlock();
     v = fv.get();
   } else {
     v = fv.get();
+    mutex.lock();
     thread_count--;
     mutex.unlock();
   }
@@ -192,11 +193,12 @@ double ParContextManager::recon_float(const double original,const int64_t known,
   std::chrono::milliseconds span(0);
   std::future<double> fv = context_map.at(cid).getFloatFuture(id);
   double v;
+  mutex.unlock();
   if (fv.wait_for(span)==std::future_status::deferred) {
-    mutex.unlock();
     v = fv.get();
   } else {
     v = fv.get();
+    mutex.lock();
     thread_count--;
     mutex.unlock();
   }
@@ -209,11 +211,12 @@ int64_t* ParContextManager::recon_intptr(const int64_t* original,const int64_t k
   std::chrono::milliseconds span(0);
   std::future<int64_t*> fv = context_map.at(cid).getIntptrFuture(id);
   int64_t* v;
+  mutex.unlock();
   if (fv.wait_for(span)==std::future_status::deferred) {
-    mutex.unlock();
     v = fv.get();
   } else {
     v = fv.get();
+    mutex.lock();
     thread_count--;
     mutex.unlock();
   }
@@ -226,11 +229,12 @@ double* ParContextManager::recon_floatptr(const double* original,const int64_t k
   std::chrono::milliseconds span(0);
   std::future<double*> fv = context_map.at(cid).getFloatptrFuture(id);
   double* v;
+  mutex.unlock();
   if (fv.wait_for(span)==std::future_status::deferred) {
-    mutex.unlock();
     v = fv.get();
   } else {
     v = fv.get();
+    mutex.lock();
     thread_count--;
     mutex.unlock();
   }
@@ -241,11 +245,12 @@ void ParContextManager::recon_void(const int64_t id,const int64_t max,const int6
   mutex.lock();
   std::chrono::milliseconds span(0);
   std::future<void> fv = context_map.at(cid).getVoidFuture(id);
+  mutex.unlock();
   if (fv.wait_for(span)==std::future_status::deferred) {
-    mutex.unlock();
     fv.get();
   } else {
     fv.get();
+    mutex.lock();
     thread_count--;
     mutex.unlock();
   }
