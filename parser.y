@@ -54,7 +54,6 @@
 %type <expressionVec> callArgs
 %type <string> binaryOperatorToken
 %type <string> unaryOperatorToken
-%type <string> nullaryOperatorToken
 %type <token> leftBraceToken rightBraceToken externStatement_h
 
 //Operators precedence
@@ -98,25 +97,40 @@ statement : variableDec TSCOLON TENDL {
 	       if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
 	       $1->insertIntoSymbolTable();
 	       $$=$1; printf("Parser: variableDec becomes statement\n");
-	     } 
+	       $$->setCommit(true);
+	     } |
+	     variableDec TENDL {
+               if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
+               $1->insertIntoSymbolTable();
+               $$=$1; printf("Parser: variableDec becomes statement\n");
+	       $$->setCommit(false);
+             }
 	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
              | structDec_f TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
 	     | if_statement TENDL {$$=$1;}
 	     | externStatement TENDL {$$=$1;printf("Parser: externStatement becomes statement\n");}
 	     |
-	     rexp TSET exp {
+	     rexp TSET exp TENDL {
 		$$ = new AssignStatement($1,$3);
 		if(!($1->identsDeclared())) YYERROR;
 		$$->describe();
+		$$->setCommit(false);
 	     } |
-	     rexp TSET exp TENDL {
+	     rexp TSET exp TSCOLON TENDL {
                 $$ = new AssignStatement($1,$3);
 		if(!($1->identsDeclared())) YYERROR;
                 $$->describe();
+		$$->setCommit(true);
              } |
              exp TENDL {
                 $$ = new ExpressionStatement($1);
                 $$->describe();
+		$$->setCommit(false);
+             } |
+             exp TSCOLON TENDL {
+                $$ = new ExpressionStatement($1);
+                $$->describe();
+		$$->setCommit(true);
              } |
 	     TRETURN TENDL {
 		$$ = new ReturnStatement(nullptr);
@@ -125,10 +139,6 @@ statement : variableDec TSCOLON TENDL {
 	     TRETURN exp TENDL {
 		$$ = new ReturnStatement($2);
 		$$->describe();
-             } |
-             exp { //Dont require a TENDL to consume
-                $$ = new ExpressionStatement($1);
-                $$->describe();
              } |
              TRETURN {
                 $$ = new ReturnStatement(nullptr);
@@ -302,7 +312,6 @@ exp : exp binaryOperatorToken exp { if (!($1->identsDeclared()) || !($3->identsD
 		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | unaryOperatorToken exp { if (!($2->identsDeclared())) YYERROR;
 		$$ = new UnaryOperator($1,$2); $$->describe(); } %prec UMINUS
-            | nullaryOperatorToken { $$ = new NullaryOperator($1); $$->describe(); } %prec TCOMMIT
             | numeric { $$ = $1; }
             | rexp { if (!($1->identsDeclared())) YYERROR; $$ = $1; }
 	    | TNULL { $$ = new NullLiteral(); }
@@ -326,7 +335,5 @@ leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
 rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
 
 unaryOperatorToken : TDASH | TLNOT | TNEW;
-
-nullaryOperatorToken : TSCOLON;
 
 %%

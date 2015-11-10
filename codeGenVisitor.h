@@ -28,7 +28,6 @@ public:
 	virtual llvm::Value* visitInteger(Integer* i) =0;
 	virtual llvm::Value* visitFloat(Float* f) =0;
 	virtual llvm::Value* visitIdentifier(Identifier* i) =0;
-	virtual llvm::Value* visitNullaryOperator(NullaryOperator* n) =0;
 	virtual llvm::Value* visitUnaryOperator(UnaryOperator* u) =0;
 	virtual llvm::Value* visitBinaryOperator(BinaryOperator* b) =0;
 	virtual llvm::Value* visitBlock(Block* b) =0;
@@ -63,7 +62,6 @@ private:
 		llvm::Value* visitInteger(Integer* i);
 		llvm::Value* visitFloat(Float* f);
 		llvm::Value* visitIdentifier(Identifier* i);
-		llvm::Value* visitNullaryOperator(NullaryOperator* n);
 		llvm::Value* visitUnaryOperator(UnaryOperator* u);
 		llvm::Value* visitBinaryOperator(BinaryOperator* b);
 		llvm::Value* visitBlock(Block* b);
@@ -123,7 +121,6 @@ public:
 	llvm::Value* visitInteger(Integer* i);
 	llvm::Value* visitFloat(Float* f);
 	llvm::Value* visitIdentifier(Identifier* i);
-	llvm::Value* visitNullaryOperator(NullaryOperator* n);
 	llvm::Value* visitUnaryOperator(UnaryOperator* u);
 	llvm::Value* visitBinaryOperator(BinaryOperator* b);
 	llvm::Value* visitBlock(Block* b);
