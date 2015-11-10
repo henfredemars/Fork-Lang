@@ -39,7 +39,6 @@ class Statement;
 class Integer;
 class Float;
 class Identifier;
-class NullaryOperator;
 class UnaryOperator;
 class BinaryOperator;
 class Block;
@@ -96,12 +95,17 @@ public:
 /*================================Statement=================================*/
 class Statement : public Node {
 public:
+	Statement();
 	virtual void describe() const;
 	virtual bool alreadyExistsInSymbolTable() const { return false; } //No RTTI needed in parser
 	virtual bool alreadyExistsInLocalSymbolTable() const { return false; }
 	virtual void insertIntoSymbolTable() { return; }
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
+protected:
+	bool commit;
 };
 
 /*=================================Integer==================================*/
@@ -223,6 +227,7 @@ public:
 	bool hasPointerType;
 	VariableDefinition();
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
+	virtual bool statementCommits() const;
 	virtual const char* stringType() const;
 	virtual void insertIntoSymbolTable();
 	virtual bool alreadyExistsInSymbolTable() const;
@@ -241,6 +246,8 @@ public:
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> getVariables() const;
 	std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> getStructs() const;
 	bool validate() const;
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
@@ -261,6 +268,8 @@ public:
 	FunctionDefinition(Identifier* user_type, Identifier* ident, std::vector<VariableDefinition*,
 		gc_allocator<VariableDefinition*>>* args,
 	Block* block, bool hasPointerType);
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	bool validate() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
@@ -272,6 +281,8 @@ class StructureDeclaration : public VariableDefinition {
 public:
 	Identifier* user_type; //Keyword type is always null
 	StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType);
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	bool validate() const;
 	virtual const char* stringType() const;
 	virtual void describe() const;
@@ -295,6 +306,8 @@ class ReturnStatement : public Statement {
 public:
 	Expression* exp;
 	ReturnStatement(Expression* exp);
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
@@ -318,6 +331,8 @@ public:
 	Block* block;
 	Block* else_block;
 	IfStatement(Expression* exp,Block* block,Block* else_block);
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
@@ -332,6 +347,8 @@ public:
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args;
 	ExternStatement(Keyword* type,Identifier* ident,
 	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType);
+	virtual void setCommit(const bool& commit);
+	virtual bool statementCommits() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };

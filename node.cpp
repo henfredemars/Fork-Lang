@@ -41,6 +41,18 @@ llvm::Value* Expression::acceptVisitor(ASTVisitor* v) {
 }
 
 /*================================Statement=================================*/
+Statement::Statement() {
+	this->commit = false;
+}
+
+void Statement::setCommit(const bool& commit) {
+	this->commit = commit;
+}
+
+bool Statement::statementCommits() const {
+	return commit;
+}
+
 void Statement::describe() const {
 	printf("---Found generic statement object with no fields\n");
 }
@@ -135,7 +147,7 @@ llvm::Value* Identifier::acceptVisitor(ASTVisitor* v) {
 	return v->visitIdentifier(this);
 }
 
-/*=============================NullaryOperator==============================*/
+/*=============================NullaryOperator==============================
 NullaryOperator::NullaryOperator(char* op) {
 	this->op = dup_char(op);
 }
@@ -150,7 +162,7 @@ void NullaryOperator::describe() const {
 
 llvm::Value* NullaryOperator::acceptVisitor(ASTVisitor* v) {
 	return v->visitNullaryOperator(this);
-}
+}*/
 
 /*==============================UnaryOperator===============================*/
 UnaryOperator::UnaryOperator(char* op, Expression* exp) {
@@ -285,6 +297,10 @@ VariableDefinition::VariableDefinition() {
 	this->hasPointerType = false;
 }
 
+bool VariableDefinition::statementCommits() const {
+	return (!exp || commit);
+}
+
 void VariableDefinition::insertIntoSymbolTable() {
         sym_table.insert(ident->name,VARIABLE);
 }
@@ -323,6 +339,14 @@ void VariableDefinition::acceptVisitor(StatementVisitor* v) {
 StructureDefinition::StructureDefinition(Identifier* ident,Block* block) {
 	this->ident = ident;
 	this->block = block;
+}
+
+void StructureDefinition::setCommit(const bool& commit) {
+	//Do nothing
+}
+
+bool StructureDefinition::statementCommits() const {
+	return true; //Structure always commits
 }
 
 std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> StructureDefinition::getVariables() const {
@@ -386,6 +410,14 @@ FunctionDefinition::FunctionDefinition(Identifier* user_type, Identifier* ident,
         sym_table.insert(ident->name,FUNCTION);
 }
 
+void FunctionDefinition::setCommit(const bool& commit) {
+	//Do nothing
+}
+
+bool FunctionDefinition::statementCommits() const {
+	return true; //Always
+}
+
 void FunctionDefinition::describe() const {
 	printf("---Found Function Definition: %s\n",ident->name);
 }
@@ -404,6 +436,14 @@ StructureDeclaration::StructureDeclaration(Identifier* user_type,Identifier* ide
 	this->type = nullptr;
 	this->ident = ident;
 	this->hasPointerType = hasPointerType;
+}
+
+void StructureDeclaration::setCommit(const bool& commit) {
+	//Do nothing
+}
+
+bool StructureDeclaration::statementCommits() const {
+	return true; //Always
 }
 
 bool StructureDeclaration::validate() const {
@@ -452,6 +492,15 @@ ReturnStatement::ReturnStatement(Expression* exp) {
 	this->exp = exp;
 }
 
+void ReturnStatement::setCommit(const bool& commit) {
+	//Do nothing
+}
+
+bool ReturnStatement::statementCommits() const {
+	return true; //Always
+}
+
+
 void ReturnStatement::describe() const {
 	if (exp) {
 	  printf("---Found return statement with expression\n");
@@ -485,6 +534,14 @@ IfStatement::IfStatement(Expression* exp,Block* block,Block* else_block) {
 	this->else_block = else_block;
 }
 
+void IfStatement::setCommit(const bool& commit) {
+	//Do nothing
+}
+
+bool IfStatement::statementCommits() const {
+	return true; //Always
+}
+
 void IfStatement::describe() const {
 	printf("---Found If Statement\n");
 }
@@ -502,6 +559,14 @@ ExternStatement::ExternStatement(Keyword* type,Identifier* ident,
 	this->args = args;
 	this->hasPointerType = hasPointerType;
         sym_table.insert(ident->name,FUNCTION);
+}
+
+void ExternStatement::setCommit(const bool& commit) {
+	//Do nothing
+}
+
+bool ExternStatement::statementCommits() const {
+	return true; //Always
 }
 
 void ExternStatement::describe() const {

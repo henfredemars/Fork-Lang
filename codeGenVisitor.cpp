@@ -234,14 +234,14 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
   return builder->CreateLoad(val, i->name);
 }
 
-/*=============================NullaryOperator==============================*/
+/*=============================NullaryOperator==============================
 llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 	if(*n->op == ';') {
 		//commit action //TODO
 		return voidValue;
 	}
 	return ErrorV("Invalid nullary operator");
-}
+}*/
 
 /*==============================UnaryOperator===============================*/
 llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
@@ -1033,7 +1033,6 @@ llvm::Value* CodeGenVisitor::HelperVisitor::visitNode(Node* n) {return nullptr;}
 llvm::Value* CodeGenVisitor::HelperVisitor::visitStatement(Statement* s) {return nullptr;}
 llvm::Value* CodeGenVisitor::HelperVisitor::visitInteger(Integer* i) {return nullptr;}
 llvm::Value* CodeGenVisitor::HelperVisitor::visitFloat(Float* f) {return nullptr;}
-llvm::Value* CodeGenVisitor::HelperVisitor::visitNullaryOperator(NullaryOperator* n) {return nullptr;}
 llvm::Value* CodeGenVisitor::HelperVisitor::visitUnaryOperator(UnaryOperator* u) {return nullptr;}
 llvm::Value* CodeGenVisitor::HelperVisitor::visitBinaryOperator(BinaryOperator* b) {return nullptr;}
 llvm::Value* CodeGenVisitor::HelperVisitor::visitBlock(Block* b) {return nullptr;}
