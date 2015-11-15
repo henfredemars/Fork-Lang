@@ -136,6 +136,10 @@ statement : variableDec TSCOLON TENDL {
 		$$ = new ReturnStatement(nullptr);
 		$$->describe();
 	     } |
+	     TRETURN TSCOLON TENDL {
+		$$ = new ReturnStatement(nullptr);
+		$$->describe();
+	     } |
 	     TRETURN exp TENDL {
 		$$ = new ReturnStatement($2);
 		$$->describe();
