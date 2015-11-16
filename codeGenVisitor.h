@@ -2,6 +2,8 @@
 #define __CODE_GEN_VISIT_H
 
 #include "node.h"
+#include <iostream>
+#include <sstream>
 
 //AST visitor
 
@@ -50,12 +52,12 @@ public:
 
 class CodeGenVisitor : public ASTVisitor {
 private:
-	class HelperVisitor : public ASTVisitor {
+	class AssignmentLHSVisitor : public ASTVisitor {
 	private:
 		CodeGenVisitor* c;
 		llvm::Value* right;
 	public:
-		HelperVisitor(CodeGenVisitor* c, llvm::Value* right);
+		AssignmentLHSVisitor(CodeGenVisitor* c, llvm::Value* right);
 		llvm::Value* visitNode(Node* n);
 		llvm::Value* visitExpression(Expression* e);
 		llvm::Value* visitStatement(Statement* s);
@@ -81,6 +83,8 @@ private:
 		llvm::Value* visitExternStatement(ExternStatement* e);
 		llvm::Value* visitNullLiteral(NullLiteral* n);
 	};
+	int lambdaNum; //lambda
+	bool insideLambda; //lambdaInsert
 	bool error;
 	bool justReturned;
 	llvm::LLVMContext* context;
