@@ -1,5 +1,4 @@
 #include "codeGenVisitor.h"
-#include <iostream>
 
 llvm::Value* CodeGenVisitor::ErrorV(const char* str) {
   fprintf(stderr, "Error: %s\n", str);
@@ -63,8 +62,8 @@ llvm::Type* CodeGenVisitor::getAllocaType(llvm::AllocaInst* alloca) {
 }
 llvm::Constant* CodeGenVisitor::getNullPointer(std::string typeName) {
 	if(structTypes.find(typeName) != structTypes.end()) {
-		llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
-		return llvm::Constant::getNullValue(llvm::PointerType::getUnqual(tempStruct));
+		llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second); //recover struct type
+		return llvm::Constant::getNullValue(llvm::PointerType::getUnqual(tempStruct)); //grab unique struct null
 	}
 	return (llvm::Constant*)ErrorV("Attempt to create null pointer of undeclared struct type");
 }
@@ -76,19 +75,19 @@ llvm::LoadInst* CodeGenVisitor::getStructField(std::string typeString, std::stri
 	auto structTuple = structTypes.find(typeString)->second;
 	bool found = false;
 	size_t index = 0;
-	std::vector<std::string> varList = std::get<1>(structTuple);
+	std::vector<std::string> varList = std::get<1>(structTuple); //get fields associated with struct
 	for(size_t end = varList.size(); index != end; ++index) {
 		if(fieldName == varList.at(index)) {
 			found = true;
-			break;
+			break; //exit once field is found
 		}
 	}
 	if(!found) {
 		return (llvm::LoadInst*)ErrorV("Unable to evaluate field that does not belong to struct");
 	}
-	llvm::StructType* currStruct = std::get<0>(structTuple);
-	auto varptr = builder->CreateLoad(var)->getPointerOperand();
-	return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index));
+	llvm::StructType* currStruct = std::get<0>(structTuple); 
+	auto varptr = builder->CreateLoad(var)->getPointerOperand(); //get pointer to struct variable
+	return builder->CreateLoad(builder->CreateStructGEP(currStruct, varptr, index)); //return struct field
 }
 
 llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid) {
@@ -100,8 +99,8 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 			return llvm::Type::getInt64PtrTy(*context);
 		}
 		else if(structTypes.find(typeName) != structTypes.end()) {
-			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second);
-			return llvm::PointerType::getUnqual(tempStruct);
+			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second); //get struct type
+			return llvm::PointerType::getUnqual(tempStruct); //return struct pointer type matching string
 		}
 		else {
 			return (llvm::Type*) ErrorV("Invalid pointer type detected");
@@ -121,7 +120,7 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 			return (llvm::Type*) ErrorV("Invalid type void detected");
 		}
 		else if(structTypes.find(typeName) != structTypes.end()) {
-			return std::get<0>(structTypes.find(typeName)->second);
+			return std::get<0>(structTypes.find(typeName)->second); //return struct type
 		}
 	}
 	return (llvm::Type*) ErrorV("Invalid type detected");
@@ -133,18 +132,18 @@ llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::strin
 	std::vector<llvm::Type*> inputArgs;
 	for(auto it = arguments->begin(), end = arguments->end(); it < end; ++it) {
 		auto argument = *it;
-		llvm::Type* type = getTypeFromString(argument->stringType(), argument->hasPointerType, false); //TODO test struct args
+		llvm::Type* type = getTypeFromString(argument->stringType(), argument->hasPointerType, false); //grab int, float, int*, float*, struct, struct* type
 		if(!type) {
 			return (llvm::Function*) ErrorV("Invalid argument for function definition");
 		}
-		inputArgs.push_back(type);
+		inputArgs.push_back(type); //place type in input arg vector
 	}
-	llvm::Type* type = getTypeFromString(returnType, hasPointerType, true); //TODO test struct return
+	llvm::Type* type = getTypeFromString(returnType, hasPointerType, true); //grab void, int, float, int*, float*, struct, struct* type for return
 	if(!type) {
 		return (llvm::Function*) ErrorV("Invalid return for function definition");
 	}
-	funcType = llvm::FunctionType::get(type, inputArgs, false);
-	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, theModule.get());
+	funcType = llvm::FunctionType::get(type, inputArgs, false); //create funcType
+	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, theModule.get()); //create function with functype and use external
 	{ //set names for func args
 	size_t i = 0;
 	for (auto &arg : func->args())
@@ -155,7 +154,7 @@ llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::strin
 
 llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name) {
 	llvm::IRBuilder<true, llvm::NoFolder> tempBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
-	if(llvm::AllocaInst* alloca = tempBuilder.CreateAlloca(type, 0, name)) {
+	if(llvm::AllocaInst* alloca = tempBuilder.CreateAlloca(type, 0, name)) { //use tempBuilder to push alloca into the function block beginning
 		return alloca;
 	}
 	return (llvm::AllocaInst*)ErrorV("Unable to create alloca of incorrect type");
@@ -163,26 +162,28 @@ llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type*
 
 CodeGenVisitor::CodeGenVisitor(std::string name) {
 	error = false;
+	lambdaNum = 0; //lambda
+	insideLambda = false; //lambda
 	justReturned = false;
 	populateSwitchMap();
-	context = &llvm::getGlobalContext();
-	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
+	context = &llvm::getGlobalContext(); //set context for vars
+	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>(); //set jit
 	theModule = llvm::make_unique<llvm::Module>(name, *context);
-	theModule->setDataLayout(forkJIT->getTargetMachine().createDataLayout());
-	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context);
-	voidValue = llvm::ReturnInst::Create(*context);
+	theModule->setDataLayout(forkJIT->getTargetMachine().createDataLayout()); //set module for tracking and execution
+	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context); //set builder for IR insertion
+	voidValue = llvm::ReturnInst::Create(*context); 
 	floatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
-	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context));
+	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context)); // set default void and nullptr values, struct has to be retrieved
 }
 
 void CodeGenVisitor::executeMain() {
 	if(!error) {
-		auto handle = forkJIT->addModule(std::move(theModule));
-		auto mainSymbol = forkJIT->findSymbol("main");
+		auto handle = forkJIT->addModule(std::move(theModule)); // JIT the module
+		auto mainSymbol = forkJIT->findSymbol("main"); 
 		assert(mainSymbol && "No code to execute, include a main function");
-		void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress();
+		void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress(); //grab address of main
 	    printf("\nExecuting main function...\n");
-	    func();
+	    func(); //execute main
 	    printf("---> main() returns: void\n");
 	    delete voidValue;
 	    forkJIT->removeModule(handle);
@@ -194,7 +195,7 @@ void CodeGenVisitor::executeMain() {
 
 void CodeGenVisitor::printModule() const {
 	if(!error) {
-		theModule->dump();
+		theModule->dump(); //dump IR to stderr that is used
 	}
 	else {
 		printf("IR dump prevented due to errors\n");
@@ -228,10 +229,10 @@ llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
 
 /*================================Identifier================================*/
 llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
-  llvm::AllocaInst* val = namedValues[i->name];
+  llvm::AllocaInst* val = namedValues[i->name]; //find alloca in map
   if (!val)
     return ErrorV("Attempt to generate code for not previously defined variable");
-  return builder->CreateLoad(val, i->name);
+  return builder->CreateLoad(val, i->name); //load alloca value from map
 }
 
 /*=============================NullaryOperator==============================
@@ -246,44 +247,44 @@ llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 /*==============================UnaryOperator===============================*/
 llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	llvm::Value* expr = u->exp->acceptVisitor(this);
-	if(!expr) {
+	if(!expr) { //NULL applied to unary operator
 		expr = intNullPointer;
 	}
 	if(getValType(expr)->isVoidTy()) {
 		return ErrorV("Unary operator applied to void type");
 	}
-	else if(getValType(expr)->isPointerTy()) {
+	else if(getValType(expr)->isPointerTy()) { //pointer applied to unary op
 		expr = castPointerToInt(expr);
-		switch(*u->op) {
+		switch(*u->op) { //pointer acts as int then is returned as pointer
 			case '-':
 			return castIntToPointer(builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr));
 			case '!':
-			return castIntToPointer(castBooleantoInt(builder->CreateNot(castIntToBoolean(expr))));
+			return castIntToPointer(castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)))); //casted to boolean returned as pointer
 			default:
-			return ErrorV("Invalid unary operator found");
+			return ErrorV("Invalid unary operator found applied to pointer type");
 		}	
 	}
-	else if(getValType(expr)->isDoubleTy()) {
+	else if(getValType(expr)->isDoubleTy()) { //float applied to unary op
 		switch(*u->op) {
 			case '-':
 			return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(castFloatToBoolean(expr)));
 			default:
-			return ErrorV("Invalid unary operator found");
+			return ErrorV("Invalid unary operator found applied to float type");
 		}
 	}
-	else if (getValType(expr)->isIntegerTy()) {
+	else if (getValType(expr)->isIntegerTy()) { //integer applied to unary op
 		switch(*u->op) {
 			case '-':
 			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)));
 			default:
-			return ErrorV("Invalid unary operator found");
+			return ErrorV("Invalid unary operator found applied to integer type");
 		}	
 	}
-	else if(getValType(expr)->isStructTy()) {
+	else if(getValType(expr)->isStructTy()) { //operand is struct
 		return ErrorV("Unable to evaluate unary operator applied to struct type");
 	}
 	return ErrorV("Unexpected type found for evaluated expression applied to unary operator");
@@ -293,16 +294,16 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	llvm::Value* left = b->left->acceptVisitor(this);
  	llvm::Value* right = b->right->acceptVisitor(this);
-	if (!left) {
+	if (!left) { //NULL found
 		left = intNullPointer;
 	}
 	if(!right) {
 		right = intNullPointer;
 	}
-	if(getValType(left)->isVoidTy() || getValType(right)->isVoidTy()) {
+	if(getValType(left)->isVoidTy() || getValType(right)->isVoidTy()) { //void found
 		return ErrorV("Binary operator applied to void type");
 	}
-	if(getValType(left)->isIntegerTy() && getValType(right)->isDoubleTy()) {
+	if(getValType(left)->isIntegerTy() && getValType(right)->isDoubleTy()) { //double and int cast both to double
 		left = castIntToFloat(left);
 	}
 	else if(getValType(left)->isDoubleTy() && getValType(right)->isIntegerTy()) {
@@ -318,7 +319,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 		if(getValType(left) != getValType(right)) { //if both operands are not now integers
 			return ErrorV("Binary operator applied to pointer and incorrect non-integer type");
 		}
-		switch (switchMap.find(b->op)->second) {
+		switch (switchMap.find(b->op)->second) { //expect pointer return
 			case BOP_PLUS:
 			return castIntToPointer(builder->CreateAdd(left, right));
 			case BOP_MINUS:
@@ -340,12 +341,12 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_LT:
 			return castIntToPointer(castBooleantoInt(builder->CreateICmpSLT(left, right)));
 			case BOP_OR:
-			return castIntToPointer(builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right)));
+			return castIntToPointer(builder->CreateOr(castIntToBoolean(left), castIntToBoolean(right))); //cast to boolean as input
 			case BOP_AND:
 			return castIntToPointer(builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right)));
 			return ErrorV("Attempt to generate code for not yet implemented dot binary operator");
 			default:
-			return ErrorV("Invalid binary operator found");
+			return ErrorV("Invalid binary operator applied to pointer and integer or pointer type");
 		}
 	}
 	else if(getValType(left)->isDoubleTy()) { //both operands are floats
@@ -375,7 +376,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_AND:
 			return castBooleantoInt(builder->CreateAnd(castFloatToBoolean(left), castFloatToBoolean(right)));
 			default:
-			return ErrorV("Invalid binary operator found");
+			return ErrorV("Invalid binary operator applied to float types");
 		}
 	}
 	else if(getValType(left)->isIntegerTy()) { //both operands are ints
@@ -405,10 +406,10 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			case BOP_AND:
 			return builder->CreateAnd(castIntToBoolean(left), castIntToBoolean(right));
 			default:
-			return ErrorV("Invalid binary operator found");
+			return ErrorV("Invalid binary operator applied to integer types");
 		}
 	}
-	else if(getValType(left)->isStructTy() || getValType(right)->isStructTy()) {
+	else if(getValType(left)->isStructTy() || getValType(right)->isStructTy()) { //either operand is a struct
 		return ErrorV("Unable to evaluate binary operator applied to struct type");
 	}
 	return ErrorV("Unexpected type found for evaluated operand applied to binary operator");
@@ -418,8 +419,58 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 	llvm::Value* lastVisited = nullptr;
 	if(b->statements) {
-		for(auto it = b->statements->begin(), end = b->statements->end(); it != end; ++it) {
-			lastVisited = (*it)->acceptVisitor(this);
+		std::vector<bool> commitVector;
+		if(!insideLambda) {
+			for(auto it = b->statements->begin(), end = b->statements->end(); it != end; ++it) { //create vector of statement commits
+				auto statement = *it;
+				commitVector.push_back(statement->statementCommits());
+			}
+			bool prev = true;
+			for(auto it = commitVector.begin(), end = commitVector.end(); it != end; ++it) { //modify vector of statement commits such that the last commit is concurrent as well
+				auto commit = *it;
+				if(!commit) { //if not commiting, return prev value
+					prev = commit;
+				}
+				else { //if commiting and not prev value, set current to false and record to true
+					if(!prev) { 
+						*it = false;
+						prev = true;
+					}
+				}
+			}
+		}
+		for(size_t i = 0, end = b->statements->size(); i != end; ++i) {
+			auto statement = b->statements->at(i);
+			bool commits = true;
+			if(!insideLambda) { //if outside lambda, check if lambda must be created
+				commits = commitVector.at(i);
+			}
+			if(!commits) { //if must create lambda
+				insideLambda = true;
+				if(!commits) { //set statement inside lambda as being committed
+					statement->setCommit(true);
+				}
+				auto ip = builder->saveAndClearIP(); //store block insertion point
+				auto lambdaStatements = new std::vector<Statement*,gc_allocator<Statement*>>();
+				lambdaStatements->push_back(statement);
+				lambdaStatements->push_back(new ReturnStatement(nullptr));
+				char* keyword = (char *)GC_MALLOC_ATOMIC(6); 
+				strcpy(keyword, "void");
+				char* identifier = (char *)GC_MALLOC_ATOMIC(32);
+				std::ostringstream ss;
+				ss << "lambda" << lambdaNum++;
+				strcpy(identifier, (ss.str()).c_str()); // name mangle the lambda
+				FunctionDefinition* fd = new FunctionDefinition(new Keyword(keyword), new Identifier(identifier), 
+					new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(), new Block(lambdaStatements), false);
+				fd->acceptVisitor(this);
+				builder->restoreIP(ip); //restore block insertion point
+				FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), new std::vector<Expression*, gc_allocator<Expression*>>());
+				lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
+				insideLambda = false;
+			}
+			else {
+				lastVisited = statement->acceptVisitor(this);
+			}
 		}
 	}
 	return lastVisited;
@@ -428,15 +479,15 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 /*===============================FunctionCall===============================*/
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	llvm::Function* func = theModule->getFunction(f->ident->name); //search func name in module
-	if(!func) {
+	if(!func) { //func name does not exist
 		return ErrorV("Unknown function reference");
 	}
-	if(func->arg_size() != f->args->size()) {
+	if(func->arg_size() != f->args->size()) { //func name exists but wrong args
 		return ErrorV("Wrong number of arguments passed to function");
 	}
 	std::vector<llvm::Value*> argVector;
 	auto funcArgs = func->arg_begin();
-	for(size_t i = 0, end = f->args->size(); i != end; ++i) {
+	for(size_t i = 0, end = f->args->size(); i != end; ++i) { //evaluate vector of args and type check
 		llvm::Value* argument = f->args->at(i)->acceptVisitor(this);
 		llvm::Argument* funcArgument = funcArgs++;
 		if(!argument) { //input NULL to functions
@@ -451,14 +502,14 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 					argument = getNullPointer(getPointedType(funcArgument)->getStructName());
 				}
 				else {
-					return ErrorV("Attempt to input pointer type to function argument of incorrect type");
+					return ErrorV("Attempt to input NULL to function argument of incorrect pointer type");
 				}
 			}
 			else {
 				return ErrorV("Attempt to input NULL to function argument of incorrect type");
 			}
 		}
-		if(getValType(argument) != getValType(funcArgument)) {
+		if(getValType(argument) != getValType(funcArgument)) { //if int found instead of double, cast
 			if(getValType(argument)->isIntegerTy() && getValType(funcArgument)->isDoubleTy()) {
 				argument = castIntToFloat(argument);
 			}
@@ -466,14 +517,14 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 				return ErrorV("Invalid type as input for function args");
 			}
 		}
-		argVector.push_back(argument);
+		argVector.push_back(argument); //push the arg into the vector
 	}
-	return builder->CreateCall(func, argVector);
+	return builder->CreateCall(func, argVector); //establish function call with name and args
 }
 
 /*===============================NullLiteral===============================*/
 llvm::Value* CodeGenVisitor::visitNullLiteral(NullLiteral* n) {
-	return nullptr;
+	return nullptr; //checked as nullptr and evaluated for individual value based on expected value in other nodes
 }
 
 /*=================================Keyword==================================*/
@@ -487,11 +538,11 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 	if(namedValues.count(name) != 0) {
 		return ErrorV("Attempt to redefine variable");
 	}
-	llvm::Function* func = builder->GetInsertBlock()->getParent(); //future optimizations include memgen
+	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	std::string type = v->stringType();
 	llvm::Value* val = nullptr;
 	if(v->hasPointerType) {
-		if(v->exp) { //custom value
+		if(v->exp) { //instantiated value
 			val = v->exp->acceptVisitor(this);
 			if(!val) { //Assign Variable to NULL
 				if(type == "int") {
@@ -531,7 +582,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 		}
 	}
 	else {
-		if(v->exp) {
+		if(v->exp) { //instantiated value
 			val = v->exp->acceptVisitor(this);
 			if(!val) {
 				return ErrorV("Unable to assign expression evaluated to null");
@@ -554,7 +605,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 				val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
 			}
 			else {
-				return ErrorV("Attempt to create variable of an incorrect type");
+				return ErrorV("Attempt to declare variable of an incorrect type");
 			}
 		}
 	}
@@ -641,11 +692,16 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	if(!func->empty()) {
 		return ErrorV("Function is already defined");
 	}
-	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "function begin", func);
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "func", func);
 	builder->SetInsertPoint(block);
-	namedValues.clear();
+	if(!insideLambda) { //keep variables to allow access to current scope
+		namedValues.clear();
+	}
 	for (auto &arg : func->args()) {
 		llvm::AllocaInst* alloca = createAlloca(func, arg.getType(), arg.getName());
+		if(!alloca) {
+			return ErrorV("Unable to create stack variable inside function body for function argument");
+		}
     	builder->CreateStore(&arg, alloca); // Store init value into alloca
 		namedValues.insert(std::make_pair(arg.getName(), alloca)); //setup map
 	} //create alloca for each argument
@@ -657,8 +713,8 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 llvm::Value* CodeGenVisitor::visitStructureDeclaration(StructureDeclaration* s) {
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
 	std::string type = s->stringType();
-	std::string name = s->ident->name;
-	if(structTypes.find(type) == structTypes.end()) {
+	std::string name = s->ident->name; //get struct info
+	if(structTypes.find(type) == structTypes.end()) { 
 		return ErrorV("Unable to instantiate struct that is not previously declared");
 	}
 	auto structTuple = structTypes.find(type)->second;
