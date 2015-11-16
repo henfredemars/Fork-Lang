@@ -97,7 +97,7 @@ int64_t ParContextManager::make_context() {
 
 void ParContextManager::destroy_context(const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
-  assert(context_map.count(cid)==1);
+  assert(context_map.count(cid)==1 && "Couldnt find context to destroy");
   context_map.erase(cid);
 }
 
