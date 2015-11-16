@@ -53,6 +53,10 @@ bool Statement::statementCommits() const {
 	return commit;
 }
 
+bool Statement::lambdable() const {
+	return false;
+}
+
 void Statement::describe() const {
 	printf("---Found generic statement object with no fields\n");
 }
@@ -75,7 +79,9 @@ bool Integer::identsDeclared() const {
 }
 
 void Integer::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Literal Integer: %i\n", (int)value);
+	#endif
 }
 
 llvm::Value* Integer::acceptVisitor(ASTVisitor* v) {
@@ -92,7 +98,9 @@ bool Float::identsDeclared() const {
 }
 
 void Float::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Float: %f\n", value);
+	#endif
 }
 
 llvm::Value* Float::acceptVisitor(ASTVisitor* v) {
@@ -109,7 +117,9 @@ bool Identifier::identsDeclared() const {
 }
 
 void Identifier::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Identifier: %s\n",name);
+	#endif
 }
 
 bool Identifier::declaredAsVar() const {
@@ -147,26 +157,8 @@ llvm::Value* Identifier::acceptVisitor(ASTVisitor* v) {
 	return v->visitIdentifier(this);
 }
 
-/*=============================NullaryOperator==============================
-NullaryOperator::NullaryOperator(char* op) {
-	this->op = dup_char(op);
-}
-
-bool NullaryOperator::identsDeclared() const {
-	return true;
-}
-
-void NullaryOperator::describe() const {
-	printf("---Found Nullary Operator\n");
-}
-
-llvm::Value* NullaryOperator::acceptVisitor(ASTVisitor* v) {
-	return v->visitNullaryOperator(this);
-}*/
-
 /*==============================UnaryOperator===============================*/
 UnaryOperator::UnaryOperator(char* op, Expression* exp) {
-        printf("UO: %s\n",op);
 	this->op = dup_char(op);
 	this->exp = exp;
 }
@@ -176,7 +168,9 @@ bool UnaryOperator::identsDeclared() const {
 }
 
 void UnaryOperator::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Unary Operator\n");
+	#endif
 }
 
 llvm::Value* UnaryOperator::acceptVisitor(ASTVisitor* v) {
@@ -195,7 +189,9 @@ bool BinaryOperator::identsDeclared() const {
 }
 
 void BinaryOperator::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Binary Operator %s\n",this->op);
+	#endif
 }
 
 llvm::Value* BinaryOperator::acceptVisitor(ASTVisitor* v) {
@@ -214,7 +210,9 @@ bool Block::identsDeclared() const {
 }
 
 void Block::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Block\n");
+	#endif
 }
 
 Block::Block() {
@@ -245,7 +243,9 @@ bool FunctionCall::identsDeclared() const {
 }
 
 void FunctionCall::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Function Call: %s\n",ident->name);
+	#endif
 }
 
 llvm::Value* FunctionCall::acceptVisitor(ASTVisitor* v) {
@@ -256,7 +256,9 @@ llvm::Value* FunctionCall::acceptVisitor(ASTVisitor* v) {
 NullLiteral::NullLiteral() { }
 
 void NullLiteral::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Null\n");
+	#endif
 }
 
 bool NullLiteral::identsDeclared() const {
@@ -273,7 +275,9 @@ Keyword::Keyword(char* name) {
 }
 
 void Keyword::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Keyword: %s\n",name);
+	#endif
 }
 
 llvm::Value* Keyword::acceptVisitor(ASTVisitor* v) {
@@ -301,6 +305,10 @@ bool VariableDefinition::statementCommits() const {
 	return (!exp || commit);
 }
 
+bool VariableDefinition::lambdable() const {
+	return !(!exp);
+}
+
 void VariableDefinition::insertIntoSymbolTable() {
         sym_table.insert(ident->name,VARIABLE);
 }
@@ -318,6 +326,7 @@ const char* VariableDefinition::stringType() const {
 }
 
 void VariableDefinition::describe() const {
+	#ifdef YYDEBUG
 	if (hasPointerType) {
 		printf("---Found Variable Declaration: type='%s*' identifier='%s'\n",
 			type->name,ident->name);
@@ -325,6 +334,7 @@ void VariableDefinition::describe() const {
 		printf("---Found Variable Declaration: type='%s' identifier='%s'\n",
                         type->name,ident->name);
 	}
+	#endif
 }
 
 llvm::Value* VariableDefinition::acceptVisitor(ASTVisitor* v) {
@@ -349,6 +359,10 @@ bool StructureDefinition::statementCommits() const {
 	return true; //Structure always commits
 }
 
+bool StructureDefinition::lambdable() const {
+	return false;
+}
+
 std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> StructureDefinition::getVariables() const {
 	StatementVisitor* sv = new StatementVisitor();
 	block->acceptVisitor(sv);
@@ -371,7 +385,9 @@ bool StructureDefinition::validate() const {
 }
 
 void StructureDefinition::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Structure Definition: %s\n",ident->name);
+	#endif
 }
 
 llvm::Value* StructureDefinition::acceptVisitor(ASTVisitor* v) {
@@ -418,8 +434,14 @@ bool FunctionDefinition::statementCommits() const {
 	return true; //Always
 }
 
+bool FunctionDefinition::lambdable() const {
+	return false;
+}
+
 void FunctionDefinition::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Function Definition: %s\n",ident->name);
+	#endif
 }
 
 bool FunctionDefinition::validate() const {
@@ -446,6 +468,10 @@ bool StructureDeclaration::statementCommits() const {
 	return true; //Always
 }
 
+bool StructureDeclaration::lambdable() const {
+	return false;
+}
+
 bool StructureDeclaration::validate() const {
         if (sym_table.check(ident->name)) {
                 printf("Variable name '%s' already exists in the symbol table\n",ident->name);
@@ -462,8 +488,10 @@ const char* StructureDeclaration::stringType() const {
 }
 
 void StructureDeclaration::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Structure Declaration: type='%s' identifier='%s'\n",
 		user_type->name,ident->name);
+	#endif
 }
 
 llvm::Value* StructureDeclaration::acceptVisitor(ASTVisitor* v) {
@@ -477,10 +505,17 @@ void StructureDeclaration::acceptVisitor(StatementVisitor* v) {
 /*===========================ExpressionStatement============================*/
 ExpressionStatement::ExpressionStatement(Expression* exp) {
 	this->exp = exp;
+	assert(exp && "Empty expression statement");
+}
+
+bool ExpressionStatement::lambdable() const {
+	return true;
 }
 
 void ExpressionStatement::describe() const {
+	#ifdef YYDEBUG
 	printf("---Expression(s) converted into statements\n");
+	#endif
 }
 
 llvm::Value* ExpressionStatement::acceptVisitor(ASTVisitor* v) {
@@ -500,13 +535,18 @@ bool ReturnStatement::statementCommits() const {
 	return true; //Always
 }
 
+bool ReturnStatement::lambdable() const {
+	return false;
+}
 
 void ReturnStatement::describe() const {
+	#ifdef YYDEBUG
 	if (exp) {
 	  printf("---Found return statement with expression\n");
 	} else {
 	  printf("---Found return statement, statement returns void\n");
 	}
+	#endif
 }
 
 llvm::Value* ReturnStatement::acceptVisitor(ASTVisitor* v) {
@@ -520,7 +560,13 @@ AssignStatement::AssignStatement(Expression* target,Expression* valxp) {
 }
 
 void AssignStatement::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found Assignment Statement\n");
+	#endif
+}
+
+bool AssignStatement::lambdable() const {
+	return true;
 }
 
 llvm::Value* AssignStatement::acceptVisitor(ASTVisitor* v) {
@@ -542,8 +588,14 @@ bool IfStatement::statementCommits() const {
 	return true; //Always
 }
 
+bool IfStatement::lambdable() const {
+	return false;
+}
+
 void IfStatement::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found If Statement\n");
+	#endif
 }
 
 llvm::Value* IfStatement::acceptVisitor(ASTVisitor* v) {
@@ -569,8 +621,14 @@ bool ExternStatement::statementCommits() const {
 	return true; //Always
 }
 
+bool ExternStatement::lambdable() const {
+	return false;
+}
+
 void ExternStatement::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found extern: %s\n",ident->name);
+	#endif
 }
 
 llvm::Value* ExternStatement::acceptVisitor(ASTVisitor* v) {
@@ -687,7 +745,9 @@ bool PointerExpression::referencingStruct() const {
 }
 
 void PointerExpression::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found PointerExpression for: %s\n",ident->name);
+	#endif
 }
 
 bool PointerExpression::identsDeclared() const {
@@ -706,7 +766,9 @@ AddressOfExpression::AddressOfExpression(Identifier* ident,Expression* offsetExp
 }
 
 void AddressOfExpression::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found AddressOfExpression for: %s\n",ident->name);
+	#endif
 }
 
 bool AddressOfExpression::identsDeclared() const {
@@ -726,7 +788,9 @@ StructureExpression::StructureExpression(Identifier* ident,Identifier* field) {
 }
 
 void StructureExpression::describe() const {
+	#ifdef YYDEBUG
 	printf("---Found StructureExpression for: %s, field: %s\n",ident->name,field->name);
+	#endif
 }
 
 bool StructureExpression::identsDeclared() const {

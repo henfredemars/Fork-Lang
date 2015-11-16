@@ -97,7 +97,7 @@ int64_t ParContextManager::make_context() {
 
 void ParContextManager::destroy_context(const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
-  assert(context_map.count(cid)==1);
+  assert(context_map.count(cid)==1 && "Couldnt find context to destroy");
   context_map.erase(cid);
 }
 
@@ -254,6 +254,6 @@ void ParContextManager::set_max_threads() {
   if (dth < 2) max_threads = 2;
   else if (dth > 4) max_threads = 4;
   else max_threads = dth;
-  printf("Setting max execution threads to: %d\n",(int)max_threads);
+  printf("Setting max execution threads: %d\n",(int)max_threads);
 }
 

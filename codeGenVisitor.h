@@ -145,4 +145,5 @@ public:
 	llvm::Value* visitNullLiteral(NullLiteral* n);
 };
 
-#endif
+#endif /* __CODE_GEN_VISIT_H */
+
