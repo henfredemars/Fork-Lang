@@ -1089,7 +1089,26 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitStructureExpression(Stru
 	std::string typeString = c->getAllocaType(var)->getStructName();
 	std::string fieldName = e->field->name;
 	llvm::Value* structFieldRef = c->getStructField(typeString, fieldName, var)->getPointerOperand(); //get LHS field
-	if(c->getValType(right) != c->getPointedType(structFieldRef)) { //LHS field does not match RHS type
+	if(!right) {
+		if(c->getPointedType(structFieldRef)->isPointerTy()) { //LHS field is a pointer
+			if(c->getPointedType(structFieldRef)->getContainedType(0)->isDoubleTy()) {
+				right = c->floatNullPointer;
+			}
+			else if(c->getPointedType(structFieldRef)->getContainedType(0)->isIntegerTy()) {
+				right = c->intNullPointer;
+			}
+			else if(c->getPointedType(structFieldRef)->getContainedType(0)->isStructTy()) {
+				right = c->getNullPointer(c->getPointedType(structFieldRef)->getContainedType(0)->getStructName());
+			}
+			else {
+				return c->ErrorV("Unable to assign to unknown pointer type");
+			}
+		}
+		else {
+			return c->ErrorV("Unable to assign evaluated null right operand to non pointer type");
+		}
+	}
+	else if(c->getValType(right) != c->getPointedType(structFieldRef)) { //LHS field does not match RHS type
 		if(c->getValType(right)->isIntegerTy() && c->getPointedType(structFieldRef)->isDoubleTy()) {
 			right = c->castIntToFloat(right);
 		}

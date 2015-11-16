@@ -36,7 +36,7 @@ void main() {
 	structy* e;
 	//function(a, b, e);
 	a.a;
-	a.b;
+	a.b = NULL;
 	a.c;
 	a.d;
 	a.e;
