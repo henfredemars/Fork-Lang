@@ -23,6 +23,8 @@ classy function(structy x, classy y, structy* z, int* q) {
 
 void main() {
 	int w = 7;
+	float aa = 10.0;
+	float* bb = &aa;
 	int* x;
 	x = &w;
 	*x = 14;
@@ -47,9 +49,10 @@ void main() {
 	int* delta = &q;
 	a.b = delta;
 	int r = *delta;
-	print_int(r)
+	print_int(r);
 	*c.b = 4;
 	print_int(*c.b);
+	*c.a = NULL;
 	return;
 }
 
