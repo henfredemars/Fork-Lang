@@ -1,6 +1,6 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidoscope/include
 LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
-OPT_LVL := -O0 -Wall -Wno-unused
+OPT_LVL := -O0 -Wall -Wno-unused -Wno-format-security
 
 #export REQUIRES_RTTI = 1
 

@@ -29,7 +29,16 @@ void pprintf(const char* s) {
    return;
  #endif
 }
- void pprintf(const char* s, const char* a) {
+
+void pprintf(const char* s, const char* a) {
+ #ifdef YYDEBUG
+   printf(s,a);
+ #else
+   return;
+ #endif
+}
+
+void pprintf(const char* s, const int a) {
  #ifdef YYDEBUG
    printf(s,a);
  #else
