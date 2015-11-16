@@ -2,6 +2,8 @@
 #define __CODE_GEN_VISIT_H
 
 #include "node.h"
+#include <iostream>
+#include <sstream>
 
 //AST visitor
 
@@ -81,6 +83,8 @@ private:
 		llvm::Value* visitExternStatement(ExternStatement* e);
 		llvm::Value* visitNullLiteral(NullLiteral* n);
 	};
+	int lambdaNum; //lambda
+	bool insideLambda; //lambdaInsert
 	bool error;
 	bool justReturned;
 	llvm::LLVMContext* context;
