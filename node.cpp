@@ -53,6 +53,10 @@ bool Statement::statementCommits() const {
 	return commit;
 }
 
+bool Statement::lambdable() const {
+	return false;
+}
+
 void Statement::describe() const {
 	printf("---Found generic statement object with no fields\n");
 }
@@ -146,23 +150,6 @@ bool Identifier::declaredAtAll() const {
 llvm::Value* Identifier::acceptVisitor(ASTVisitor* v) {
 	return v->visitIdentifier(this);
 }
-
-/*=============================NullaryOperator==============================
-NullaryOperator::NullaryOperator(char* op) {
-	this->op = dup_char(op);
-}
-
-bool NullaryOperator::identsDeclared() const {
-	return true;
-}
-
-void NullaryOperator::describe() const {
-	printf("---Found Nullary Operator\n");
-}
-
-llvm::Value* NullaryOperator::acceptVisitor(ASTVisitor* v) {
-	return v->visitNullaryOperator(this);
-}*/
 
 /*==============================UnaryOperator===============================*/
 UnaryOperator::UnaryOperator(char* op, Expression* exp) {
@@ -301,6 +288,10 @@ bool VariableDefinition::statementCommits() const {
 	return (!exp || commit);
 }
 
+bool VariableDefinition::lambdable() const {
+	return !(!exp);
+}
+
 void VariableDefinition::insertIntoSymbolTable() {
         sym_table.insert(ident->name,VARIABLE);
 }
@@ -347,6 +338,10 @@ void StructureDefinition::setCommit(const bool& commit) {
 
 bool StructureDefinition::statementCommits() const {
 	return true; //Structure always commits
+}
+
+bool StructureDefinition::lambdable() const {
+	return false;
 }
 
 std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> StructureDefinition::getVariables() const {
@@ -418,6 +413,10 @@ bool FunctionDefinition::statementCommits() const {
 	return true; //Always
 }
 
+bool FunctionDefinition::lambdable() const {
+	return false;
+}
+
 void FunctionDefinition::describe() const {
 	printf("---Found Function Definition: %s\n",ident->name);
 }
@@ -444,6 +443,10 @@ void StructureDeclaration::setCommit(const bool& commit) {
 
 bool StructureDeclaration::statementCommits() const {
 	return true; //Always
+}
+
+bool StructureDeclaration::lambdable() const {
+	return false;
 }
 
 bool StructureDeclaration::validate() const {
@@ -477,6 +480,11 @@ void StructureDeclaration::acceptVisitor(StatementVisitor* v) {
 /*===========================ExpressionStatement============================*/
 ExpressionStatement::ExpressionStatement(Expression* exp) {
 	this->exp = exp;
+	assert(exp && "Empty expression statement");
+}
+
+bool ExpressionStatement::lambdable() const {
+	return true;
 }
 
 void ExpressionStatement::describe() const {
@@ -500,6 +508,9 @@ bool ReturnStatement::statementCommits() const {
 	return true; //Always
 }
 
+bool ReturnStatement::lambdable() const {
+	return false;
+}
 
 void ReturnStatement::describe() const {
 	if (exp) {
@@ -523,6 +534,10 @@ void AssignStatement::describe() const {
 	printf("---Found Assignment Statement\n");
 }
 
+bool AssignStatement::lambdable() const {
+	return true;
+}
+
 llvm::Value* AssignStatement::acceptVisitor(ASTVisitor* v) {
 	return v->visitAssignStatement(this);
 }
@@ -540,6 +555,10 @@ void IfStatement::setCommit(const bool& commit) {
 
 bool IfStatement::statementCommits() const {
 	return true; //Always
+}
+
+bool IfStatement::lambdable() const {
+	return false;
 }
 
 void IfStatement::describe() const {
@@ -567,6 +586,10 @@ void ExternStatement::setCommit(const bool& commit) {
 
 bool ExternStatement::statementCommits() const {
 	return true; //Always
+}
+
+bool ExternStatement::lambdable() const {
+	return false;
 }
 
 void ExternStatement::describe() const {
