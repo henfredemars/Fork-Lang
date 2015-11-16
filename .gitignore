@@ -4,6 +4,7 @@
 *.o
 *.obj
 *.s
+*.bc
 *.ll
 *.bin
 
