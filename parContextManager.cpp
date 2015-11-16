@@ -254,6 +254,6 @@ void ParContextManager::set_max_threads() {
   if (dth < 2) max_threads = 2;
   else if (dth > 4) max_threads = 4;
   else max_threads = dth;
-  printf("Setting max execution threads to: %d\n",(int)max_threads);
+  printf("Setting max execution threads: %d\n",(int)max_threads);
 }
 
