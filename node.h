@@ -30,7 +30,7 @@
 #include "lib.h"
 
 //Externs
-extern void yyerror(const char *s);
+extern void yyerror(const char* c);
 
 //Things defined here
 class Node;

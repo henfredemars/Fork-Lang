@@ -5,17 +5,13 @@
 
 %{
     #include "node.h"
+    #include "yy_overrides.h"
     Block *program;
 
     extern int yylex();
-    //extern int yydebug;
-    extern int yylineno;
     extern SymbolTable sym_table;
     extern TypeTable user_type_table;
     extern Node* ast_root;
-    void yyerror(const char *s) { 
-	printf("Error in parser near line %d: %s\n", yylineno, s);
-    }
 %}
 
 //Union of semantic types
@@ -88,7 +84,7 @@ statements : statement {
              } |
              statements statement {
                 $1->statements->push_back($2);
-		printf("Parser: add statement to block\n");
+		pprintf("Parser: add statement to block\n");
 		$$=$1;
              } ;
 
@@ -96,19 +92,19 @@ statements : statement {
 statement : variableDec TSCOLON TENDL {
 	       if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
 	       $1->insertIntoSymbolTable();
-	       $$=$1; printf("Parser: variableDec becomes statement\n");
+	       $$=$1; pprintf("Parser: variableDec becomes statement\n");
 	       $$->setCommit(true);
 	     } |
 	     variableDec TENDL {
                if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
                $1->insertIntoSymbolTable();
-               $$=$1; printf("Parser: variableDec becomes statement\n");
+               $$=$1; pprintf("Parser: variableDec becomes statement\n");
 	       $$->setCommit(false);
              }
-	     | functionDec TENDL {$$=$1;printf("Parser: functionDec becomes statement\n");}
-             | structDec_f TENDL {$$=$1;printf("Parser: structDec becomes statement\n");}
+	     | functionDec TENDL {$$=$1;pprintf("Parser: functionDec becomes statement\n");}
+             | structDec_f TENDL {$$=$1;pprintf("Parser: structDec becomes statement\n");}
 	     | if_statement TENDL {$$=$1;}
-	     | externStatement TENDL {$$=$1;printf("Parser: externStatement becomes statement\n");}
+	     | externStatement TENDL {$$=$1;pprintf("Parser: externStatement becomes statement\n");}
 	     |
 	     rexp TSET exp TENDL {
 		$$ = new AssignStatement($1,$3);
@@ -182,13 +178,13 @@ if_statement : TIF TLPAREN exp TRPAREN block {
 
 
 block : leftBraceToken statements rightBraceToken { $$ = $2;
-		printf("Parser: statements become block\n"); } |
+		pprintf("Parser: statements become block\n"); } |
         leftBraceToken TENDL statements rightBraceToken { $$ = $3;
-                printf("Parser: statements become block\n"); } |
+                pprintf("Parser: statements become block\n"); } |
         leftBraceToken statements TENDL rightBraceToken { $$ = $2;
-                printf("Parser: statements become block\n"); } |
+                pprintf("Parser: statements become block\n"); } |
         leftBraceToken TENDL statements TENDL rightBraceToken { $$ = $3;
-                printf("Parser: statements become block\n"); }
+                pprintf("Parser: statements become block\n"); }
 
               | leftBraceToken rightBraceToken { $$ = new Block(); $$->describe(); }
 	      | leftBraceToken TENDL rightBraceToken { $$ = new Block(); $$->describe(); }
@@ -231,7 +227,7 @@ structDec_b : struct_keyword ident {
 	      StructureDefinition* sd = new StructureDefinition($2,nullptr);
 	      if (!(sd->validate())) YYERROR;
               $$ = sd; //Place on stack
-	      printf("Early structure declaration of: %s\n",$2->name);
+	      pprintf("Early structure declaration of: %s\n",$2->name);
 	    } ;
 
 //A function definition is made of a var_keyword, identifier, arguments, and a function body block
@@ -279,24 +275,24 @@ struct_keyword : TSTRUCT {
 //Arguments in a function definition
 functionArgs : /* empty */ { 
                 $$ = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
-		  printf("Parser: functionArgs, empty in function definition\n");} %prec EMPTYFUNARGS
+		  pprintf("Parser: functionArgs, empty in function definition\n");} %prec EMPTYFUNARGS
                 | variableDec { $$ = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
                   $$->push_back((VariableDefinition*)$1); 
 		  $1->insertIntoSymbolTable();
-		  printf("Parser: functionArgs, one argument in function definition\n");} 
+		  pprintf("Parser: functionArgs, one argument in function definition\n");} 
                   //VariableDec always a VariableDefinition*, although defined as a statement
                 | functionArgs TCOMMA variableDec { $1->push_back((VariableDefinition*)$3);
 		  $3->insertIntoSymbolTable();
-		  printf("Parser: additional function argument found in function definition\n");
+		  pprintf("Parser: additional function argument found in function definition\n");
 		} ;
 
 //Arguments of a particular function call at the call site
 callArgs : /* empty */ { $$ = new std::vector<Expression*,gc_allocator<Expression*>>(); 
-		printf("Parser: new callArgs, empty\n");} %prec EMPTYFUNARGS
+		pprintf("Parser: new callArgs, empty\n");} %prec EMPTYFUNARGS
               | exp { $$ = new std::vector<Expression*,gc_allocator<Expression*>>(); $$->push_back($1);
-		printf("Parser: new callArgs, one argument expression\n");}
+		pprintf("Parser: new callArgs, one argument expression\n");}
               | callArgs TCOMMA exp { $1->push_back($3); 
-		printf("Parser: callArgs additional argument found\n");}
+		pprintf("Parser: callArgs additional argument found\n");}
               ;
 
 rexp : ident { $$ = $1; $$->describe(); }
