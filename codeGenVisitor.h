@@ -84,7 +84,7 @@ private:
 		llvm::Value* visitNullLiteral(NullLiteral* n);
 	};
 	int lambdaNum; //lambda
-	bool insideLambda; //lambdaInsert
+	bool insideLambda; //lambda
 	bool error;
 	bool justReturned;
 	llvm::LLVMContext* context;
