@@ -102,6 +102,7 @@ public:
 	virtual void insertIntoSymbolTable() { return; }
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
 protected:
@@ -136,16 +137,6 @@ public:
         bool declaredAsVar() const;
 	bool declaredAsFunc() const;
 	bool declaredAtAll() const;
-	virtual void describe() const;
-	virtual bool identsDeclared() const;
-	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
-};
-
-/*=============================NullaryOperator==============================*/
-class NullaryOperator : public Expression {
-public:
-	char* op;
-	NullaryOperator(char* op);
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
@@ -228,6 +219,7 @@ public:
 	VariableDefinition();
 	VariableDefinition(Keyword* type, Identifier* ident, Expression* exp, bool isPointer);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	virtual const char* stringType() const;
 	virtual void insertIntoSymbolTable();
 	virtual bool alreadyExistsInSymbolTable() const;
@@ -248,6 +240,7 @@ public:
 	bool validate() const;
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
@@ -270,6 +263,7 @@ public:
 	Block* block, bool hasPointerType);
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	bool validate() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
@@ -283,6 +277,7 @@ public:
 	StructureDeclaration(Identifier* type,Identifier* ident,bool hasPointerType);
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	bool validate() const;
 	virtual const char* stringType() const;
 	virtual void describe() const;
@@ -297,6 +292,7 @@ public:
 	Expression* exp;
 	ExpressionStatement(Expression* exp);
 	virtual void describe() const;
+	virtual bool lambdable() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -308,6 +304,7 @@ public:
 	ReturnStatement(Expression* exp);
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
@@ -320,6 +317,7 @@ public:
 	Expression* valxp;
 	AssignStatement(Expression* target,Expression* valxp);
 	virtual void describe() const;
+	virtual bool lambdable() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -333,6 +331,7 @@ public:
 	IfStatement(Expression* exp,Block* block,Block* else_block);
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
@@ -349,6 +348,7 @@ public:
 	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType);
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
+	virtual bool lambdable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
