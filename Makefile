@@ -1,6 +1,6 @@
 LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidoscope/include
 LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
-OPT_LVL := -O0 -flto -Wall -Wno-unused -Wno-format-security
+OPT_LVL := -O1 -flto -Wall -Wno-unused -Wno-format-security
 
 #export REQUIRES_RTTI = 1
 
@@ -26,7 +26,7 @@ lib.so: lib.o parContextManager.o
 	g++ -shared -o lib.so lib.o parContextManager.o
 
 lib.o: lib.cpp lib.h parContextManager.h
-	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fPIC -c lib.cpp -o lib.o
+	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fno-lto -fPIC -c lib.cpp -o lib.o
 
 parContextManager.o: parContextManager.cpp parContextManager.h
 	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -fPIC -c parContextManager.cpp -o parContextManager.o
@@ -62,7 +62,7 @@ clean:
 distclean:
 	rm -f lex.cpp parser.cpp *.o fork_log parser parser.hpp *.output *.so;
 	rm -f parser.tab.c .llvm_built_marker .gc_built_marker .bcleanup_marker;
-	rm -f ./Testing/Programs/*.o ./Testing/Programs/*.bin ./Testing/Programs/*.s /Testing/Programs/*.ll
+	rm -f ./Testing/Programs/*.o ./Testing/Programs/*.bin ./Testing/Programs/*.s ./Testing/Programs/*.ll ./Testing/Programs/*.bc 
 	make -C ./gc clean
 	make -C ./Bench/C++ clean
 	rm -rf ./llvm/build
