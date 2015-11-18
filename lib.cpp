@@ -71,24 +71,24 @@ extern "C" void free_int(int64_t* i) {
 
 // id - zero-indexed number of the statement being scheduled for the commit
 // cid - context identifier obtained from make_context
-extern "C"  void __fork_sched_int(int64_t (*statement)(void),int64_t id,int64_t cid) {
-  manager.sched_int(statement,id,cid);
+extern "C"  void __fork_sched_int(int64_t (*statement)(void* e),void* env,int64_t id,int64_t cid) {
+  manager.sched_int(statement,env,id,cid);
 }
 
-extern "C"  void __fork_sched_float(double (*statement)(void),int64_t id,int64_t cid) {
-  manager.sched_float(statement,id,cid);
+extern "C"  void __fork_sched_float(double (*statement)(void* e),void* env,int64_t id,int64_t cid) {
+  manager.sched_float(statement,env,id,cid);
 }
 
-extern "C"  void __fork_sched_intptr(int64_t* (*statement)(void),int64_t id,int64_t cid) {
-  manager.sched_intptr(statement,id,cid);
+extern "C"  void __fork_sched_intptr(int64_t* (*statement)(void* e),void* env,int64_t id,int64_t cid) {
+  manager.sched_intptr(statement,env,id,cid);
 }
 
-extern "C"  void __fork_sched_floatptr(double* (*statement)(void),int64_t id,int64_t cid) {
-  manager.sched_floatptr(statement,id,cid);
+extern "C"  void __fork_sched_floatptr(double* (*statement)(void* e),void* env,int64_t id,int64_t cid) {
+  manager.sched_floatptr(statement,env,id,cid);
 }
 
-extern "C"  void __fork_sched_void(void (*statement)(void),int64_t id,int64_t cid) {
-  manager.sched_void(statement,id,cid);
+extern "C"  void __fork_sched_void(void (*statement)(void* e),void* env,int64_t id,int64_t cid) {
+  manager.sched_void(statement,env,id,cid);
 }
 
 //Description of function parameters:

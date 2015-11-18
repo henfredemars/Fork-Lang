@@ -2,8 +2,6 @@ LLVM_INC := -I./llvm/include -I./llvm/build/include -I./llvm/examples/Kaleidosco
 LLVM_BIN := ./llvm/build/Release+Asserts/bin/llvm-config
 OPT_LVL := -O1 -flto -Wall -Wno-unused -Wno-format-security
 
-#export REQUIRES_RTTI = 1
-
 all: parser CTest
 
 parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor.o statementVisitor.o main.o parser.hpp lib.so .bcleanup_marker
