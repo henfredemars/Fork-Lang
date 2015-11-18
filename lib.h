@@ -25,15 +25,15 @@ extern "C" void free_float(float* f);
 
 extern "C" void free_int(int64_t* i);
 
-extern "C"  void __fork_sched_int(int64_t (*statement)(void),int64_t id,int64_t cid);
+extern "C"  void __fork_sched_int(int64_t (*statement)(void*),void* env,int64_t id,int64_t cid);
 
-extern "C"  void __fork_sched_float(double (*statement)(void),int64_t id,int64_t cid);
+extern "C"  void __fork_sched_float(double (*statement)(void*),void* end,int64_t id,int64_t cid);
 
-extern "C"  void __fork_sched_intptr(int64_t* (*statement)(void),int64_t id,int64_t cid);
+extern "C"  void __fork_sched_intptr(int64_t* (*statement)(void*),void* env,int64_t id,int64_t cid);
 
-extern "C"  void __fork_sched_floatptr(double* (*statement)(void),int64_t id,int64_t cid);
+extern "C"  void __fork_sched_floatptr(double* (*statement)(void*),void* env,int64_t id,int64_t cid);
 
-extern "C"  void __fork_sched_void(void (*statement)(void),int64_t id,int64_t cid);
+extern "C"  void __fork_sched_void(void (*statement)(void*),void* env,int64_t id,int64_t cid);
 
 extern "C" int64_t __recon_int(int64_t original,int64_t known,int64_t update,int64_t id,int64_t max,int64_t cid);
 

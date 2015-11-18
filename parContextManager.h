@@ -47,11 +47,11 @@ public:
 	ParContextManager();
 	int64_t make_context();
 	void destroy_context(const int64_t cid);
-	void sched_int(int64_t (*statement)(void),const int64_t id,const int64_t cid);
-	void sched_float(double (*statement)(void),const int64_t id,const int64_t cid);
-	void sched_intptr(int64_t* (*statement)(void),int64_t id,const int64_t cid);
-	void sched_floatptr(double* (*statement)(void),int64_t id,const int64_t cid);
-	void sched_void(void (*statement)(void),int64_t id,const int64_t cid);
+	void sched_int(int64_t (*statement)(void*),void* env,const int64_t id,const int64_t cid);
+	void sched_float(double (*statement)(void*),void* env,const int64_t id,const int64_t cid);
+	void sched_intptr(int64_t* (*statement)(void*),void* env,int64_t id,const int64_t cid);
+	void sched_floatptr(double* (*statement)(void*),void* env,int64_t id,const int64_t cid);
+	void sched_void(void (*statement)(void*),void* env,int64_t id,const int64_t cid);
 	int64_t recon_int(const int64_t original,const int64_t known,const int64_t update,
 		const int64_t id,const int64_t max,const int64_t cid);
 	double recon_float(const double original,const int64_t known,const double update,

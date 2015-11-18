@@ -101,61 +101,61 @@ void ParContextManager::destroy_context(const int64_t cid) {
   context_map.erase(cid);
 }
 
-void ParContextManager::sched_int(int64_t (*statement)(void),const int64_t id,const int64_t cid) {
+void ParContextManager::sched_int(int64_t (*statement)(void*),void* env,const int64_t id,const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<int64_t> promise;
   if (thread_count >= max_threads) {
-    promise = std::async(std::launch::deferred,statement);
+    promise = std::async(std::launch::deferred,statement,env);
   } else {
-    promise = std::async(std::launch::async,statement);
+    promise = std::async(std::launch::async,statement,env);
     thread_count++;
   }
   context_map.at(cid).addIntFuture(promise,id);
 }
 
-void ParContextManager::sched_float(double (*statement)(void),const int64_t id,const int64_t cid) {
+void ParContextManager::sched_float(double (*statement)(void*),void* env,const int64_t id,const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<double> promise;
   if (thread_count >= max_threads) {
-    promise = std::async(std::launch::deferred,statement);
+    promise = std::async(std::launch::deferred,statement,env);
   } else {
-    promise = std::async(std::launch::async,statement);
+    promise = std::async(std::launch::async,statement,env);
     thread_count++;
   }
   context_map.at(cid).addFloatFuture(promise,id);
 }
 
-void ParContextManager::sched_intptr(int64_t* (*statement)(void),int64_t id,const int64_t cid) {
+void ParContextManager::sched_intptr(int64_t* (*statement)(void*),void* env,int64_t id,const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<int64_t*> promise;
   if (thread_count >= max_threads) {
-    promise = std::async(std::launch::deferred,statement);
+    promise = std::async(std::launch::deferred,statement,env);
   } else {
-    promise = std::async(std::launch::async,statement);
+    promise = std::async(std::launch::async,statement,env);
     thread_count++;
   }
   context_map.at(cid).addIntptrFuture(promise,id);
 }
 
-void ParContextManager::sched_floatptr(double* (*statement)(void),int64_t id,const int64_t cid) {
+void ParContextManager::sched_floatptr(double* (*statement)(void*),void* env,int64_t id,const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<double*> promise;
   if (thread_count >= max_threads) {
-    promise = std::async(std::launch::deferred,statement);
+    promise = std::async(std::launch::deferred,statement,env);
   } else {
-    promise = std::async(std::launch::async,statement);
+    promise = std::async(std::launch::async,statement,env);
     thread_count++;
   }
   context_map.at(cid).addFloatptrFuture(promise,id);
 }
 
-void ParContextManager::sched_void(void (*statement)(void),int64_t id,const int64_t cid) {
+void ParContextManager::sched_void(void (*statement)(void*),void* env,int64_t id,const int64_t cid) {
   std::lock_guard<std::mutex> section_monitor(mutex);
   std::future<void> promise;
   if (thread_count >= max_threads) {
-    promise = std::async(std::launch::deferred,statement);
+    promise = std::async(std::launch::deferred,statement,env);
   } else {
-    promise = std::async(std::launch::async,statement);
+    promise = std::async(std::launch::async,statement,env);
     thread_count++;
   }
   context_map.at(cid).addVoidFuture(promise,id);
