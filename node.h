@@ -16,7 +16,7 @@
 #include "llvm/IR/NoFolder.h"
 #include "llvm/Support/TargetSelect.h"
 #include "KaleidoscopeJIT.h"
-#include <map>
+#include <unordered_map>
 #include <iterator>
 #include <cctype>
 #include <cstdio>
@@ -367,7 +367,7 @@ public:
 	void push();
 	void pop();
 private:
-	std::vector<std::map<std::string,IdentType>> frames;
+	std::vector<std::unordered_map<std::string,IdentType>> frames;
 };
 
 /*===============================TypeTable================================*/
