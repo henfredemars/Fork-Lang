@@ -94,9 +94,9 @@ private:
 	llvm::Value* voidValue;
 	llvm::Constant* intNullPointer;
 	llvm::Constant* floatNullPointer;
-	std::map<std::string, llvm::AllocaInst*> namedValues;
-	std::map<std::string, std::tuple<llvm::StructType*, std::vector<std::string>>> structTypes;
-	std::map<std::string, Binops> switchMap;
+	std::unordered_map<std::string, llvm::AllocaInst*> namedValues;
+	std::unordered_map<std::string, std::tuple<llvm::StructType*, std::vector<std::string>>> structTypes;
+	std::unordered_map<std::string, Binops> switchMap;
 	llvm::Value* ErrorV(const char* str);
 	void populateSwitchMap();
 	llvm::Value* castIntToFloat(llvm::Value* val);

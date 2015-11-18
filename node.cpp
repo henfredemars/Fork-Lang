@@ -643,7 +643,7 @@ SymbolTable::SymbolTable() {
 
 void SymbolTable::insert(const char* ident,IdentType type) {
 	assert(frames.size());
-	std::map<std::string,IdentType>& lframe = frames.back();
+	std::unordered_map<std::string,IdentType>& lframe = frames.back();
         if (this->check(ident))
           yyerror("Identifier already exists");
         lframe.insert(std::make_pair(std::string(ident),type));
@@ -706,7 +706,7 @@ bool SymbolTable::checkLocal(const char* ident,IdentType type) const {
 
 void SymbolTable::push() {
 	//Push new scope
-	this->frames.push_back(std::map<std::string,IdentType>());
+	this->frames.push_back(std::unordered_map<std::string,IdentType>());
 }
 
 void SymbolTable::pop() {
