@@ -447,25 +447,58 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 			}
 			if(!commits) { //if must create lambda
 				insideLambda = true;
-				if(!commits) { //set statement inside lambda as being committed
-					statement->setCommit(true);
+				statement->setCommit(true);
+				//create env struct type
+				llvm::StructType* currStruct = llvm::StructType::create(*context, "env"); //create env struct type
+				std::vector<std::string> stringVec;
+				std::vector<llvm::Type*> types;
+				std::vector<llvm::Value*> vals;
+				for(auto it = namedValues.begin(), end = namedValues.end(); it != end; ++it) {
+					stringVec.push_back(it->first);
+					types.push_back(getAllocaType(it->second));
+					vals.push_back(builder->CreateLoad(it->second, it->first));
 				}
+				currStruct->setBody(types); //insert type list into env
+				structTypes.insert(std::make_pair("env", std::make_tuple(currStruct, stringVec))); //add env and fields to struct list
+				//create env
+				llvm::AllocaInst* alloca = createAlloca(builder->GetInsertBlock()->getParent(), currStruct, "e0");
+				llvm::Constant* structDec = llvm::ConstantAggregateZero::get(currStruct);
+				builder->CreateStore(structDec, alloca);
+				namedValues.insert(std::make_pair("e0", alloca));
+				for(size_t i = 0, end = vals.size(); i != end; ++i) {
+					auto structFieldRef = getStructField("env", stringVec.at(i), alloca)->getPointerOperand();
+					builder->CreateStore(vals.at(i), structFieldRef);
+				}
+				auto copyValues = namedValues; //clone map
 				auto ip = builder->saveAndClearIP(); //store block insertion point
 				auto lambdaStatements = new std::vector<Statement*,gc_allocator<Statement*>>();
 				lambdaStatements->push_back(statement);
 				lambdaStatements->push_back(new ReturnStatement(nullptr));
 				char* keyword = (char *)GC_MALLOC_ATOMIC(6); 
 				strcpy(keyword, "void");
+				char* envType = (char *)GC_MALLOC_ATOMIC(4); 
+				strcpy(envType, "env");
+				char* envName = (char *)GC_MALLOC_ATOMIC(3); 
+				strcpy(envName, "e0");
 				char* identifier = (char *)GC_MALLOC_ATOMIC(32);
 				std::ostringstream ss;
 				ss << "lambda" << lambdaNum++;
 				strcpy(identifier, (ss.str()).c_str()); // name mangle the lambda
+				//pass struct to function def
+				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add env* e argument
 				FunctionDefinition* fd = new FunctionDefinition(new Keyword(keyword), new Identifier(identifier), 
-					new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(), new Block(lambdaStatements), false);
+					envArg, new Block(lambdaStatements), false);
 				fd->acceptVisitor(this);
 				builder->restoreIP(ip); //restore block insertion point
-				FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), new std::vector<Expression*, gc_allocator<Expression*>>());
+				namedValues = copyValues;
+				//pass env as pointer
+				auto envVal = new std::vector<Expression*, gc_allocator<Expression*>>();
+				envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
+				FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
 				lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
+				structTypes.erase("env");
+				namedValues.erase("e0");
 				insideLambda = false;
 			}
 			else {
@@ -694,17 +727,33 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	}
 	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "func", func);
 	builder->SetInsertPoint(block);
+	namedValues.clear();
 	if(!insideLambda) { //keep variables to allow access to current scope
-		namedValues.clear();
+		for (auto &arg : func->args()) {
+			llvm::AllocaInst* alloca = createAlloca(func, arg.getType(), arg.getName());
+			if(!alloca) {
+				return ErrorV("Unable to create stack variable inside function body for function argument");
+			}
+	    	builder->CreateStore(&arg, alloca); // Store init value into alloca
+			namedValues.insert(std::make_pair(arg.getName(), alloca));
+		} //create alloca for each argument
 	}
-	for (auto &arg : func->args()) {
-		llvm::AllocaInst* alloca = createAlloca(func, arg.getType(), arg.getName());
-		if(!alloca) {
-			return ErrorV("Unable to create stack variable inside function body for function argument");
+	else {
+		auto env = func->arg_begin();
+		llvm::AllocaInst* envAlloca = createAlloca(func, env->getType(), env->getName());
+		if(!envAlloca) {
+			return ErrorV("Unable to create stack variable inside lambda body for environment");
 		}
-    	builder->CreateStore(&arg, alloca); // Store init value into alloca
-		namedValues.insert(std::make_pair(arg.getName(), alloca));
-	} //create alloca for each argument
+		builder->CreateStore(env, envAlloca);
+		namedValues.insert(std::make_pair(env->getName(), envAlloca));
+		auto varList = std::get<1>(structTypes.find("env")->second);
+		for(size_t i = 0, end = varList.size(); i != end; ++i) {
+			llvm::Value* val = getStructField("env", varList.at(i), builder->CreateLoad(envAlloca));
+			llvm::AllocaInst* alloca = createAlloca(func, getValType(val), varList.at(i));
+			builder->CreateStore(val, alloca);
+			namedValues.insert(std::make_pair(varList.at(i), alloca));
+		}
+	}
 	llvm::Value* retVal = f->block->acceptVisitor(this);
 	return retVal;
 }
