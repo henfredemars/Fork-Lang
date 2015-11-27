@@ -3,9 +3,8 @@ extern void print_int(int x);
 void main() {
 	int a = 6 + 2;
 	print_int(a * 10);
-	print_int(a * 10)
-	6 + 4
-	7 * 5;
+	5 + 4
+	7 * 5
 	print_int(a + 4);
 	return;
 }
