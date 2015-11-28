@@ -10,7 +10,7 @@ def main():
   parser.add_argument('-v',action='store_true',help='Use valgrind')
   parser.add_argument('-c',action='store_true',help='Compile and link static binary')
   parser.add_argument('files',metavar='filename',type=str,nargs='+',help='files to process')
-  regex_delete = re.compile("(^\s*//.*)|(^\s*$)")
+  #regex_delete = re.compile("(^\s*//.*)|(^\s*$)")
   args = parser.parse_args()
   files = args.files
   #Check that parser exists
@@ -27,8 +27,8 @@ def main():
       print(e)
       exit(2)
     for line in f_in:
-      if not regex_delete.match(line):
-        f_out.write(line)
+      #if not regex_delete.match(line):
+      f_out.write(line)
     f_in.close()
     f_out.close()
   #Build temp_files
