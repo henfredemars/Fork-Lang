@@ -84,7 +84,8 @@ private:
 		llvm::Value* visitNullLiteral(NullLiteral* n);
 	};
 	int lambdaNum; //lambda
-	bool insideLambda; //lambda
+	llvm::Value* currCid; //lambda
+	int currId; //lambda
 	bool error;
 	bool justReturned;
 	llvm::LLVMContext* context;
@@ -112,9 +113,11 @@ private:
 	llvm::Constant* getNullPointer(std::string typeName);
 	llvm::LoadInst* getStructField(std::string typeString, std::string fieldName, llvm::Value* var);
 	llvm::Type* getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid);
+	llvm::Value* makeSched(llvm::Type* type);
 	llvm::Function* generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
+	bool insideLambda; //lambda
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
 	void executeMain();
@@ -143,6 +146,17 @@ public:
 	llvm::Value* visitStructureExpression(StructureExpression* r);
 	llvm::Value* visitExternStatement(ExternStatement* e);
 	llvm::Value* visitNullLiteral(NullLiteral* n);
+};
+
+class LambdaReconVisitor : public gc {
+private:
+	CodeGenVisitor* c;
+public:
+	LambdaReconVisitor(CodeGenVisitor* c);
+	Expression* visitNode(Node* n);
+	Expression* visitExpression(Expression* e);
+	Expression* visitStatement(Statement* s);
+	Expression* visitAssignStatement(AssignStatement* a);
 };
 
 #endif /* __CODE_GEN_VISIT_H */
