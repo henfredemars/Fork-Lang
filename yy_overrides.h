@@ -177,6 +177,7 @@ std::vector<Statement*,gc_allocator<Statement*>>* buildInjections() {
 	v__recon_int->push_back(vmax);
 	v__recon_int->push_back(vcid);
 	auto v__destroy_context = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	v__destroy_context->push_back(vcid);
 	injections->push_back(new ExternStatement(kint,i__make_context,v__make_context,false));
 	injections->push_back(new ExternStatement(kvoid,i__fork_sched_int,v__fork_sched_int,false));
 	injections->push_back(new ExternStatement(kvoid,i__fork_sched_float,v__fork_sched_float,false));
