@@ -6,11 +6,11 @@ extern  void __fork_sched_void(void* statement, void* env, int id, int cid);
 void main() {
 	int a = 6 + 2;
 	int b = 54;
-	print_int(b);
+	print_int(b)
 	print_int(a * 10);
 	b = 42;
-	5 + 4;
-	7 * 5;
+	5 + 4
+	7 * 5
 	print_int(a + 4);
 	return;
 }
