@@ -24,10 +24,15 @@ extern "C" int yywrap() { return 1; }
 %option noyyrealloc
 %option noyyfree
 %option yylineno
+%x C_COMMENT
 
 %%
 
 [ \t\r]                   ;
+^[ ]*\n			  ;
+<C_COMMENT>.		  ;
+"/*"            	  BEGIN(C_COMMENT);
+<C_COMMENT>"*/"		  BEGIN(INITIAL);
 "\n"                      return TOKEN(TENDL);
 "="                       return TOKEN(TSET);
 "=="                      SAVE_TOKEN; return TEQUAL;
