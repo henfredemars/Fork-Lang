@@ -639,6 +639,19 @@ llvm::Value* ExternStatement::acceptVisitor(ASTVisitor* v) {
 SymbolTable::SymbolTable() {
 	//Push global scope
 	this->push();
+	//Special scheduling functions handled in parser.y start symbol
+	insert("__make_context",FUNCTION);
+	insert("__destroy_context",FUNCTION);
+	insert("__fork_sched_int",FUNCTION);
+	insert("__fork_sched_float",FUNCTION);
+	insert("__fork_sched_intptr",FUNCTION);
+	insert("__fork_sched_floatptr",FUNCTION);
+	insert("__fork_sched_void",FUNCTION);
+	insert("__recon_int",FUNCTION);
+	insert("__recon_float",FUNCTION);
+	insert("__recon_intptr",FUNCTION);
+	insert("__recon_floatptr",FUNCTION);
+	insert("__recon_void",FUNCTION);
 }
 
 void SymbolTable::insert(const char* ident,IdentType type) {

@@ -161,7 +161,7 @@ void ParContextManager::sched_void(void (*statement)(void*),void* env,int64_t id
   context_map.at(cid).addVoidFuture(promise,id);
 }
 
-int64_t ParContextManager::recon_int(const int64_t original,const int64_t known,const int64_t update,
+int64_t ParContextManager::recon_int(const int64_t original,const int64_t known,
                 const int64_t id,const int64_t max,const int64_t cid) {
   mutex.lock();
   std::chrono::milliseconds span(0);
@@ -179,7 +179,7 @@ int64_t ParContextManager::recon_int(const int64_t original,const int64_t known,
   return v;
 }
 
-double ParContextManager::recon_float(const double original,const int64_t known,const double update,
+double ParContextManager::recon_float(const double original,const int64_t known,
                 const int64_t id,const int64_t max,const int64_t cid) {
   mutex.lock();
   std::chrono::milliseconds span(0);
@@ -197,7 +197,7 @@ double ParContextManager::recon_float(const double original,const int64_t known,
   return v;
 }
 
-int64_t* ParContextManager::recon_intptr(const int64_t* original,const int64_t known,const int64_t* update,
+int64_t* ParContextManager::recon_intptr(const int64_t* original,const int64_t known,
                 const int64_t id,const int64_t max,const int64_t cid) {
   mutex.lock();
   std::chrono::milliseconds span(0);
@@ -215,7 +215,7 @@ int64_t* ParContextManager::recon_intptr(const int64_t* original,const int64_t k
   return v;
 }
 
-double* ParContextManager::recon_floatptr(const double* original,const int64_t known,const double* update,
+double* ParContextManager::recon_floatptr(const double* original,const int64_t known,
                 const int64_t id,const int64_t max,const int64_t cid) {
   mutex.lock();
   std::chrono::milliseconds span(0);

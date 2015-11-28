@@ -72,49 +72,49 @@ extern "C" void free_int(int64_t* i) {
 
 // id - zero-indexed number of the statement being scheduled for the commit
 // cid - context identifier obtained from make_context
-extern "C"  void __fork_sched_int(int64_t (*statement)(void* e),void* env,int64_t id,int64_t cid) {
-  manager.sched_int(statement,env,id,cid);
+// CAST TO FUNCTION POINTER MUST BE VALID!
+extern "C"  void __fork_sched_int(void* func,void* env,int64_t id,int64_t cid) {
+  manager.sched_int((int64_t (*)(void*))func,env,id,cid);
 }
 
-extern "C"  void __fork_sched_float(double (*statement)(void* e),void* env,int64_t id,int64_t cid) {
-  manager.sched_float(statement,env,id,cid);
+extern "C"  void __fork_sched_float(void* func,void* env,int64_t id,int64_t cid) {
+  manager.sched_float((double (*)(void*))func,env,id,cid);
 }
 
-extern "C"  void __fork_sched_intptr(int64_t* (*statement)(void* e),void* env,int64_t id,int64_t cid) {
-  manager.sched_intptr(statement,env,id,cid);
+extern "C"  void __fork_sched_intptr(void* func,void* env,int64_t id,int64_t cid) {
+  manager.sched_intptr((int64_t* (*)(void*))func,env,id,cid);
 }
 
-extern "C"  void __fork_sched_floatptr(double* (*statement)(void* e),void* env,int64_t id,int64_t cid) {
-  manager.sched_floatptr(statement,env,id,cid);
+extern "C"  void __fork_sched_floatptr(void* func,void* env,int64_t id,int64_t cid) {
+  manager.sched_floatptr((double* (*)(void*))func,env,id,cid);
 }
 
-extern "C"  void __fork_sched_void(void (*statement)(void* e),void* env,int64_t id,int64_t cid) {
-  manager.sched_void(statement,env,id,cid);
+extern "C"  void __fork_sched_void(void* func,void* env,int64_t id,int64_t cid) {
+  manager.sched_void((void (*)(void*))func,env,id,cid);
 }
 
 //Description of function parameters:
 //  original - value before the parallel execution
 //  known - original value parameter is valid
-//  update - value of previous recon statement, original if known, else any value accepted
 //  id - index of statement being reconned in this commit, starting at zero
 //  max - maximum valid index of statements in this commit
 //  cid - context identifier obtained from make_context
 //Conflict resolution scheme: none, always return value of the statement
 //Right now, none of the function parameters are used
-extern "C" int64_t __recon_int(int64_t original,int64_t known,int64_t update,int64_t id,int64_t max,int64_t cid) {
-  return manager.recon_int(original,known,update,id,max,cid);
+extern "C" int64_t __recon_int(int64_t original,int64_t known,int64_t id,int64_t max,int64_t cid) {
+  return manager.recon_int(original,known,id,max,cid);
 }
 
-extern "C" double __recon_float(double original,int64_t known,double update,int64_t id,int64_t max,int64_t cid) {
-  return manager.recon_float(original,known,update,id,max,cid);
+extern "C" double __recon_float(double original,int64_t known,int64_t id,int64_t max,int64_t cid) {
+  return manager.recon_float(original,known,id,max,cid);
 }
 
-extern "C" int64_t* __recon_intptr(int64_t* original,int64_t known,int64_t* update,int64_t id,int64_t max,int64_t cid) {
-  return manager.recon_intptr(original,known,update,id,max,cid);
+extern "C" int64_t* __recon_intptr(int64_t* original,int64_t known,int64_t id,int64_t max,int64_t cid) {
+  return manager.recon_intptr(original,known,id,max,cid);
 }
 
-extern "C" double* __recon_floatptr(double* original,int64_t known,double* update,int64_t id,int64_t max,int64_t cid) {
-  return manager.recon_floatptr(original,known,update,id,max,cid);
+extern "C" double* __recon_floatptr(double* original,int64_t known,int64_t id,int64_t max,int64_t cid) {
+  return manager.recon_floatptr(original,known,id,max,cid);
 }
 
 extern "C" void  __recon_void(int64_t id,int64_t max,int64_t cid) {
