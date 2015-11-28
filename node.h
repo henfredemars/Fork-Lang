@@ -56,6 +56,7 @@ class IfStatement;
 class ASTVisitor;
 class StatementVisitor;
 class CodeGenVisitor;
+class LambdaReconVisitor;
 class SymbolTable;
 class TypeTable;
 class ExternStatement;
@@ -82,6 +83,7 @@ class Node : public gc {
 public:
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+	virtual Expression* acceptVisitor(LambdaReconVisitor* v);
 };
 
 /*================================Expression================================*/
@@ -90,6 +92,7 @@ public:
 	virtual void describe() const;
 	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+	virtual Expression* acceptVisitor(LambdaReconVisitor* v);
 };
 
 /*================================Statement=================================*/
@@ -105,6 +108,7 @@ public:
 	virtual bool lambdable() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
+	virtual Expression* acceptVisitor(LambdaReconVisitor* v);
 protected:
 	bool commit;
 };
@@ -319,6 +323,7 @@ public:
 	virtual void describe() const;
 	virtual bool lambdable() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
+	virtual Expression* acceptVisitor(LambdaReconVisitor* v);
 };
 
 /*===============================IfStatement================================*/

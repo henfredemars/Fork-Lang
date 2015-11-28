@@ -26,6 +26,10 @@ llvm::Value* Node::acceptVisitor(ASTVisitor* v) {
 	return v->visitNode(this);
 }
 
+Expression* Node::acceptVisitor(LambdaReconVisitor* v) {
+	return v->visitNode(this);
+}
+
 /*================================Expression================================*/
 void Expression::describe() const {
 	printf("---Found generic Expression object with no fields\n");
@@ -37,6 +41,10 @@ bool Expression::identsDeclared() const {
 }
 
 llvm::Value* Expression::acceptVisitor(ASTVisitor* v) {
+	return v->visitExpression(this);
+}
+
+Expression* Expression::acceptVisitor(LambdaReconVisitor* v) {
 	return v->visitExpression(this);
 }
 
@@ -67,6 +75,10 @@ llvm::Value* Statement::acceptVisitor(ASTVisitor* v) {
 
 void Statement::acceptVisitor(StatementVisitor* v) {
 	v->visitStatement(this);
+}
+
+Expression* Statement::acceptVisitor(LambdaReconVisitor* v) {
+	return v->visitStatement(this);
 }
 
 /*=================================Integer==================================*/
@@ -570,6 +582,10 @@ bool AssignStatement::lambdable() const {
 }
 
 llvm::Value* AssignStatement::acceptVisitor(ASTVisitor* v) {
+	return v->visitAssignStatement(this);
+}
+
+Expression* AssignStatement::acceptVisitor(LambdaReconVisitor* v) {
 	return v->visitAssignStatement(this);
 }
 
