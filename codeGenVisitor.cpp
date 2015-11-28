@@ -130,6 +130,15 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 }
 
 llvm::Value* CodeGenVisitor::makeSched(llvm::Type* type) {
+	if(type->isIntegerTy()) {
+		strcpy(lambdaKeyword, "int");
+	}
+	else if(type->isDoubleTy()) {
+		strcpy(lambdaKeyword, "float");
+	}
+	else {
+		return ErrorV("Not yet implemented closure assignment to pointer or struct types");
+	}
 	//store scheduler call TODO
 	//store recon assignment TODO
 	//return recon function call TODO
@@ -175,6 +184,7 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	lambdaNum = 0; //lambda
 	insideLambda = false; //lambda
 	justReturned = false;
+	executeCommit = true;
 	populateSwitchMap();
 	context = &llvm::getGlobalContext(); //set context for vars
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>(); //set jit
@@ -448,8 +458,8 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 					}
 				}
 			}
+			executeCommit = true;
 		}
-		bool executeCommit = true;
 		for(size_t i = 0, end = b->statements->size(); i != end; ++i) {
 			auto statement = b->statements->at(i);
 			bool commits = true;
@@ -504,9 +514,16 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 					lambdaStatements->push_back(statement);
 				}
 				lambdaStatements->push_back(new ReturnStatement(expr)); //make inserted statements
+				lambdaKeyword = (char *)GC_MALLOC_ATOMIC(6); 
 				//make recon logic for assignment or normal statements TODO
-				char* keyword = (char *)GC_MALLOC_ATOMIC(6); 
-				strcpy(keyword, "void");
+				if(!expr) {
+					strcpy(lambdaKeyword, "void");
+
+				}
+				else {
+					AssignStatement* reconAssign = new AssignStatement(expr, nullptr);
+					reconAssign->acceptVisitor(this);
+				}
 				char* envType = (char *)GC_MALLOC_ATOMIC(4); 
 				strcpy(envType, "env");
 				char* envName = (char *)GC_MALLOC_ATOMIC(3); 
@@ -518,7 +535,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				//pass struct to function def
 				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add env* e argument
-				FunctionDefinition* fd = new FunctionDefinition(new Keyword(keyword), new Identifier(identifier), 
+				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), 
 					envArg, new Block(lambdaStatements), false);
 				fd->acceptVisitor(this);
 				builder->restoreIP(ip); //restore block insertion point
@@ -542,7 +559,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				insideLambda = false;
 			}
 			else {
-				if(!executeCommit) {
+				if(!executeCommit && !insideLambda) {
 					executeCommit = true;
 					//make all sched calls in sequence TODO
 					//make all recon assignments in sequence TODO
@@ -552,9 +569,9 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 					auto destroyContextVal = new std::vector<Expression*, gc_allocator<Expression*>>();
 					char* cid = (char *)GC_MALLOC_ATOMIC(4); 
 					strcpy(cid, "cid");
-					//destroyContextVal->push_back(new Identifier(cid));
-					//FunctionCall* destroyContext = new FunctionCall(new Identifier(destroyContextName), destroyContextVal);
-					//destroyContext->acceptVisitor(this);
+					destroyContextVal->push_back(new Identifier(cid));
+					FunctionCall* destroyContext = new FunctionCall(new Identifier(destroyContextName), destroyContextVal);
+					destroyContext->acceptVisitor(this);
 					namedValues.erase("cid");
 					//delete cid that identifies the previous thread group
 				}
@@ -914,12 +931,15 @@ llvm::Value* CodeGenVisitor::visitReturnStatement(ReturnStatement* r) {
 
 /*=============================AssignStatement==============================*/
 llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
-	llvm::Value* right = a->valxp->acceptVisitor(this); //visit RHS
+	llvm::Value* right = nullptr;
+	if(!insideLambda) {
+		right = a->valxp->acceptVisitor(this); //visit RHS
+	}
 	AssignmentLHSVisitor* leftVisitor = new AssignmentLHSVisitor(this, right); //pass codegenvisitor and RHS to LHS visitor 
 	llvm::Value* retVal = a->target->acceptVisitor(leftVisitor); //visit LHS
-	if(!retVal) {
+	/*if(!retVal) { // TODO fix with lambda assignment
 		return ErrorV("Unable to evaluate assignment statement");
-	}
+	}*/
 	return retVal;
 }
 
@@ -1081,7 +1101,7 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitIdentifier(Identifier* i
 		return c->ErrorV("Unable to evaluate identifier left operand in assignment statement");
 	}
 	if(c->insideLambda) {
-		right = c->makeSched(c->getValType(var));
+		right = c->makeSched(c->getAllocaType(var));
 		return right;
 	}
 	if(!right) { //right is NULL
