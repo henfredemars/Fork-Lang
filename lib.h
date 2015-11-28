@@ -1,10 +1,10 @@
 //Fork standard library
 
+//DO NOT USE GC HERE --- not compatible with C++11 <thread>
+
 #include <cmath>
 #include <stdint.h>
 #include <stdio.h>
-#include "gc/include/gc.h"
-#include "gc/include/gc_cpp.h"
 #include "parContextManager.h"
 
 //extern "C" disables C++ name mangling
