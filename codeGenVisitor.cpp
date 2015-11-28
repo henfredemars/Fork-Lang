@@ -98,6 +98,9 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 		else if(typeName == "int") {
 			return llvm::Type::getInt64PtrTy(*context);
 		}
+		else if(typeName == "void") {
+			return llvm::PointerType::get(llvm::IntegerType::get(*context, 64), 0); //i64* pointer called void* for extern purposes
+		}
 		else if(structTypes.find(typeName) != structTypes.end()) {
 			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second); //get struct type
 			return llvm::PointerType::getUnqual(tempStruct); //return struct pointer type matching string
@@ -126,13 +129,20 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 	return (llvm::Type*) ErrorV("Invalid type detected");
 }
 
+llvm::Value* CodeGenVisitor::makeSched(llvm::Type* type) {
+	//store scheduler call TODO
+	//store recon assignment TODO
+	//return recon function call TODO
+	return nullptr;
+}
+
 llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments) {
 	llvm::FunctionType* funcType = nullptr;
 	llvm::Function* func = nullptr;
 	std::vector<llvm::Type*> inputArgs;
 	for(auto it = arguments->begin(), end = arguments->end(); it < end; ++it) {
 		auto argument = *it;
-		llvm::Type* type = getTypeFromString(argument->stringType(), argument->hasPointerType, false); //grab int, float, int*, float*, struct, struct* type
+		llvm::Type* type = getTypeFromString(argument->stringType(), argument->hasPointerType, false); //grab int, float, int*, float*, struct, struct*, void* type
 		if(!type) {
 			return (llvm::Function*) ErrorV("Invalid argument for function definition");
 		}
@@ -238,7 +248,7 @@ llvm::Value* CodeGenVisitor::visitIdentifier(Identifier* i) {
 /*=============================NullaryOperator==============================
 llvm::Value* CodeGenVisitor::visitNullaryOperator(NullaryOperator* n) {
 	if(*n->op == ';') {
-		//commit action //TODO
+		//commit action 
 		return voidValue;
 	}
 	return ErrorV("Invalid nullary operator");
@@ -439,6 +449,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				}
 			}
 		}
+		bool executeCommit = true;
 		for(size_t i = 0, end = b->statements->size(); i != end; ++i) {
 			auto statement = b->statements->at(i);
 			bool commits = true;
@@ -446,6 +457,20 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				commits = commitVector.at(i);
 			}
 			if(!commits) { //if must create lambda
+				if(executeCommit) {
+					executeCommit = false;
+					char* makeContextName = (char *)GC_MALLOC_ATOMIC(15); 
+					strcpy(makeContextName, "__make_context");
+					char* cid = (char *)GC_MALLOC_ATOMIC(4); 
+					strcpy(cid, "cid");
+					char* keyword = (char *)GC_MALLOC_ATOMIC(4); 
+					strcpy(keyword, "int");
+					FunctionCall* makeContext = new FunctionCall(new Identifier(makeContextName), new std::vector<Expression*, gc_allocator<Expression*>>());
+					VariableDefinition* cidDef = new VariableDefinition(new Keyword(keyword), new Identifier(cid), makeContext, false);
+					currCid = cidDef->acceptVisitor(this);
+					currId = 0;
+					//make cid that identifies this thread group
+				}
 				insideLambda = true;
 				statement->setCommit(true);
 				//create env struct type
@@ -465,6 +490,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				llvm::Constant* structDec = llvm::ConstantAggregateZero::get(currStruct);
 				builder->CreateStore(structDec, alloca);
 				namedValues.insert(std::make_pair("e0", alloca));
+				auto loadVal = builder->CreateLoad(alloca);
 				for(size_t i = 0, end = vals.size(); i != end; ++i) {
 					auto structFieldRef = getStructField("env", stringVec.at(i), alloca)->getPointerOperand();
 					builder->CreateStore(vals.at(i), structFieldRef);
@@ -472,8 +498,13 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				auto copyValues = namedValues; //clone map
 				auto ip = builder->saveAndClearIP(); //store block insertion point
 				auto lambdaStatements = new std::vector<Statement*,gc_allocator<Statement*>>();
-				lambdaStatements->push_back(statement);
-				lambdaStatements->push_back(new ReturnStatement(nullptr));
+				LambdaReconVisitor* lambdaVisitor = new LambdaReconVisitor(this);
+				auto expr = statement->acceptVisitor(lambdaVisitor);
+				if(!expr) {
+					lambdaStatements->push_back(statement);
+				}
+				lambdaStatements->push_back(new ReturnStatement(expr)); //make inserted statements
+				//make recon logic for assignment or normal statements TODO
 				char* keyword = (char *)GC_MALLOC_ATOMIC(6); 
 				strcpy(keyword, "void");
 				char* envType = (char *)GC_MALLOC_ATOMIC(4); 
@@ -492,17 +523,41 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				fd->acceptVisitor(this);
 				builder->restoreIP(ip); //restore block insertion point
 				namedValues = copyValues;
+				//make function pointer TODO
+				//llvm::Function* lambdaFun = theModule->getFunction(identifier);
+				//void* LambdaFunPtr = forkJIT->getPointerToFunction(lambdaFun);
+				//auto lambdaArg = castIntToPointer(llvm::ConstantInt::get(*context, llvm::APInt(64, (int64_t)LambdaFunPtr, true)));
+				//auto lambdaArgEnv = (new AddressOfExpression(new Identifier(envName), nullptr))->acceptVisitor(this); 
+				//std::vector<llvm::Value*> lambdaVals;
+				//lambdaVals.push_back(lambdaArg);
+				//lambdaVals.push_back(lambdaArgEnv);
+				//builder->CreateCall(theModule->getFunction("sched_void"), lambdaVals);
 				//pass env as pointer
-				auto envVal = new std::vector<Expression*, gc_allocator<Expression*>>();
-				envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
-				FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
-				lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
+
+				//FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
+				//lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
 				structTypes.erase("env");
 				namedValues.erase("e0");
 				insideLambda = false;
 			}
 			else {
-				lastVisited = statement->acceptVisitor(this);
+				if(!executeCommit) {
+					executeCommit = true;
+					//make all sched calls in sequence TODO
+					//make all recon assignments in sequence TODO
+					//remove sched and recon from storage TODO
+					char* destroyContextName = (char *)GC_MALLOC_ATOMIC(18); 
+					strcpy(destroyContextName, "__destroy_context");
+					auto destroyContextVal = new std::vector<Expression*, gc_allocator<Expression*>>();
+					char* cid = (char *)GC_MALLOC_ATOMIC(4); 
+					strcpy(cid, "cid");
+					//destroyContextVal->push_back(new Identifier(cid));
+					//FunctionCall* destroyContext = new FunctionCall(new Identifier(destroyContextName), destroyContextVal);
+					//destroyContext->acceptVisitor(this);
+					namedValues.erase("cid");
+					//delete cid that identifies the previous thread group
+				}
+					lastVisited = statement->acceptVisitor(this);
 			}
 		}
 	}
@@ -1024,6 +1079,10 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitIdentifier(Identifier* i
 	if(!var) {
 		return c->ErrorV("Unable to evaluate identifier left operand in assignment statement");
 	}
+	if(c->insideLambda) {
+		right = c->makeSched(c->getValType(var));
+		return right;
+	}
 	if(!right) { //right is NULL
 		if(c->getAllocaType(var)->isPointerTy()) { //left is a pointer
 			if(c->getAllocaType(var)->getContainedType(0)->isDoubleTy()) {
@@ -1074,6 +1133,10 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitPointerExpression(Pointe
 			std::string typeString = type->getStructName();
 			std::string fieldName = e->field->name;
 			refVar = c->getStructField(typeString, fieldName, refVar)->getPointerOperand(); //grab struct field
+			if(c->insideLambda) {
+				right = c->makeSched(c->getPointedType(refVar));
+				return right;
+			}
 			if(!right) { //right is NULL
 				if(c->getPointedType(refVar)->isPointerTy()) { //LHS field is a pointer
 					if(c->getPointedType(refVar)->getContainedType(0)->isDoubleTy()) {
@@ -1107,10 +1170,14 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitPointerExpression(Pointe
 		}
 	}
 	else {
+		if(c->insideLambda) {
+			right = c->makeSched(c->getPointedType(refVar));
+			return right;
+		}
 		if(!right) { //LHS is non pointer and RHS is pointer
 			return c->ErrorV("Unable to assign NULL pointer to left operand of non-pointer type");
 		}
-		if(c->getValType(right) != c->getPointedType(refVar)) { //LHS deref type does not match RHS type
+		else if(c->getValType(right) != c->getPointedType(refVar)) { //LHS deref type does not match RHS type
 			if(c->getValType(right)->isIntegerTy() && c->getPointedType(refVar)->isDoubleTy()) {
 				right = c->castIntToFloat(right);
 			}
@@ -1138,6 +1205,10 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitStructureExpression(Stru
 	std::string typeString = c->getAllocaType(var)->getStructName();
 	std::string fieldName = e->field->name;
 	llvm::Value* structFieldRef = c->getStructField(typeString, fieldName, var)->getPointerOperand(); //get LHS field
+	if(c->insideLambda) {
+		right = c->makeSched(c->getPointedType(structFieldRef));
+		return right;
+	}
 	if(!right) {
 		if(c->getPointedType(structFieldRef)->isPointerTy()) { //LHS field is a pointer
 			if(c->getPointedType(structFieldRef)->getContainedType(0)->isDoubleTy()) {
@@ -1188,3 +1259,13 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitAssignStatement(AssignSt
 llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitIfStatement(IfStatement* i) {return nullptr;}
 llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitExternStatement(ExternStatement* e) {return nullptr;}
 llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitNullLiteral(NullLiteral* n) {return nullptr;}
+
+LambdaReconVisitor::LambdaReconVisitor(CodeGenVisitor* c) {
+	this->c = c;
+}
+Expression* LambdaReconVisitor::visitNode(Node* n) {return nullptr;}
+Expression* LambdaReconVisitor::visitExpression(Expression* e) {return nullptr;}
+Expression* LambdaReconVisitor::visitStatement(Statement* s) {return nullptr;}
+Expression* LambdaReconVisitor::visitAssignStatement(AssignStatement* a) {
+	return a->target;
+}
