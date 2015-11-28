@@ -52,13 +52,13 @@ public:
 	void sched_intptr(int64_t* (*statement)(void*),void* env,int64_t id,const int64_t cid);
 	void sched_floatptr(double* (*statement)(void*),void* env,int64_t id,const int64_t cid);
 	void sched_void(void (*statement)(void*),void* env,int64_t id,const int64_t cid);
-	int64_t recon_int(const int64_t original,const int64_t known,const int64_t update,
+	int64_t recon_int(const int64_t original,const int64_t known,
 		const int64_t id,const int64_t max,const int64_t cid);
-	double recon_float(const double original,const int64_t known,const double update,
+	double recon_float(const double original,const int64_t known,
 		const int64_t id,const int64_t max,const int64_t cid);
-	int64_t* recon_intptr(const int64_t* original,const int64_t known,const int64_t* update,
+	int64_t* recon_intptr(const int64_t* original,const int64_t known,
 		const int64_t id,const int64_t max,const int64_t cid);
-	double* recon_floatptr(const double* original,const int64_t known,const double* update,
+	double* recon_floatptr(const double* original,const int64_t known,
 		const int64_t id,const int64_t max,const int64_t cid);
 	void recon_void(const int64_t id,const int64_t max,const int64_t cid);
 private:

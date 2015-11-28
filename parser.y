@@ -70,6 +70,8 @@
 
 //A program is a collection of statements in a block
 program : statements { program = $1; program->describe();
+		       auto externInjects = buildInjections();
+		       program->statements->insert(program->statements->begin(),externInjects->begin(),externInjects->end());
 		       ast_root = program;
 	  	       printf("Parser: start symbol\n\n");
 	} ;
