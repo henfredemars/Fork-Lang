@@ -1,6 +1,8 @@
 
 //Parallel statement execution management object
 
+//DO NOT USE GC HERE --- not compatible with C++11 <thread>
+
 #ifndef __PARCONTEXTMANAGER_H
 #define __PARCONTEXTMANAGER_H
 
@@ -14,12 +16,10 @@
 #include <cassert>
 #include <stdint.h>
 #include <stdio.h>
-#include "gc/include/gc.h"
-#include "gc/include/gc_cpp.h"
 
 //All methods can be safely called from any thread and in parallel
 
-class StatementContext : public gc {
+class StatementContext {
 public:
 	StatementContext();
 	StatementContext(StatementContext&& sc);
@@ -42,7 +42,7 @@ private:
 	std::mutex map_mutex;
 };
 
-class ParContextManager : public gc {
+class ParContextManager {
 public:
 	ParContextManager();
 	int64_t make_context();

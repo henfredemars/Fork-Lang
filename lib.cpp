@@ -3,6 +3,7 @@
 #include "lib.h"
 
 //extern "C" disables C++ name mangling
+//DO NOT USE GC HERE --- not compatible with C++11 <thread>
 
 //Never garble writing to the output stream
 std::mutex print_mutex;
