@@ -86,6 +86,8 @@ private:
 	int lambdaNum; //lambda
 	llvm::Value* currCid; //lambda
 	int currId; //lambda
+	bool executeCommit; //lambda
+	char* lambdaKeyword;
 	bool error;
 	bool justReturned;
 	llvm::LLVMContext* context;
