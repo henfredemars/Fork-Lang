@@ -533,9 +533,10 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				//lambdaVals.push_back(lambdaArgEnv);
 				//builder->CreateCall(theModule->getFunction("sched_void"), lambdaVals);
 				//pass env as pointer
-
-				//FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
-				//lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
+				auto envVal = new std::vector<Expression*,gc_allocator<Expression*>>();
+				envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
+				FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
+				lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
 				structTypes.erase("env");
 				namedValues.erase("e0");
 				insideLambda = false;
