@@ -42,7 +42,7 @@ main.o: main.cpp node.h
 	g++ `$(LLVM_BIN) --cxxflags` $(OPT_LVL) -c main.cpp -o main.o $(LLVM_INC) `$(LLVM_BIN) --cxxflags`
 
 .gc_built_marker:
-	touch .gc_built_marker;cd ./gc;./configure --prefix=/usr/local/ --enable-threads=posix --enable-parallel-mark --enable-cplusplus --enable-gc-assertions;make
+	touch .gc_built_marker;cd ./gc;./configure --prefix=/usr/local/ --enable-cplusplus --enable-gc-assertions;make
 
 CTest: .gc_built_marker
 	make -C ./Bench/C++
