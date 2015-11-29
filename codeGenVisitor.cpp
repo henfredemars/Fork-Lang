@@ -26,11 +26,11 @@ llvm::Value* CodeGenVisitor::castIntToFloat(llvm::Value* val) {
 }
 
 llvm::Value* CodeGenVisitor::castIntToBoolean(llvm::Value* val) {
-	return builder->CreateICmpNE(val, llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true)));
+	return builder->CreateICmpNE(val, llvm::ConstantInt::get(*mainContext, llvm::APInt(64, 0, true)));
 }
 
 llvm::Value* CodeGenVisitor::castFloatToBoolean(llvm::Value* val) {
-	return builder->CreateFCmpONE(val, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)));
+	return builder->CreateFCmpONE(val, llvm::ConstantFP::get(*mainContext, llvm::APFloat(0.0)));
 }
 
 llvm::Value* CodeGenVisitor::castBooleantoInt(llvm::Value* val) {
@@ -42,7 +42,7 @@ llvm::Value* CodeGenVisitor::castPointerToInt(llvm::Value* val) {
 }
 
 llvm::Value* CodeGenVisitor::castIntToPointer(llvm::Value* val) {
-	return builder->CreateIntToPtr(val, llvm::Type::getInt64PtrTy(*context));
+	return builder->CreateIntToPtr(val, llvm::Type::getInt64PtrTy(*mainContext));
 }
 
 llvm::Type* CodeGenVisitor::getValType(llvm::Value* val) {
@@ -93,13 +93,13 @@ llvm::LoadInst* CodeGenVisitor::getStructField(std::string typeString, std::stri
 llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid) {
 	if(isPointer) { 
 		if(typeName == "float") {
-			return llvm::Type::getDoublePtrTy(*context);
+			return llvm::Type::getDoublePtrTy(*mainContext);
 		}
 		else if(typeName == "int") {
-			return llvm::Type::getInt64PtrTy(*context);
+			return llvm::Type::getInt64PtrTy(*mainContext);
 		}
 		else if(typeName == "void") {
-			return llvm::PointerType::get(llvm::IntegerType::get(*context, 64), 0); //i64* pointer called void* for extern purposes
+			return llvm::PointerType::get(llvm::IntegerType::get(*mainContext, 64), 0); //i64* pointer called void* for extern purposes
 		}
 		else if(structTypes.find(typeName) != structTypes.end()) {
 			llvm::StructType* tempStruct = std::get<0>(structTypes.find(typeName)->second); //get struct type
@@ -127,6 +127,13 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 		}
 	}
 	return (llvm::Type*) ErrorV("Invalid type detected");
+}
+
+llvm::LLVMContext* CodeGenVisitor::getContext() {
+	if(insideLambda) {
+		return lambdaContext;
+	}
+	return mainContext;
 }
 
 llvm::Function* CodeGenVisitor::getModuleFunction(std::string fName) {
@@ -193,14 +200,16 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	justReturned = false;
 	executeCommit = true;
 	populateSwitchMap();
-	context = &llvm::getGlobalContext(); //set context for vars
+	mainContext = llvm::unwrap(LLVMContextCreate());
+	lambdaContext = llvm::unwrap(LLVMContextCreate());
+	//context = &llvm::getGlobalContext(); //set context for vars
 	forkJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>(); //set jit
-	theModule = llvm::make_unique<llvm::Module>(name, *context);
+	theModule = llvm::make_unique<llvm::Module>(name, *mainContext);
 	theModule->setDataLayout(forkJIT->getTargetMachine().createDataLayout()); //set module for tracking and execution
-	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*context); //set builder for IR insertion
-	voidValue = llvm::ReturnInst::Create(*context); 
-	floatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*context));
-	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*context)); // set default void and nullptr values, struct has to be retrieved
+	builder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*mainContext); //set builder for IR insertion
+	voidValue = llvm::ReturnInst::Create(*mainContext); 
+	floatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*mainContext));
+	intNullPointer = llvm::Constant::getNullValue(llvm::Type::getInt64PtrTy(*mainContext)); // set default void and nullptr values, struct has to be retrieved
 }
 
 void CodeGenVisitor::executeMain() {
@@ -213,6 +222,8 @@ void CodeGenVisitor::executeMain() {
 	    func(); //execute main
 	    printf("---> main() returns: void\n");
 	    delete voidValue;
+	    LLVMContextDispose(llvm::wrap(lambdaContext));
+	    LLVMContextDispose(llvm::wrap(mainContext));
 	    forkJIT->removeModule(handle);
 	}
 	else {
@@ -246,12 +257,12 @@ llvm::Value* CodeGenVisitor::visitStatement(Statement* s) {
 
 /*=================================Integer==================================*/
 llvm::Value* CodeGenVisitor::visitInteger(Integer* i) {
-	return llvm::ConstantInt::get(*context, llvm::APInt(64, i->value, true));
+	return llvm::ConstantInt::get(*mainContext, llvm::APInt(64, i->value, true));
 }
 
 /*==================================Float===================================*/
 llvm::Value* CodeGenVisitor::visitFloat(Float* f) {
-	return llvm::ConstantFP::get(*context, llvm::APFloat(f->value));
+	return llvm::ConstantFP::get(*mainContext, llvm::APFloat(f->value));
 }
 
 /*================================Identifier================================*/
@@ -284,7 +295,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 		expr = castPointerToInt(expr);
 		switch(*u->op) { //pointer acts as int then is returned as pointer
 			case '-':
-			return castIntToPointer(builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr));
+			return castIntToPointer(builder->CreateMul(llvm::ConstantInt::get(*mainContext, llvm::APInt(64, -1, true)), expr));
 			case '!':
 			return castIntToPointer(castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)))); //casted to boolean returned as pointer
 			default:
@@ -294,7 +305,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	else if(getValType(expr)->isDoubleTy()) { //float applied to unary op
 		switch(*u->op) {
 			case '-':
-			return builder->CreateFMul(llvm::ConstantFP::get(*context, llvm::APFloat(-1.0)), expr);
+			return builder->CreateFMul(llvm::ConstantFP::get(*mainContext, llvm::APFloat(-1.0)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(castFloatToBoolean(expr)));
 			default:
@@ -304,7 +315,7 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	else if (getValType(expr)->isIntegerTy()) { //integer applied to unary op
 		switch(*u->op) {
 			case '-':
-			return builder->CreateMul(llvm::ConstantInt::get(*context, llvm::APInt(64, -1, true)), expr);
+			return builder->CreateMul(llvm::ConstantInt::get(*mainContext, llvm::APInt(64, -1, true)), expr);
 			case '!':
 			return castBooleantoInt(builder->CreateNot(castIntToBoolean(expr)));
 			default:
@@ -491,7 +502,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				insideLambda = true;
 				statement->setCommit(true);
 				//create env struct type
-				llvm::StructType* currStruct = llvm::StructType::create(*context, "env"); //create env struct type
+				llvm::StructType* currStruct = llvm::StructType::create(*mainContext, "env"); //create env struct type
 				std::vector<std::string> stringVec;
 				std::vector<llvm::Type*> types;
 				std::vector<llvm::Value*> vals;
@@ -543,19 +554,14 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add env* e argument
 				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), envArg, new Block(lambdaStatements), false);
-				auto lambdaJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
-				lambdaModule = llvm::make_unique<llvm::Module>(identifier, *context);
-				lambdaModule->setDataLayout(lambdaJIT->getTargetMachine().createDataLayout());
+				lambdaModule = llvm::make_unique<llvm::Module>(identifier, *mainContext);
+				lambdaModule->setDataLayout(forkJIT->getTargetMachine().createDataLayout());
 				fd->acceptVisitor(this);
 				builder->restoreIP(ip); //restore block insertion point
 				namedValues = copyValues;
 				//make function pointer
-				std::cout << identifier << std::endl;
-				if(lambdaModule->getFunction(identifier)) {
-					std::cout << "where is this function" << std::endl;
-				}
-				auto handle = lambdaJIT->addModule(std::move(lambdaModule)); // JIT the module
-				auto lambdaSymbol = lambdaJIT->findSymbol(identifier); 
+				auto handle = forkJIT->addModule(std::move(lambdaModule)); // JIT the module
+				auto lambdaSymbol = forkJIT->findSymbol(identifier); 
 				uint64_t lam = lambdaSymbol.getAddress(); //grab address of the lambda
 				forkJIT->removeModule(handle);
 				//pass env as pointer
@@ -714,10 +720,10 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 		}
 		else { // default value
 			if(type == "int") {
-				val = llvm::ConstantInt::get(*context, llvm::APInt(64, 0, true));
+				val = llvm::ConstantInt::get(*mainContext, llvm::APInt(64, 0, true));
 			}
 			else if(type == "float") {
-				val = llvm::ConstantFP::get(*context, llvm::APFloat(0.0));
+				val = llvm::ConstantFP::get(*mainContext, llvm::APFloat(0.0));
 			}
 			else {
 				return ErrorV("Attempt to declare variable of an incorrect type");
@@ -740,7 +746,7 @@ llvm::Value* CodeGenVisitor::visitVariableDefinition(VariableDefinition* v) {
 llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>> vars = s->getVariables();
 	std::vector<StructureDeclaration*,gc_allocator<StructureDeclaration*>> structs = s->getStructs();
-	llvm::StructType* currStruct = llvm::StructType::create(*context, s->ident->name); //forward declare struct type
+	llvm::StructType* currStruct = llvm::StructType::create(*mainContext, s->ident->name); //forward declare struct type
 	std::vector<llvm::Type*> types;
 	std::vector<std::string> stringVec;
 	for(auto it = vars.begin(), end = vars.end(); it != end; ++it) { //iterate over var list
@@ -807,7 +813,7 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	if(!func->empty()) {
 		return ErrorV("Function is already defined");
 	}
-	llvm::BasicBlock* block = llvm::BasicBlock::Create(*context, "func", func);
+	llvm::BasicBlock* block = llvm::BasicBlock::Create(*mainContext, "func", func);
 	builder->SetInsertPoint(block);
 	namedValues.clear();
 	if(!insideLambda) { //keep variables to allow access to current scope
@@ -971,9 +977,9 @@ llvm::Value* CodeGenVisitor::visitIfStatement(IfStatement* i) {
 		return ErrorV("Unable to determine condition type");
 	}
 	llvm::Function* func = builder->GetInsertBlock()->getParent();
-	llvm::BasicBlock* thenIf = llvm::BasicBlock::Create(*context, "then", func);
-	llvm::BasicBlock* elseIf = llvm::BasicBlock::Create(*context, "else");
-	llvm::BasicBlock* mergeIf = llvm::BasicBlock::Create(*context, "if");
+	llvm::BasicBlock* thenIf = llvm::BasicBlock::Create(*mainContext, "then", func);
+	llvm::BasicBlock* elseIf = llvm::BasicBlock::Create(*mainContext, "else");
+	llvm::BasicBlock* mergeIf = llvm::BasicBlock::Create(*mainContext, "if");
 	builder->CreateCondBr(condition, thenIf, elseIf); //branch between blocks
 	//insert into then
 	builder->SetInsertPoint(thenIf);
