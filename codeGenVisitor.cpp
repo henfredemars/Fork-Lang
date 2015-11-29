@@ -129,6 +129,13 @@ llvm::Type* CodeGenVisitor::getTypeFromString(std::string typeName, bool isPoint
 	return (llvm::Type*) ErrorV("Invalid type detected");
 }
 
+llvm::Function* CodeGenVisitor::getModuleFunction(std::string fName) {
+	if(insideLambda && lambdaModule) {
+		return lambdaModule->getFunction(fName);
+	}
+	return theModule->getFunction(fName);
+}
+
 llvm::Value* CodeGenVisitor::makeSched(llvm::Type* type) {
 	if(type->isIntegerTy()) {
 		strcpy(lambdaKeyword, "int");
@@ -535,25 +542,27 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				//pass struct to function def
 				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add env* e argument
-				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), 
-					envArg, new Block(lambdaStatements), false);
+				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), envArg, new Block(lambdaStatements), false);
+				auto lambdaJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
+				lambdaModule = llvm::make_unique<llvm::Module>(identifier, *context);
+				lambdaModule->setDataLayout(lambdaJIT->getTargetMachine().createDataLayout());
 				fd->acceptVisitor(this);
 				builder->restoreIP(ip); //restore block insertion point
 				namedValues = copyValues;
-				//make function pointer TODO
-				//llvm::Function* lambdaFun = theModule->getFunction(identifier);
-				//void* LambdaFunPtr = forkJIT->getPointerToFunction(lambdaFun);
-				//auto lambdaArg = castIntToPointer(llvm::ConstantInt::get(*context, llvm::APInt(64, (int64_t)LambdaFunPtr, true)));
-				//auto lambdaArgEnv = (new AddressOfExpression(new Identifier(envName), nullptr))->acceptVisitor(this); 
-				//std::vector<llvm::Value*> lambdaVals;
-				//lambdaVals.push_back(lambdaArg);
-				//lambdaVals.push_back(lambdaArgEnv);
-				//builder->CreateCall(theModule->getFunction("sched_void"), lambdaVals);
+				//make function pointer
+				std::cout << identifier << std::endl;
+				if(lambdaModule->getFunction(identifier)) {
+					std::cout << "where is this function" << std::endl;
+				}
+				auto handle = lambdaJIT->addModule(std::move(lambdaModule)); // JIT the module
+				auto lambdaSymbol = lambdaJIT->findSymbol(identifier); 
+				uint64_t lam = lambdaSymbol.getAddress(); //grab address of the lambda
+				forkJIT->removeModule(handle);
 				//pass env as pointer
-				auto envVal = new std::vector<Expression*,gc_allocator<Expression*>>();
-				envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
-				FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
-				lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
+				//auto envVal = new std::vector<Expression*,gc_allocator<Expression*>>();
+				//envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
+				//FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
+				//lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
 				structTypes.erase("env");
 				namedValues.erase("e0");
 				insideLambda = false;
@@ -584,7 +593,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 
 /*===============================FunctionCall===============================*/
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
-	llvm::Function* func = theModule->getFunction(f->ident->name); //search func name in module
+	llvm::Function* func = getModuleFunction(f->ident->name); //search func name in module
 	if(!func) { //func name does not exist
 		return ErrorV("Unknown function reference");
 	}
@@ -783,7 +792,7 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 
 /*============================FunctionDefinition============================*/
 llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
-	llvm::Function* func = theModule->getFunction(f->ident->name);
+	llvm::Function* func = getModuleFunction(f->ident->name);
 	if(!func) {
 		if(!f->type) {
 			func = generateFunction(f->hasPointerType, f->user_type->name, f->ident->name, f->args); //struct return type

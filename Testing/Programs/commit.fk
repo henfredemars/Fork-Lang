@@ -1,13 +1,10 @@
 extern void print_int(int x);
-extern int __make_context();
-extern void __destroy_context(int cid);
-extern  void __fork_sched_void(void* statement, void* env, int id, int cid);
 
 void main() {
 	int a = 6 + 2;
 	int b = 54;
-	b = 42
-	5 + 4;
+	b = 42;
+	5 + 4
 	7 * 5;
 	print_int(a * 10);
 	print_int(b);

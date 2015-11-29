@@ -93,6 +93,7 @@ private:
 	llvm::LLVMContext* context;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
 	std::unique_ptr<llvm::Module> theModule;
+	std::unique_ptr<llvm::Module> lambdaModule; //lambda
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
 	llvm::Value* voidValue;
 	llvm::Constant* intNullPointer;
@@ -116,6 +117,7 @@ private:
 	llvm::LoadInst* getStructField(std::string typeString, std::string fieldName, llvm::Value* var);
 	llvm::Type* getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid);
 	llvm::Value* makeSched(llvm::Type* type);
+	llvm::Function* getModuleFunction(std::string fName);
 	llvm::Function* generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
