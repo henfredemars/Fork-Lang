@@ -15,6 +15,8 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/NoFolder.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/ExecutionEngine/Orc/GlobalMappingLayer.h"
+#include "llvm-c/Core.h"
 #include "KaleidoscopeJIT.h"
 #include <unordered_map>
 #include <iterator>
