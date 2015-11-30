@@ -143,11 +143,11 @@ llvm::IRBuilder<true, llvm::NoFolder>* CodeGenVisitor::getBuilder() {
 	return mainBuilder.get();
 }
 
-llvm::Function* CodeGenVisitor::getModuleFunction(std::string fName) {
-	if(insideLambda && lambdaModule) {
-		return lambdaModule->getFunction(fName);
+llvm::Module* CodeGenVisitor::getModule() {
+	if(insideLambda) {
+		return lambdaModule.get();
 	}
-	return theModule->getFunction(fName);
+	return mainModule.get();
 }
 
 llvm::Value* CodeGenVisitor::getVoidValue() {
@@ -204,7 +204,7 @@ llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::strin
 		return (llvm::Function*) ErrorV("Invalid return for function definition");
 	}
 	funcType = llvm::FunctionType::get(type, inputArgs, false); //create funcType
-	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, theModule.get()); //create function with functype and use external
+	func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, getModule()); //create function with functype and use external
 	{ //set names for func args
 	size_t i = 0;
 	for (auto &arg : func->args())
@@ -233,10 +233,9 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	lambdaContext = llvm::unwrap(LLVMContextCreate());
 	mainJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
 	lambdaJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
-	theModule = llvm::make_unique<llvm::Module>(name, *mainContext);
-	theModule->setDataLayout(mainJIT->getTargetMachine().createDataLayout()); //set module for tracking and execution
+	mainModule = llvm::make_unique<llvm::Module>(name, *mainContext);
+	mainModule->setDataLayout(mainJIT->getTargetMachine().createDataLayout()); //set module for tracking and execution
 	mainBuilder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*mainContext); //set builder for IR insertion
-	lambdaBuilder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*lambdaContext);
 	mainVoidValue = llvm::ReturnInst::Create(*mainContext); 
 	lambdaVoidValue = llvm::ReturnInst::Create(*lambdaContext); 
 	mainFloatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*mainContext));
@@ -247,7 +246,7 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 
 void CodeGenVisitor::executeMain() {
 	if(!error) {
-		auto handle = mainJIT->addModule(std::move(theModule)); // JIT the module
+		auto handle = mainJIT->addModule(std::move(mainModule)); // JIT the module
 		auto mainSymbol = mainJIT->findSymbol("main"); 
 		assert(mainSymbol && "No code to execute, include a main function");
 		void (*func)() = (void (*)())(intptr_t)mainSymbol.getAddress(); //grab address of main
@@ -267,7 +266,7 @@ void CodeGenVisitor::executeMain() {
 
 void CodeGenVisitor::printModule() const {
 	if(!error) {
-		theModule->dump(); //dump IR to stderr that is used
+		mainModule->dump(); //dump IR to stderr that is used
 	}
 	else {
 		printf("IR dump prevented due to errors\n");
@@ -556,7 +555,6 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 					auto structFieldRef = getStructField("env", stringVec.at(i), alloca)->getPointerOperand();
 					getBuilder()->CreateStore(vals.at(i), structFieldRef);
 				}
-				std::cout << "you made it" << std::endl;
 				auto copyValues = namedValues; //clone map
 				auto ip = getBuilder()->saveAndClearIP(); //store block insertion point
 				char* envType = (char *)GC_MALLOC_ATOMIC(4); 
@@ -585,11 +583,11 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 					reconAssign->acceptVisitor(this);
 					recon = false;
 				}
-				std::cout << "you made it2" << std::endl;
 				//pass struct to function def
 				insideLambda = true;
-				lambdaModule = llvm::make_unique<llvm::Module>(identifier, *getContext());
+				lambdaModule = llvm::make_unique<llvm::Module>(identifier, *lambdaContext);
 				lambdaModule->setDataLayout(lambdaJIT->getTargetMachine().createDataLayout());
+				lambdaBuilder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*lambdaContext);
 				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add env* e argument
 				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), envArg, new Block(lambdaStatements), false);
@@ -600,12 +598,11 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				insideLambda = false;
 				getBuilder()->restoreIP(ip); //restore block insertion point
 				namedValues = copyValues;
-				std::cout << "you made it3" << std::endl;
 				//make function pointer
-				//auto handle = lambdaJIT->addModule(std::move(lambdaModule)); // JIT the module
-				//auto lambdaSymbol = lambdaJIT->findSymbol(identifier); 
-				//uint64_t lam = lambdaSymbol.getAddress(); //grab address of the lambda
-				//lambdaJIT->removeModule(handle);
+				auto handle = lambdaJIT->addModule(std::move(lambdaModule)); // JIT the module
+				auto lambdaSymbol = lambdaJIT->findSymbol(identifier); 
+				uint64_t lam = lambdaSymbol.getAddress(); //grab address of the lambda
+				std::cout << lam << std::endl;
 				//pass env as pointer
 				//auto envVal = new std::vector<Expression*,gc_allocator<Expression*>>();
 				//envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
@@ -613,7 +610,6 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				//lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
 				structTypes.erase("env");
 				namedValues.erase("e0");
-				std::cout << "you made it4" << std::endl;
 			}
 			else {
 				if(!executeCommit && !insideLambda) {
@@ -641,7 +637,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 
 /*===============================FunctionCall===============================*/
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
-	llvm::Function* func = getModuleFunction(f->ident->name); //search func name in module
+	llvm::Function* func = getModule()->getFunction(f->ident->name); //search func name in module
 	if(!func) { //func name does not exist
 		return ErrorV("Unknown function reference");
 	}
@@ -840,7 +836,7 @@ llvm::Value* CodeGenVisitor::visitStructureDefinition(StructureDefinition* s) {
 
 /*============================FunctionDefinition============================*/
 llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
-	llvm::Function* func = getModuleFunction(f->ident->name);
+	llvm::Function* func = getModule()->getFunction(f->ident->name);
 	if(!func) {
 		if(!f->type) {
 			func = generateFunction(f->hasPointerType, f->user_type->name, f->ident->name, f->args); //struct return type
@@ -1131,7 +1127,7 @@ llvm::Value* CodeGenVisitor::visitStructureExpression(StructureExpression* e) {
 
 /*===============================ExternStatement================================*/
 llvm::Value* CodeGenVisitor::visitExternStatement(ExternStatement* e) {
-	llvm::Function* func = theModule->getFunction(e->ident->name);
+	llvm::Function* func = getModule()->getFunction(e->ident->name);
 	if(!func) { //func doesnt exist
 		func = generateFunction(e->hasPointerType, e->type->name, e->ident->name, e->args); //define func with no body
 	}

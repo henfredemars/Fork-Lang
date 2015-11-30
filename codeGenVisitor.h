@@ -95,7 +95,7 @@ private:
 	llvm::LLVMContext* lambdaContext; //lambda
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> mainBuilder;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> lambdaBuilder; //lambda
-	std::unique_ptr<llvm::Module> theModule;
+	std::unique_ptr<llvm::Module> mainModule;
 	std::unique_ptr<llvm::Module> lambdaModule; //lambda
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> mainJIT;
 	std::unique_ptr<llvm::orc::KaleidoscopeJIT> lambdaJIT; //lambda
@@ -123,9 +123,9 @@ private:
 	llvm::Constant* getNullPointer(std::string typeName);
 	llvm::LoadInst* getStructField(std::string typeString, std::string fieldName, llvm::Value* var);
 	llvm::Type* getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid);
+	llvm::Module* getModule(); //lambda
 	llvm::IRBuilder<true, llvm::NoFolder>* getBuilder(); //lambda
 	llvm::LLVMContext* getContext(); //lambda
-	llvm::Function* getModuleFunction(std::string fName); //lambda
 	llvm::Value* getVoidValue();
 	llvm::Constant* getIntNullPointer();
 	llvm::Constant* getFloatNullPointer(); 
