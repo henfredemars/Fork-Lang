@@ -30,7 +30,7 @@ extern "C" int yywrap() { return 1; }
 
 [ \t\r]                   ;
 ^[ ]*\n			  ;
-^[ ]*\/\/+.*\n		  ;
+\/\/+.*\n		  ;
 <C_COMMENT>.		  ;
 "/*"            	  BEGIN(C_COMMENT);
 <C_COMMENT>"*/"		  BEGIN(INITIAL);
