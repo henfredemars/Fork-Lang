@@ -71,9 +71,21 @@ std::vector<Statement*,gc_allocator<Statement*>>* buildInjections() {
 	char* c_original = (char*)GC_MALLOC_ATOMIC(32);
 	char* c_known = (char*)GC_MALLOC_ATOMIC(8);
 	char* c_max = (char*)GC_MALLOC_ATOMIC(8);
+	char* cmalloc_int = (char*)GC_MALLOC_ATOMIC(32);
+	char* cmalloc_float = (char*)GC_MALLOC_ATOMIC(32);
+	char* ccalloc_int = (char*)GC_MALLOC_ATOMIC(32);
+	char* ccalloc_float = (char*)GC_MALLOC_ATOMIC(32);
+	char* cfree_int = (char*)GC_MALLOC_ATOMIC(32);
+	char* cfree_float = (char*)GC_MALLOC_ATOMIC(32);
 	std::strcpy(cvoid,"void");
 	std::strcpy(cint,"int");
 	std::strcpy(cfloat,"float");
+	std::strcpy(cmalloc_int,"malloc_int");
+	std::strcpy(cmalloc_float,"malloc_float");
+	std::strcpy(ccalloc_int,"calloc_int");
+	std::strcpy(ccalloc_float,"calloc_float");
+	std::strcpy(cfree_int,"free_int");
+	std::strcpy(cfree_float,"free_float");
 	std::strcpy(c__make_context,"__make_context");
 	std::strcpy(c__destroy_context,"__destroy_context");
 	std::strcpy(c__fork_sched_int,"__fork_sched_int");
@@ -108,12 +120,17 @@ std::vector<Statement*,gc_allocator<Statement*>>* buildInjections() {
 	Identifier* i__recon_floatptr = new Identifier(c__recon_floatptr);
 	Identifier* i__recon_void = new Identifier(c__recon_void);
 	Identifier* i__destroy_context = new Identifier(c__destroy_context);
+	Identifier* imalloc_int = new Identifier(cmalloc_int);
+	Identifier* imalloc_float = new Identifier(cmalloc_float);
+	Identifier* icalloc_int = new Identifier(ccalloc_int);
+	Identifier* icalloc_float = new Identifier(ccalloc_float);
+	Identifier* ifree_int = new Identifier(cfree_int);
+	Identifier* ifree_float = new Identifier(cfree_float);
 	VariableDefinition* vfunc = new VariableDefinition(kvoid,new Identifier(c_func),nullptr,true); //Variables
 	VariableDefinition* venv = new VariableDefinition(kvoid,new Identifier(c_env),nullptr,true);
 	VariableDefinition* vid = new VariableDefinition(kint,new Identifier(c_id),nullptr,false);
 	VariableDefinition* vcid = new VariableDefinition(kint,new Identifier(c_cid),nullptr,false);
 	VariableDefinition* vmax = new VariableDefinition(kint,new Identifier(c_max),nullptr,false);
-
 	VariableDefinition* vknownint = new VariableDefinition(kint,new Identifier(c_known),nullptr,false);
 	VariableDefinition* vknownintptr = new VariableDefinition(kint,new Identifier(c_known),nullptr,true);
 	VariableDefinition* vknownfloat = new VariableDefinition(kfloat,new Identifier(c_known),nullptr,false);
@@ -122,7 +139,20 @@ std::vector<Statement*,gc_allocator<Statement*>>* buildInjections() {
 	VariableDefinition* voriginalintptr = new VariableDefinition(kint,new Identifier(c_original),nullptr,true);
 	VariableDefinition* voriginalfloat = new VariableDefinition(kfloat,new Identifier(c_original),nullptr,false);
 	VariableDefinition* voriginalfloatptr = new VariableDefinition(kfloat,new Identifier(c_original),nullptr,true);
+
 	auto v__make_context = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); //Call vectors
+	auto vmalloc_int = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	vmalloc_int->push_back(vid);
+	auto vmalloc_float = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	vmalloc_float->push_back(vid);
+	auto vcalloc_int = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	vcalloc_int->push_back(vid);
+	auto vcalloc_float = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	vcalloc_float->push_back(vid);
+	auto vfree_int = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	vfree_int->push_back(voriginalintptr);
+	auto vfree_float = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
+	vfree_float->push_back(voriginalfloatptr);
 	auto v__fork_sched_int = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 	v__fork_sched_int->push_back(vfunc);
 	v__fork_sched_int->push_back(venv);
@@ -178,18 +208,24 @@ std::vector<Statement*,gc_allocator<Statement*>>* buildInjections() {
 	v__recon_void->push_back(vcid);
 	auto v__destroy_context = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 	v__destroy_context->push_back(vcid);
-	injections->push_back(new ExternStatement(kint,i__make_context,v__make_context,false));
-	injections->push_back(new ExternStatement(kvoid,i__fork_sched_int,v__fork_sched_int,false));
-	injections->push_back(new ExternStatement(kvoid,i__fork_sched_float,v__fork_sched_float,false));
-	injections->push_back(new ExternStatement(kvoid,i__fork_sched_intptr,v__fork_sched_intptr,false));
-	injections->push_back(new ExternStatement(kvoid,i__fork_sched_floatptr,v__fork_sched_floatptr,false));
-	injections->push_back(new ExternStatement(kvoid,i__fork_sched_void,v__fork_sched_void,false));
-	injections->push_back(new ExternStatement(kint,i__recon_int,v__recon_int,false));
-	injections->push_back(new ExternStatement(kfloat,i__recon_float,v__recon_float,false));
-	injections->push_back(new ExternStatement(kint,i__recon_intptr,v__recon_intptr,true));
-	injections->push_back(new ExternStatement(kfloat,i__recon_floatptr,v__recon_floatptr,true));
-	injections->push_back(new ExternStatement(kvoid,i__recon_void,v__recon_void,false));
-	injections->push_back(new ExternStatement(kvoid,i__destroy_context,v__destroy_context,false));
+	injections->push_back(new ExternStatement(kint,imalloc_int,vmalloc_int,true,true));
+	injections->push_back(new ExternStatement(kfloat,imalloc_float,vmalloc_float,true,true));
+	injections->push_back(new ExternStatement(kint,icalloc_int,vcalloc_int,true,true));
+	injections->push_back(new ExternStatement(kfloat,icalloc_float,vcalloc_float,true,true));
+	injections->push_back(new ExternStatement(kvoid,ifree_int,vfree_int,false,true));
+	injections->push_back(new ExternStatement(kvoid,ifree_float,vfree_float,false,true));
+	injections->push_back(new ExternStatement(kint,i__make_context,v__make_context,false,true));
+	injections->push_back(new ExternStatement(kvoid,i__fork_sched_int,v__fork_sched_int,false,true));
+	injections->push_back(new ExternStatement(kvoid,i__fork_sched_float,v__fork_sched_float,false,true));
+	injections->push_back(new ExternStatement(kvoid,i__fork_sched_intptr,v__fork_sched_intptr,false,true));
+	injections->push_back(new ExternStatement(kvoid,i__fork_sched_floatptr,v__fork_sched_floatptr,false,true));
+	injections->push_back(new ExternStatement(kvoid,i__fork_sched_void,v__fork_sched_void,false,true));
+	injections->push_back(new ExternStatement(kint,i__recon_int,v__recon_int,false,true));
+	injections->push_back(new ExternStatement(kfloat,i__recon_float,v__recon_float,false,true));
+	injections->push_back(new ExternStatement(kint,i__recon_intptr,v__recon_intptr,true,true));
+	injections->push_back(new ExternStatement(kfloat,i__recon_floatptr,v__recon_floatptr,true,true));
+	injections->push_back(new ExternStatement(kvoid,i__recon_void,v__recon_void,false,true));
+	injections->push_back(new ExternStatement(kvoid,i__destroy_context,v__destroy_context,false,true));
 	return injections;
 }
 

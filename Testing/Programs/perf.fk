@@ -1,0 +1,70 @@
+
+//Example algorithm for comparison with C
+//Compute the value of PI via a reguar monte-carlo simulation
+
+extern void print_int(int x);
+extern float sqrt(float x);
+
+int mod(int x, int y) {
+	int m = x/y;
+	return x-m*y;
+}
+
+float distance(float x0, float y0, float x1, float y1) {
+	float dx = x0 - x1;
+	float dy = y0 - y1;
+	return sqrt(dx*dx + dy*dy);
+}
+
+void init_coords(float* coords,int numberOfPoints, float delta) {
+	if (numberOfPoints==0) {
+		return;
+	}
+	numberOfPoints = numberOfPoints-1;
+	coords[numberOfPoints] = delta*numberOfPoints;
+	init_coords(coords,numberOfPoints,delta);
+	return;
+}
+
+void compute_distances_from_center_sub(float* distances, float xcoord, float* ycoords,int numberOfPointsY,int offset) {
+	if (numberOfPointsY==0) {
+		return;
+	}
+	numberOfPointsY = numberOfPointsY-1;
+	distances[offset] = distance(0,0,xcoord,ycoords[numberOfPointsY]);
+	offset = offset+1;
+	compute_distances_from_center_sub(distances,xcoord,ycoords,numberOfPointsY,offset);
+	return;
+}
+
+void main() {
+	//Configuration
+	int numberOfPointsX = 1000;
+	int numberOfPointsY = 1000;
+	int totalNumberOfPoints = numberOfPointsX*numberOfPointsY;
+	float deltaX = 1/numberOfPointsX;
+	float deltaY = 1/numberOfPointsY;
+	print_int(totalNumberOfPoints);
+
+	//Make coordinate arrays
+	float* xcoords = calloc_float(numberOfPointsX);
+	float* ycoords = calloc_float(numberOfPointsY);
+
+	//Initialize coordinate arrays
+	init_coords(xcoords,numberOfPointsX,deltaX);
+	init_coords(ycoords,numberOfPointsY,deltaY);
+
+	//Create array to hold distances
+	float* distances = calloc_float(totalNumberOfPoints);
+
+	//Compute distances
+	//compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY);
+
+	//Free coordiante arrays
+	free_float(xcoords);
+	free_float(ycoords);
+
+	return;
+}
+
+

@@ -5,7 +5,7 @@
 #define __NODE_H
 
 //#define GC_DEBUG 1
-#define YYDEBUG 1
+//#define YYDEBUG 1
 
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/ADT/STLExtras.h"
@@ -59,22 +59,11 @@ class ASTVisitor;
 class StatementVisitor;
 class CodeGenVisitor;
 class LambdaReconVisitor;
-class SymbolTable;
 class TypeTable;
 class ExternStatement;
 class PointerExpression;
 class AddressOfExpression;
 class StructureExpression;
-
-//Symbol Table
-enum IdentType {
-  VARIABLE,
-  STRUCTURE,
-  FUNCTION,
-  INVALID
-};
-
-extern SymbolTable sym_table;
 
 //Visitor type declarations
 #include "codeGenVisitor.h"
@@ -92,7 +81,6 @@ public:
 class Expression : public Node {
 public:
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual Expression* acceptVisitor(LambdaReconVisitor* v);
 };
@@ -102,9 +90,6 @@ class Statement : public Node {
 public:
 	Statement();
 	virtual void describe() const;
-	virtual bool alreadyExistsInSymbolTable() const { return false; } //No RTTI needed in parser
-	virtual bool alreadyExistsInLocalSymbolTable() const { return false; }
-	virtual void insertIntoSymbolTable() { return; }
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
 	virtual bool lambdable() const;
@@ -121,7 +106,6 @@ public:
 	int64_t value;
 	Integer(int64_t value);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -131,7 +115,6 @@ public:
 	double value;
 	Float(double value);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -140,11 +123,7 @@ class Identifier : public Expression {
 public:
 	char* name;
 	Identifier(char* name);
-        bool declaredAsVar() const;
-	bool declaredAsFunc() const;
-	bool declaredAtAll() const;
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -155,7 +134,6 @@ public:
 	Expression* exp;
 	UnaryOperator(char* op, Expression* exp);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -167,7 +145,6 @@ public:
 	Expression* right;
 	BinaryOperator(Expression* left, char* op, Expression* right);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -180,7 +157,6 @@ public:
 	Block(std::vector<Statement*,gc_allocator<Statement*>>* statements);
 	std::vector<Statement*,gc_allocator<Statement*>>* statements;
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
 };
@@ -192,7 +168,6 @@ public:
 	std::vector<Expression*,gc_allocator<Expression*>>* args;
 	FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -201,7 +176,6 @@ class NullLiteral : public Expression {
 public:
 	NullLiteral();
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -227,9 +201,6 @@ public:
 	virtual bool statementCommits() const;
 	virtual bool lambdable() const;
 	virtual const char* stringType() const;
-	virtual void insertIntoSymbolTable();
-	virtual bool alreadyExistsInSymbolTable() const;
-	virtual bool alreadyExistsInLocalSymbolTable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 	virtual void acceptVisitor(StatementVisitor* v);
@@ -353,28 +324,13 @@ public:
 	std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args;
 	ExternStatement(Keyword* type,Identifier* ident,
 	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType);
+	ExternStatement(Keyword* type,Identifier* ident,
+	  std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType, bool earlyInsert);
 	virtual void setCommit(const bool& commit);
 	virtual bool statementCommits() const;
 	virtual bool lambdable() const;
 	virtual void describe() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
-};
-
-/*===============================SymbolTable================================*/
-//Stack for identifier verification
-class SymbolTable : public gc {
-public:
-	SymbolTable();
-	void insert(const char* ident,IdentType type);
-	IdentType at(const char* ident) const;
-	bool check(const char* ident,IdentType type) const;
-	bool check(const char* ident) const;
-	bool checkLocal(const char* ident,IdentType type) const;
-	bool checkLocal(const char* ident) const;
-	void push();
-	void pop();
-private:
-	std::vector<std::unordered_map<std::string,IdentType>> frames;
 };
 
 /*===============================TypeTable================================*/
@@ -398,7 +354,6 @@ public:
 	bool referencingStruct() const;
 	PointerExpression(Identifier* ident, Expression* offsetExpression, Identifier* field);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -409,7 +364,6 @@ public:
 	Identifier* ident; //Always acting on the direct value of ident
 	AddressOfExpression(Identifier* ident, Expression* offsetExpression);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 
@@ -420,7 +374,6 @@ public:
 	Identifier* ident; //structure ident
 	StructureExpression(Identifier* ident,Identifier* field);
 	virtual void describe() const;
-	virtual bool identsDeclared() const;
 	virtual llvm::Value* acceptVisitor(ASTVisitor* v);
 };
 

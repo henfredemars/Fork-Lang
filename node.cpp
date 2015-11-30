@@ -5,7 +5,6 @@
 #include "node.h"
 
 //Tables
-SymbolTable sym_table;
 TypeTable user_type_table;
 
 //Copy identifier
@@ -33,11 +32,6 @@ Expression* Node::acceptVisitor(LambdaReconVisitor* v) {
 /*================================Expression================================*/
 void Expression::describe() const {
 	printf("---Found generic Expression object with no fields\n");
-}
-
-bool Expression::identsDeclared() const {
-        printf("Attempt to check idents on generic expression\n");
-        assert(false);
 }
 
 llvm::Value* Expression::acceptVisitor(ASTVisitor* v) {
@@ -86,10 +80,6 @@ Integer::Integer(int64_t value) {
 	this->value = value;
 }
 
-bool Integer::identsDeclared() const {
-	return true;
-}
-
 void Integer::describe() const {
 	#ifdef YYDEBUG
 	printf("---Found Literal Integer: %i\n", (int)value);
@@ -103,10 +93,6 @@ llvm::Value* Integer::acceptVisitor(ASTVisitor* v) {
 /*==================================Float===================================*/
 Float::Float(double value) {
 	this->value = value;
-}
-
-bool Float::identsDeclared() const {
-	return true;
 }
 
 void Float::describe() const {
@@ -124,45 +110,10 @@ Identifier::Identifier(char* name) {
 	this->name = dup_char(name);
 }
 
-bool Identifier::identsDeclared() const {
-	return declaredAtAll();
-}
-
 void Identifier::describe() const {
 	#ifdef YYDEBUG
 	printf("---Found Identifier: %s\n",name);
 	#endif
-}
-
-bool Identifier::declaredAsVar() const {
-        IdentType type = sym_table.at(name);
-	if (type == INVALID) {
-                yyerror("Identifier does not exist in symbol table");
-                return false;
-        } else if (type != VARIABLE) {
-                yyerror("Identifier was not a variable");
-		return false;
-        }
-	return true;
-}
-
-bool Identifier::declaredAsFunc() const {
-	if (!sym_table.check(name)) {
-                yyerror("Identifier does not exist in symbol table");
-                return false;
-        } else if (!sym_table.check(name,FUNCTION)) {
-                yyerror("Identifier was not a function");
-		return false;
-        }
-	return true;
-}
-
-bool Identifier::declaredAtAll() const {
-	if (!sym_table.check(name)) {
-                yyerror("Identifier does not exist in symbol table");
-                return false;
-        }
-	return true;
 }
 
 llvm::Value* Identifier::acceptVisitor(ASTVisitor* v) {
@@ -173,10 +124,6 @@ llvm::Value* Identifier::acceptVisitor(ASTVisitor* v) {
 UnaryOperator::UnaryOperator(char* op, Expression* exp) {
 	this->op = dup_char(op);
 	this->exp = exp;
-}
-
-bool UnaryOperator::identsDeclared() const {
-	return exp->identsDeclared();
 }
 
 void UnaryOperator::describe() const {
@@ -196,10 +143,6 @@ BinaryOperator::BinaryOperator(Expression* left, char* op, Expression* right) {
 	this->right = right;
 }
 
-bool BinaryOperator::identsDeclared() const {
-	return (left->identsDeclared() && right->identsDeclared());
-}
-
 void BinaryOperator::describe() const {
 	#ifdef YYDEBUG
 	printf("---Found Binary Operator %s\n",this->op);
@@ -213,12 +156,6 @@ llvm::Value* BinaryOperator::acceptVisitor(ASTVisitor* v) {
 /*==================================Block===================================*/
 Block::Block(std::vector<Statement*, gc_allocator<Statement*>>* statements) {
 	this->statements = statements;
-}
-
-bool Block::identsDeclared() const {
-	printf("Attempt to check idents on Block\n");
-	assert(false);
-	return false;
 }
 
 void Block::describe() const {
@@ -243,15 +180,6 @@ void Block::acceptVisitor(StatementVisitor* v) {
 FunctionCall::FunctionCall(Identifier* ident, std::vector<Expression*, gc_allocator<Expression*>>* args) {
 	this->ident = ident;
 	this->args = args;
-        if (!sym_table.check(ident->name)) {
-		yyerror("Called function does not exist in symbol table");
-	} else if (!sym_table.check(ident->name,FUNCTION)) {
-		yyerror("Identifier was not a function");
-	}
-}
-
-bool FunctionCall::identsDeclared() const {
-	return ident->declaredAsFunc();
 }
 
 void FunctionCall::describe() const {
@@ -271,10 +199,6 @@ void NullLiteral::describe() const {
 	#ifdef YYDEBUG
 	printf("---Found Null\n");
 	#endif
-}
-
-bool NullLiteral::identsDeclared() const {
-	return true;
 }
 
 llvm::Value* NullLiteral::acceptVisitor(ASTVisitor* v) {
@@ -319,18 +243,6 @@ bool VariableDefinition::statementCommits() const {
 
 bool VariableDefinition::lambdable() const {
 	return !(!exp);
-}
-
-void VariableDefinition::insertIntoSymbolTable() {
-        sym_table.insert(ident->name,VARIABLE);
-}
-
-bool VariableDefinition::alreadyExistsInSymbolTable() const {
-	return sym_table.check(ident->name,VARIABLE);
-}
-
-bool VariableDefinition::alreadyExistsInLocalSymbolTable() const {
-	return sym_table.checkLocal(ident->name,VARIABLE);
 }
 
 const char* VariableDefinition::stringType() const {
@@ -422,7 +334,6 @@ FunctionDefinition::FunctionDefinition(Keyword* type, Identifier* ident,
 	this->block = block;
 	this->hasPointerType = hasPointerType;
 	assert(type && "Missing return type");
-        sym_table.insert(ident->name,FUNCTION);
 }
 
 FunctionDefinition::FunctionDefinition(Identifier* user_type, Identifier* ident,
@@ -435,7 +346,6 @@ FunctionDefinition::FunctionDefinition(Identifier* user_type, Identifier* ident,
 	this->block = block;
 	this->hasPointerType = hasPointerType;
 	assert(user_type && "Missing user-defined return type");
-        sym_table.insert(ident->name,FUNCTION);
 }
 
 void FunctionDefinition::setCommit(const bool& commit) {
@@ -485,10 +395,7 @@ bool StructureDeclaration::lambdable() const {
 }
 
 bool StructureDeclaration::validate() const {
-        if (sym_table.check(ident->name)) {
-                printf("Variable name '%s' already exists in the symbol table\n",ident->name);
-		return false;
-        } else if (!user_type_table.check(user_type->name)) {
+        if (!user_type_table.check(user_type->name)) {
                 yyerror("Type was not a declared in the structure table");
 		return false;
 	}
@@ -620,13 +527,19 @@ llvm::Value* IfStatement::acceptVisitor(ASTVisitor* v) {
 
 /*===============================ExternStatement================================*/
 ExternStatement::ExternStatement(Keyword* type,Identifier* ident,
-          std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType)
+          std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType) :
+	ExternStatement(type,ident,args,hasPointerType,false)
+{
+	//Do nothing
+}
+
+ExternStatement::ExternStatement(Keyword* type,Identifier* ident,
+          std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* args, bool hasPointerType, bool earlyInsert)
 {
 	this->type = type;
-	this->ident = ident;
-	this->args = args;
-	this->hasPointerType = hasPointerType;
-        sym_table.insert(ident->name,FUNCTION);
+        this->ident = ident;
+        this->args = args;
+        this->hasPointerType = hasPointerType;
 }
 
 void ExternStatement::setCommit(const bool& commit) {
@@ -649,99 +562,6 @@ void ExternStatement::describe() const {
 
 llvm::Value* ExternStatement::acceptVisitor(ASTVisitor* v) {
         return v->visitExternStatement(this);
-}
-
-/*===============================SymbolTable================================*/
-SymbolTable::SymbolTable() {
-	//Push global scope
-	this->push();
-	//Special scheduling functions handled in parser.y start symbol
-	/*insert("__make_context",FUNCTION);
-	insert("__destroy_context",FUNCTION);
-	insert("__fork_sched_int",FUNCTION);
-	insert("__fork_sched_float",FUNCTION);
-	insert("__fork_sched_intptr",FUNCTION);
-	insert("__fork_sched_floatptr",FUNCTION);
-	insert("__fork_sched_void",FUNCTION);
-	insert("__recon_int",FUNCTION);
-	insert("__recon_float",FUNCTION);
-	insert("__recon_intptr",FUNCTION);
-	insert("__recon_floatptr",FUNCTION);
-	insert("__recon_void",FUNCTION);*/
-}
-
-void SymbolTable::insert(const char* ident,IdentType type) {
-	assert(frames.size());
-	std::unordered_map<std::string,IdentType>& lframe = frames.back();
-        if (this->check(ident))
-          yyerror("Identifier already exists");
-        lframe.insert(std::make_pair(std::string(ident),type));
-}
-
-IdentType SymbolTable::at(const char* ident) const {
-	int frame_size = frames.size();
-        assert(frame_size);
-        for (int i = 0; i<frame_size;i++) {
-          if (frames.at(i).count(std::string(ident))) {
-            return frames.at(i).at(std::string(ident));
-          }
-        }
-	return INVALID;
-}
-
-bool SymbolTable::check(const char* ident) const {
-	int frame_size = frames.size();
-        assert(frame_size);
-        for (int i = 0; i<frame_size;i++) {
-          if (frames.at(i).count(std::string(ident))) {
-	    return true;
-          }
-        }
-        return false;
-}
-
-bool SymbolTable::checkLocal(const char* ident) const {
-	int frame_size = frames.size();
-	assert(frame_size);
-	if (frames.at(frame_size-1).count(std::string(ident))) {
-	  return true;
-	}
-	return false;
-}
-
-bool SymbolTable::check(const char* ident,IdentType type) const {
-	int frame_size = frames.size();
-        assert(frame_size);
-        for (int i = 0; i<frame_size;i++) {
-          if (frames.at(i).count(std::string(ident))) {
-            if (frames.at(i).at(std::string(ident))==type) {
-              return true;
-            }
-          }
-        }
-        return false;
-}
-
-bool SymbolTable::checkLocal(const char* ident,IdentType type) const {
-	int frame_size = frames.size();
-        assert(frame_size);
-        if (frames.at(frame_size-1).count(std::string(ident))) {
-          if (frames.at(frame_size-1).at(std::string(ident))==type) {
-            return true;
-          }
-        }
-        return false;
-}
-
-void SymbolTable::push() {
-	//Push new scope
-	this->frames.push_back(std::unordered_map<std::string,IdentType>());
-}
-
-void SymbolTable::pop() {
-	//Pop current scope
-	assert(frames.size());
-	frames.pop_back();
 }
 
 /*===============================TypeTable================================*/
@@ -779,10 +599,6 @@ void PointerExpression::describe() const {
 	#endif
 }
 
-bool PointerExpression::identsDeclared() const {
-	return sym_table.check(ident->name,VARIABLE) && offsetExpression->identsDeclared();
-}
-
 llvm::Value* PointerExpression::acceptVisitor(ASTVisitor* v) {
 	return v->visitPointerExpression(this);
 }
@@ -798,10 +614,6 @@ void AddressOfExpression::describe() const {
 	#ifdef YYDEBUG
 	printf("---Found AddressOfExpression for: %s\n",ident->name);
 	#endif
-}
-
-bool AddressOfExpression::identsDeclared() const {
-	return sym_table.check(ident->name,VARIABLE) && (!offsetExpression || offsetExpression->identsDeclared());
 }
 
 llvm::Value* AddressOfExpression::acceptVisitor(ASTVisitor* v) {
@@ -820,11 +632,6 @@ void StructureExpression::describe() const {
 	#ifdef YYDEBUG
 	printf("---Found StructureExpression for: %s, field: %s\n",ident->name,field->name);
 	#endif
-}
-
-bool StructureExpression::identsDeclared() const {
-	//TODO Check if field is valid field name?
-	return sym_table.check(ident->name,VARIABLE);
 }
 
 llvm::Value* StructureExpression::acceptVisitor(ASTVisitor* v) {
