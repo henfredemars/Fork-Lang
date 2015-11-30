@@ -520,10 +520,10 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 			if(!commits) { //if must create lambda
 				if(executeCommit) {
 					executeCommit = false;
-					char* makeContextName = (char *)GC_MALLOC_ATOMIC(15); 
-					strcpy(makeContextName, "__make_context");
 					char* cid = (char *)GC_MALLOC_ATOMIC(4); 
 					strcpy(cid, "cid");
+					char* makeContextName = (char *)GC_MALLOC_ATOMIC(15); 
+					strcpy(makeContextName, "__make_context");
 					char* keyword = (char *)GC_MALLOC_ATOMIC(4); 
 					strcpy(keyword, "int");
 					FunctionCall* makeContext = new FunctionCall(new Identifier(makeContextName), new std::vector<Expression*, gc_allocator<Expression*>>());
@@ -602,12 +602,31 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				auto handle = lambdaJIT->addModule(std::move(lambdaModule)); // JIT the module
 				auto lambdaSymbol = lambdaJIT->findSymbol(identifier); 
 				uint64_t lam = lambdaSymbol.getAddress(); //grab address of the lambda
-				std::cout << lam << std::endl;
+				auto lamInt = llvm::ConstantInt::get(*getContext(), llvm::APInt(64, lam, true));
+				auto lamPtr = castIntToPointer(lamInt);
 				//pass env as pointer
-				//auto envVal = new std::vector<Expression*,gc_allocator<Expression*>>();
-				//envVal->push_back(new AddressOfExpression(new Identifier(envName), nullptr));
-				//FunctionCall* lambdaCall = new FunctionCall(new Identifier(identifier), envVal);
-				//lastVisited = lambdaCall->acceptVisitor(this); //create lambda call
+				std::vector<llvm::Value*> schedVector;
+				schedVector.push_back(lamPtr);
+				schedVector.push_back(getBuilder()->CreateBitOrPointerCast((new AddressOfExpression(new Identifier(envName), nullptr))->acceptVisitor(this), 
+					llvm::PointerType::get(llvm::IntegerType::get(*getContext(), 64), 0)));
+				schedVector.push_back(llvm::ConstantInt::get(*getContext(), llvm::APInt(64, currId++, true))); //id increments for next one, currId gives max + 1 in the end
+				schedVector.push_back(currCid); //cid
+				llvm::Function* lambdaCall = nullptr;
+				if(!strcmp(lambdaKeyword, "int")) {
+					lambdaCall = getModule()->getFunction("__fork_sched_int");
+				}
+				else if(!strcmp(lambdaKeyword, "float")) {
+					lambdaCall = getModule()->getFunction("__fork_sched_float");
+				}
+				else if(!strcmp(lambdaKeyword, "void")) {
+					lambdaCall = getModule()->getFunction("__fork_sched_void");
+				}
+				else {
+					lambdaCall = (llvm::Function*)ErrorV("Not yet implemented closure assignment to pointer or struct types");
+				}
+				if(lambdaCall) {
+					lastVisited = getBuilder()->CreateCall(lambdaCall, schedVector); //create lambda call
+				}
 				structTypes.erase("env");
 				namedValues.erase("e0");
 			}
