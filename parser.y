@@ -72,6 +72,7 @@
 program : statements { program = $1; program->describe();
 		       auto externInjects = buildInjections();
 		       program->statements->insert(program->statements->begin(),externInjects->begin(),externInjects->end());
+		       delete externInjects;
 		       ast_root = program;
 	  	       printf("Parser: start symbol\n\n");
 	} ;
