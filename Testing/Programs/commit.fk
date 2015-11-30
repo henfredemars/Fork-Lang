@@ -10,11 +10,11 @@ void main() {
 	int b = 12;
 	int c = 16;
 	float d = 4.5;
-	function();
-	c = 5
+	c = 5 + a
 	12 + a
 	print_float(-a + 4.5)
 	print_int(4 + a)
+	// function();
 	print_int(a);
 	7 * 5;
 	print_int(c);
