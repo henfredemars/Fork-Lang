@@ -181,9 +181,7 @@ llvm::Value* CodeGenVisitor::makeSched(llvm::Type* type) {
 	else {
 		return ErrorV("Not yet implemented closure assignment to pointer or struct types");
 	}
-	//store scheduler call TODO
 	//store recon assignment TODO
-	//return recon function call TODO
 	return nullptr;
 }
 
@@ -557,8 +555,8 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				}
 				auto copyValues = namedValues; //clone map
 				auto ip = getBuilder()->saveAndClearIP(); //store block insertion point
-				char* envType = (char *)GC_MALLOC_ATOMIC(4); 
-				strcpy(envType, "env");
+				char* envType = (char *)GC_MALLOC_ATOMIC(5); 
+				strcpy(envType, "void");
 				char* envName = (char *)GC_MALLOC_ATOMIC(3); 
 				strcpy(envName, "e0");
 				char* identifier = (char *)GC_MALLOC_ATOMIC(32);
@@ -567,19 +565,23 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				strcpy(identifier, (ss.str()).c_str()); // name mangle the lambda
 				auto lambdaStatements = new std::vector<Statement*,gc_allocator<Statement*>>();
 				LambdaReconVisitor* lambdaVisitor = new LambdaReconVisitor(this);
-				auto expr = statement->acceptVisitor(lambdaVisitor);
-				if(!expr) {
+				statement->acceptVisitor(lambdaVisitor);
+				auto exprLHS = lambdaVisitor->getLHS();
+				auto exprRHS = lambdaVisitor->getRHS();
+				//get LHS and RHS
+				if(!exprLHS) {
 					lambdaStatements->push_back(statement);
 				}
-				lambdaStatements->push_back(new ReturnStatement(expr)); //make inserted statements
+				lambdaStatements->push_back(new ReturnStatement(exprRHS)); //make inserted statements
 				lambdaKeyword = (char *)GC_MALLOC_ATOMIC(6); 
-				//make recon logic for assignment or normal statements TODO
-				if(!expr) {
+				//make recon vector for assign statement
+				if(!exprLHS) {
 					strcpy(lambdaKeyword, "void");
+					reconVector.push_back(std::make_pair(nullptr, nullptr));
 				}
 				else {
 					recon = true;
-					AssignStatement* reconAssign = new AssignStatement(expr, nullptr);
+					AssignStatement* reconAssign = new AssignStatement(exprLHS, exprRHS);
 					reconAssign->acceptVisitor(this);
 					recon = false;
 				}
@@ -589,7 +591,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				lambdaModule->setDataLayout(lambdaJIT->getTargetMachine().createDataLayout());
 				lambdaBuilder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*lambdaContext);
 				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
-				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add env* e argument
+				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add void* e0 env argument
 				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), envArg, new Block(lambdaStatements), false);
 				fd->acceptVisitor(this);
 				if(!error) {
@@ -633,9 +635,39 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 			else {
 				if(!executeCommit && !insideLambda) {
 					executeCommit = true;
-					//make all sched calls in sequence TODO
-					//make all recon assignments in sequence TODO
-					//remove sched and recon from storage TODO
+					--currId;
+					for(size_t i = 0, end = reconVector.size(); i != end; ++i) {
+						char* reconName = (char *)GC_MALLOC_ATOMIC(15);
+						std::vector<llvm::Value*> reconVal;
+						if(llvm::Value* refVar = reconVector.at(i).second) {
+							llvm::Value* var = getBuilder()->CreateLoad(reconVector.at(i).second);
+							if(getValType(var)->isIntegerTy()) {
+								strcpy(reconName, "__recon_int");
+							}
+							else if(getValType(var)->isDoubleTy()) {
+								strcpy(reconName, "__recon_float");
+							}
+							else {
+								break;
+							}
+							reconVal.push_back(var);
+							reconVal.push_back(llvm::ConstantInt::get(*getContext(), llvm::APInt(64, 1, true)));
+							reconVal.push_back(llvm::ConstantInt::get(*getContext(), llvm::APInt(64, i, true)));
+							reconVal.push_back(llvm::ConstantInt::get(*getContext(), llvm::APInt(64, currId, true)));
+							reconVal.push_back(currCid);
+							llvm::Function* reconFun = getModule()->getFunction(reconName);
+							auto reconCall = getBuilder()->CreateCall(reconFun, reconVal);
+							getBuilder()->CreateStore(reconCall, refVar);
+						}
+						else {
+							strcpy(reconName, "__recon_void");
+							reconVal.push_back(llvm::ConstantInt::get(*getContext(), llvm::APInt(64, i, true)));
+							reconVal.push_back(llvm::ConstantInt::get(*getContext(), llvm::APInt(64, currId, true)));
+							reconVal.push_back(currCid);
+							llvm::Function* reconFun = getModule()->getFunction(reconName);
+							getBuilder()->CreateCall(reconFun, reconVal);
+						}
+					}
 					char* destroyContextName = (char *)GC_MALLOC_ATOMIC(18); 
 					strcpy(destroyContextName, "__destroy_context");
 					auto destroyContextVal = new std::vector<Expression*, gc_allocator<Expression*>>();
@@ -658,7 +690,13 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 	llvm::Function* func = getModule()->getFunction(f->ident->name); //search func name in module
 	if(!func) { //func name does not exist
-		return ErrorV("Unknown function reference");
+		if(insideLambda) {
+			auto mainFunc = mainModule->getFunction(f->ident->name); //declare in lambda module
+			func = llvm::Function::Create(mainFunc->getFunctionType(), llvm::Function::ExternalLinkage, f->ident->name, getModule());
+		}
+		else {
+			return ErrorV("Unknown function reference");
+		}
 	}
 	if(func->arg_size() != f->args->size()) { //func name exists but wrong args
 		return ErrorV("Wrong number of arguments passed to function");
@@ -885,13 +923,15 @@ llvm::Value* CodeGenVisitor::visitFunctionDefinition(FunctionDefinition* f) {
 	}
 	else {
 		auto env = func->arg_begin();
-		llvm::AllocaInst* envAlloca = createAlloca(func, env->getType(), env->getName());
+		auto structTuple = structTypes.find("env")->second;
+		llvm::AllocaInst* envAlloca = createAlloca(func, llvm::PointerType::getUnqual(std::get<0>(structTuple)), env->getName());
 		if(!envAlloca) {
 			return ErrorV("Unable to create stack variable inside lambda body for environment");
 		}
-		getBuilder()->CreateStore(env, envAlloca);
+		auto environ = getBuilder()->CreateBitOrPointerCast(env, llvm::PointerType::getUnqual(std::get<0>(structTuple)));
+		getBuilder()->CreateStore(environ, envAlloca);
 		namedValues.insert(std::make_pair(env->getName(), envAlloca));
-		auto varList = std::get<1>(structTypes.find("env")->second);
+		auto varList = std::get<1>(structTuple);
 		for(size_t i = 0, end = varList.size(); i != end; ++i) {
 			llvm::Value* val = getStructField("env", varList.at(i), getBuilder()->CreateLoad(envAlloca));
 			llvm::AllocaInst* alloca = createAlloca(func, getValType(val), varList.at(i));
@@ -1009,9 +1049,9 @@ llvm::Value* CodeGenVisitor::visitAssignStatement(AssignStatement* a) {
 	}
 	AssignmentLHSVisitor* leftVisitor = new AssignmentLHSVisitor(this, right); //pass codegenvisitor and RHS to LHS visitor 
 	llvm::Value* retVal = a->target->acceptVisitor(leftVisitor); //visit LHS
-	/*if(!retVal) { // TODO fix with lambda assignment
+	if(!retVal && !recon) {
 		return ErrorV("Unable to evaluate assignment statement");
-	}*/
+	}
 	return retVal;
 }
 
@@ -1174,6 +1214,7 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitIdentifier(Identifier* i
 	}
 	if(c->recon) {
 		right = c->makeSched(c->getAllocaType(var));
+		c->reconVector.push_back(std::make_pair(nullptr, var));
 		return right;
 	}
 	if(!right) { //right is NULL
@@ -1228,6 +1269,7 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitPointerExpression(Pointe
 			refVar = c->getStructField(typeString, fieldName, refVar)->getPointerOperand(); //grab struct field
 			if(c->recon) {
 				right = c->makeSched(c->getPointedType(refVar));
+				c->reconVector.push_back(std::make_pair(nullptr, refVar));
 				return right;
 			}
 			if(!right) { //right is NULL
@@ -1265,6 +1307,7 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitPointerExpression(Pointe
 	else {
 		if(c->recon) {
 			right = c->makeSched(c->getPointedType(refVar));
+			c->reconVector.push_back(std::make_pair(nullptr, refVar));
 			return right;
 		}
 		if(!right) { //LHS is non pointer and RHS is pointer
@@ -1300,6 +1343,7 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitStructureExpression(Stru
 	llvm::Value* structFieldRef = c->getStructField(typeString, fieldName, var)->getPointerOperand(); //get LHS field
 	if(c->recon) {
 		right = c->makeSched(c->getPointedType(structFieldRef));
+		c->reconVector.push_back(std::make_pair(nullptr, structFieldRef));
 		return right;
 	}
 	if(!right) {
@@ -1355,10 +1399,20 @@ llvm::Value* CodeGenVisitor::AssignmentLHSVisitor::visitNullLiteral(NullLiteral*
 
 LambdaReconVisitor::LambdaReconVisitor(CodeGenVisitor* c) {
 	this->c = c;
+	exprLHS = nullptr;
+	exprRHS = nullptr;
+}
+Expression* LambdaReconVisitor::getRHS() {
+	return exprRHS;
+}
+Expression* LambdaReconVisitor::getLHS() {
+	return exprLHS;
 }
 Expression* LambdaReconVisitor::visitNode(Node* n) {return nullptr;}
 Expression* LambdaReconVisitor::visitExpression(Expression* e) {return nullptr;}
 Expression* LambdaReconVisitor::visitStatement(Statement* s) {return nullptr;}
 Expression* LambdaReconVisitor::visitAssignStatement(AssignStatement* a) {
-	return a->target;
+	exprLHS = a->target;
+	exprRHS = a->valxp;
+	return exprRHS;
 }
