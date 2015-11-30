@@ -54,13 +54,12 @@ void compute_distances_from_center(float* distances,float* xcoords,float* ycoord
 int count_less_than_one_half(float* distances,int start,int end) {
 	if (start > end) {
 	  return 0;
+	}
+	float val = distances[start];
+	if (val < 0.5) {
+	  return count_less_than_one_half(distances,start+1,end)+1;
 	} else {
-	  float val = distances[start];
-	  if (val < 0.5) {
-	    return count_less_than_one_half(distances,start+1,end)+1;
-	  } else {
-	    return count_less_than_one_half(distances,start+1,end);
-	  }
+	  return count_less_than_one_half(distances,start+1,end);
 	}
 }
 
