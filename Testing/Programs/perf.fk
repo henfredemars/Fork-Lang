@@ -3,6 +3,7 @@
 //Compute the value of PI via a reguar monte-carlo simulation
 
 extern void print_int(int x);
+extern void print_float(float x);
 extern float sqrt(float x);
 
 int mod(int x, int y) {
@@ -13,7 +14,8 @@ int mod(int x, int y) {
 float distance(float x0, float y0, float x1, float y1) {
 	float dx = x0 - x1;
 	float dy = y0 - y1;
-	return sqrt(dx*dx + dy*dy);
+	float result = sqrt((dx*dx) + (dy*dy));
+	return result;
 }
 
 void init_coords(float* coords,int numberOfPoints, float delta) {
@@ -31,20 +33,44 @@ void compute_distances_from_center_sub(float* distances, float xcoord, float* yc
 		return;
 	}
 	numberOfPointsY = numberOfPointsY-1;
-	distances[offset] = distance(0,0,xcoord,ycoords[numberOfPointsY]);
+	distances[offset] = distance(0.5,0.5,xcoord,ycoords[numberOfPointsY]);
 	offset = offset+1;
 	compute_distances_from_center_sub(distances,xcoord,ycoords,numberOfPointsY,offset);
 	return;
 }
 
+void compute_distances_from_center(float* distances,float* xcoords,float* ycoords,int numberOfPointsX,int numberOfPointsY,int callcount) {
+	if (numberOfPointsX==0) {
+		return;
+	}
+	numberOfPointsX = numberOfPointsX-1;
+	int offset = numberOfPointsY*callcount;
+	compute_distances_from_center_sub(distances,xcoords[numberOfPointsX],ycoords,numberOfPointsY,offset);
+	callcount = callcount+1;
+	compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY,callcount);
+	return;
+}
+
+int count_less_than_one_half(float* distances,int start,int end) {
+	if (start > end) {
+	  return 0;
+	} else {
+	  float val = distances[start];
+	  if (val < 0.5) {
+	    return count_less_than_one_half(distances,start+1,end)+1;
+	  } else {
+	    return count_less_than_one_half(distances,start+1,end);
+	  }
+	}
+}
+
 void main() {
 	//Configuration
-	int numberOfPointsX = 1000;
-	int numberOfPointsY = 1000;
+	int numberOfPointsX = 1200;
+	int numberOfPointsY = 1200;
 	int totalNumberOfPoints = numberOfPointsX*numberOfPointsY;
-	float deltaX = 1/numberOfPointsX;
-	float deltaY = 1/numberOfPointsY;
-	print_int(totalNumberOfPoints);
+	float deltaX = 1.0/numberOfPointsX;
+	float deltaY = 1.0/numberOfPointsY;
 
 	//Make coordinate arrays
 	float* xcoords = calloc_float(numberOfPointsX);
@@ -58,13 +84,22 @@ void main() {
 	float* distances = calloc_float(totalNumberOfPoints);
 
 	//Compute distances
-	//compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY);
+	compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY,0);
+	compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY,0);
+	compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY,0);
+	compute_distances_from_center(distances,xcoords,ycoords,numberOfPointsX,numberOfPointsY,0);
 
-	//Free coordiante arrays
+	//Count number of points inside the unit circle
+	int count = count_less_than_one_half(distances,0,totalNumberOfPoints-1);
+	print_int(count);
+
+	//PI is roughly...
+	print_float(4/(totalNumberOfPoints/(count*1.0)));
+
+	//Free arrays
 	free_float(xcoords);
 	free_float(ycoords);
+	free_float(distances);
 
 	return;
 }
-
-
