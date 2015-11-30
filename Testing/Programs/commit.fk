@@ -1,7 +1,22 @@
 extern void print_int(int x);
+extern void print_float(float y);
+
+int function() {
+	return 4;
+}
 
 void main() {
-	5 + 4
+	int a = 8;
+	int b = 12;
+	int c = 16;
+	float d = 4.5;
+	d + 24.5;
+	function();
+	c = 5
+	print_int(b + a)
+	print_int(a);
+	print_int(c);
+	print_float(d);
 	7 * 5;
 	return;
 }

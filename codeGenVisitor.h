@@ -93,6 +93,7 @@ private:
 	bool justReturned;
 	llvm::LLVMContext* mainContext;
 	llvm::LLVMContext* lambdaContext; //lambda
+	std::vector<std::pair<llvm::Value*, llvm::Value*>> reconVector;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> mainBuilder;
 	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> lambdaBuilder; //lambda
 	std::unique_ptr<llvm::Module> mainModule;
@@ -167,7 +168,11 @@ public:
 class LambdaReconVisitor : public gc {
 private:
 	CodeGenVisitor* c;
+	Expression* exprLHS;
+	Expression* exprRHS;
 public:
+	Expression* getRHS();
+	Expression* getLHS();
 	LambdaReconVisitor(CodeGenVisitor* c);
 	Expression* visitNode(Node* n);
 	Expression* visitExpression(Expression* e);
