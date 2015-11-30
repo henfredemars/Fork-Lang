@@ -61,6 +61,7 @@ int count_less_than_one_half(float* distances,int start,int end) {
 	} else {
 	  return count_less_than_one_half(distances,start+1,end);
 	}
+	return 0;
 }
 
 void main() {
