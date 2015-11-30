@@ -9,7 +9,6 @@
     Block *program;
 
     extern int yylex();
-    extern SymbolTable sym_table;
     extern TypeTable user_type_table;
     extern Node* ast_root;
 %}
@@ -93,14 +92,10 @@ statements : statement {
 
 //A statement is a variable declaration, function declaration, empty, or an expression-statement
 statement : variableDec TSCOLON TENDL {
-	       if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
-	       $1->insertIntoSymbolTable();
 	       $$=$1; pprintf("Parser: variableDec becomes statement\n");
 	       $$->setCommit(true);
 	     } |
 	     variableDec TENDL {
-               if ($1->alreadyExistsInLocalSymbolTable()) {printf("Variable already exists in the local scope\n"); YYERROR;}
-               $1->insertIntoSymbolTable();
                $$=$1; pprintf("Parser: variableDec becomes statement\n");
 	       $$->setCommit(false);
              }
@@ -111,13 +106,13 @@ statement : variableDec TSCOLON TENDL {
 	     |
 	     rexp TSET exp TENDL {
 		$$ = new AssignStatement($1,$3);
-		if(!($1->identsDeclared())) YYERROR;
+		//if(!($1->identsDeclared())) YYERROR;
 		$$->describe();
 		$$->setCommit(false);
 	     } |
 	     rexp TSET exp TSCOLON TENDL {
                 $$ = new AssignStatement($1,$3);
-		if(!($1->identsDeclared())) YYERROR;
+		//if(!($1->identsDeclared())) YYERROR;
                 $$->describe();
 		$$->setCommit(true);
              } |
@@ -159,16 +154,14 @@ statement : variableDec TSCOLON TENDL {
 //Declarations of external functions (standard library for example)
 externStatement : externStatement_h var_keyword TSTAR ident TLPAREN functionArgs TRPAREN TSCOLON {
 		  $$ = new ExternStatement($2,$4,$6,true);
-		  sym_table.pop();
 		  $$->describe();
 		} |
 		externStatement_h var_keyword ident TLPAREN functionArgs TRPAREN TSCOLON {
                   $$ = new ExternStatement($2,$3,$5,false);
-		  sym_table.pop();
                   $$->describe();
                 };
 
-externStatement_h : TEXTERN { $$=$1; sym_table.push(); }
+externStatement_h : TEXTERN { $$=$1; }
 
 if_statement : TIF TLPAREN exp TRPAREN block {
 		$$ = new IfStatement($3,$5,nullptr);
@@ -201,12 +194,12 @@ variableDec : var_keyword ident { $$ = new VariableDefinition($1,$2,nullptr,fals
                 $$->describe();
              } |
 	     ident ident { StructureDeclaration* sd = new StructureDeclaration($1,$2,false);
-		if (!(sd->validate())) YYERROR;
+		//if (!(sd->validate())) YYERROR;
 		$$ = sd; //Place on stack
                 $$->describe(); //Assume ident ident is a structure dec
              } |
 	     ident TSTAR ident { StructureDeclaration* sd = new StructureDeclaration($1,$3,true);
-		if (!(sd->validate())) YYERROR;
+		//if (!(sd->validate())) YYERROR;
 		$$ = sd; //Place on stack
                 $$->describe(); //Assume ident ident is a structure dec
              } |
@@ -228,7 +221,7 @@ structDec_f : structDec_b block TSCOLON {
 //(Forward) decl of structure
 structDec_b : struct_keyword ident {
 	      StructureDefinition* sd = new StructureDefinition($2,nullptr);
-	      if (!(sd->validate())) YYERROR;
+	      //if (!(sd->validate())) YYERROR;
               $$ = sd; //Place on stack
 	      pprintf("Early structure declaration of: %s\n",$2->name);
 	    } ;
@@ -281,11 +274,9 @@ functionArgs : /* empty */ {
 		  pprintf("Parser: functionArgs, empty in function definition\n");} %prec EMPTYFUNARGS
                 | variableDec { $$ = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>(); 
                   $$->push_back((VariableDefinition*)$1); 
-		  $1->insertIntoSymbolTable();
 		  pprintf("Parser: functionArgs, one argument in function definition\n");} 
                   //VariableDec always a VariableDefinition*, although defined as a statement
                 | functionArgs TCOMMA variableDec { $1->push_back((VariableDefinition*)$3);
-		  $3->insertIntoSymbolTable();
 		  pprintf("Parser: additional function argument found in function definition\n");
 		} ;
 
@@ -311,15 +302,15 @@ ident : TIDENTIFIER { $$ = new Identifier($1); $$->describe(); }
 
 //An expression is pretty much any (valid) mixture of operators
 //Identifiers inside expressions must always be declared beforehand
-exp : exp binaryOperatorToken exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR;
+exp : exp binaryOperatorToken exp { //if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR;
 		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
-            | unaryOperatorToken exp { if (!($2->identsDeclared())) YYERROR;
+            | unaryOperatorToken exp { //if (!($2->identsDeclared())) YYERROR;
 		$$ = new UnaryOperator($1,$2); $$->describe(); } %prec UMINUS
             | numeric { $$ = $1; }
-            | rexp { if (!($1->identsDeclared())) YYERROR; $$ = $1; }
+            | rexp { /*if (!($1->identsDeclared())) YYERROR; $$ = $1;*/ }
 	    | TNULL { $$ = new NullLiteral(); }
             | TLPAREN exp TRPAREN { $$ = $2; } //Consume pairs of parentheses
-            | exp TEQUAL exp { if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR; 
+            | exp TEQUAL exp { //if (!($1->identsDeclared()) || !($3->identsDeclared())) YYERROR; 
 		$$ = new BinaryOperator($1,$2,$3); $$->describe(); }
             | ident TLPAREN callArgs TRPAREN { $$ = new FunctionCall($1,$3); $$->describe(); }
 	    | TSAMPR ident { $$ = new AddressOfExpression($2,nullptr); $$->describe(); }
@@ -334,8 +325,8 @@ numeric : TINTLIT { $$ = new Integer(atol($1)); $$->describe(); }
 binaryOperatorToken : TEQUAL | TNEQUAL | TLT | TLTE | TGT | TGTE | TDASH 
 			| TPLUS | TSTAR | TSLASH | TLOR | TLAND;
 
-leftBraceToken : TLBRACE {$$=$1; sym_table.push(); };
-rightBraceToken : TRBRACE {$$=$1; sym_table.pop(); }
+leftBraceToken : TLBRACE {$$=$1; };
+rightBraceToken : TRBRACE {$$=$1; };
 
 unaryOperatorToken : TDASH | TLNOT | TNEW;
 

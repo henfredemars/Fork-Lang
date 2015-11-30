@@ -24,55 +24,51 @@ extern "C" int yywrap() { return 1; }
 %option noyyrealloc
 %option noyyfree
 %option yylineno
-%x C_COMMENT
 
 %%
 
-[ \t\r]                   ;
-^[ ]*\n			  ;
-\/\/+.*\n		  ;
-<C_COMMENT>.		  ;
-"/*"            	  BEGIN(C_COMMENT);
-<C_COMMENT>"*/"		  BEGIN(INITIAL);
-"\n"                      return TOKEN(TENDL);
-"="                       return TOKEN(TSET);
-"=="                      SAVE_TOKEN; return TEQUAL;
-"!="                      SAVE_TOKEN; return TNEQUAL;
-"<"                       SAVE_TOKEN; return TLT;
-"<="                      SAVE_TOKEN; return TLTE;
-">"                       SAVE_TOKEN; return TGT;
-">="                      SAVE_TOKEN; return TGTE;
-"||"                      SAVE_TOKEN; return TLOR;
-"&&"                      SAVE_TOKEN; return TLAND;
-"!"                       SAVE_TOKEN; return TLNOT;
-"("                       return TOKEN(TLPAREN);
-")"                       return TOKEN(TRPAREN);
-"{"                       return TOKEN(TLBRACE);
-"}"                       return TOKEN(TRBRACE);
-"["                       return TOKEN(TLSBRACE);
-"]"                       return TOKEN(TRSBRACE);
-"."                       SAVE_TOKEN; return TDOT;
-"+"                       SAVE_TOKEN; return TPLUS;
-"-"                       SAVE_TOKEN; return TDASH;
-"*"                       SAVE_TOKEN; return TSTAR;
-"/"                       SAVE_TOKEN; return TSLASH;
-";"                       SAVE_TOKEN; return TSCOLON;
-"&"			  SAVE_TOKEN; return TSAMPR;
-","                       return TOKEN(TCOMMA);
-"if"                      return TOKEN(TIF);
-"while"                   return TOKEN(TWHILE);
-"return"                  return TOKEN(TRETURN);
-"int"                     return TOKEN(TINT);
-"float"                   return TOKEN(TFLOAT);
-"void"                    return TOKEN(TVOID);
-"struct"                  return TOKEN(TSTRUCT);
-"extern"		  return TOKEN(TEXTERN);
-"else"			  return TOKEN(TELSE);
-"NULL"			  return TOKEN(TNULL);
-"new"			  SAVE_TOKEN; return TNEW;
-[0-9]*\.[0-9]+            SAVE_TOKEN; return TFLOATLIT;
-[0-9]+                    SAVE_TOKEN; return TINTLIT;
-[a-zA-Z$_][a-zA-Z0-9$_]*  SAVE_TOKEN; return TIDENTIFIER;
-.                         if (yytext) printf("Unknown token encountered in lexer: %s\n",yytext); yyterminate();
+<INITIAL>[ \t\r]                   ;
+<INITIAL>^[ ]*\n	           ;
+<INITIAL>\/\/+.*\n		   ;
+<INITIAL>"\n"                      return TOKEN(TENDL);
+<INITIAL>"="                       return TOKEN(TSET);
+<INITIAL>"=="                      SAVE_TOKEN; return TEQUAL;
+<INITIAL>"!="                      SAVE_TOKEN; return TNEQUAL;
+<INITIAL>"<"                       SAVE_TOKEN; return TLT;
+<INITIAL>"<="                      SAVE_TOKEN; return TLTE;
+<INITIAL>">"                       SAVE_TOKEN; return TGT;
+<INITIAL>">="                      SAVE_TOKEN; return TGTE;
+<INITIAL>"||"                      SAVE_TOKEN; return TLOR;
+<INITIAL>"&&"                      SAVE_TOKEN; return TLAND;
+<INITIAL>"!"                       SAVE_TOKEN; return TLNOT;
+<INITIAL>"("                       return TOKEN(TLPAREN);
+<INITIAL>")"                       return TOKEN(TRPAREN);
+<INITIAL>"{"                       return TOKEN(TLBRACE);
+<INITIAL>"}"                       return TOKEN(TRBRACE);
+<INITIAL>"["                       return TOKEN(TLSBRACE);
+<INITIAL>"]"                       return TOKEN(TRSBRACE);
+<INITIAL>"."                       SAVE_TOKEN; return TDOT;
+<INITIAL>"+"                       SAVE_TOKEN; return TPLUS;
+<INITIAL>"-"                       SAVE_TOKEN; return TDASH;
+<INITIAL>"*"                       SAVE_TOKEN; return TSTAR;
+<INITIAL>"/"                       SAVE_TOKEN; return TSLASH;
+<INITIAL>";"                       SAVE_TOKEN; return TSCOLON;
+<INITIAL>"&"			  SAVE_TOKEN; return TSAMPR;
+<INITIAL>","                       return TOKEN(TCOMMA);
+<INITIAL>"if"                      return TOKEN(TIF);
+<INITIAL>"while"                   return TOKEN(TWHILE);
+<INITIAL>"return"                  return TOKEN(TRETURN);
+<INITIAL>"int"                     return TOKEN(TINT);
+<INITIAL>"float"                   return TOKEN(TFLOAT);
+<INITIAL>"void"                    return TOKEN(TVOID);
+<INITIAL>"struct"                  return TOKEN(TSTRUCT);
+<INITIAL>"extern"		  return TOKEN(TEXTERN);
+<INITIAL>"else"			  return TOKEN(TELSE);
+<INITIAL>"NULL"			  return TOKEN(TNULL);
+<INITIAL>"new"			  SAVE_TOKEN; return TNEW;
+<INITIAL>[0-9]*\.[0-9]+            SAVE_TOKEN; return TFLOATLIT;
+<INITIAL>[0-9]+                    SAVE_TOKEN; return TINTLIT;
+<INITIAL>[a-zA-Z$_][a-zA-Z0-9$_]*  SAVE_TOKEN; return TIDENTIFIER;
+<INITIAL>.                         if (yytext) printf("Unknown token encountered in lexer: %s\n",yytext); yyterminate();
 
 %%

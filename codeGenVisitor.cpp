@@ -136,7 +136,7 @@ llvm::LLVMContext* CodeGenVisitor::getContext() {
 	return mainContext;
 }
 
-llvm::IRBuilder<true, llvm::NoFolder>* CodeGenVisitor::getBuilder() {
+llvm::IRBuilder<>* CodeGenVisitor::getBuilder() {
 	if(insideLambda) {
 		return lambdaBuilder.get();
 	}
@@ -211,7 +211,7 @@ llvm::Function* CodeGenVisitor::generateFunction(bool hasPointerType, std::strin
 }
 
 llvm::AllocaInst* CodeGenVisitor::createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name) {
-	llvm::IRBuilder<true, llvm::NoFolder> tempBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
+	llvm::IRBuilder<> tempBuilder(&func->getEntryBlock(), func->getEntryBlock().begin());
 	if(llvm::AllocaInst* alloca = tempBuilder.CreateAlloca(type, 0, name)) { //use tempBuilder to push alloca into the function block beginning
 		return alloca;
 	}
@@ -232,7 +232,7 @@ CodeGenVisitor::CodeGenVisitor(std::string name) {
 	lambdaJIT = llvm::make_unique<llvm::orc::KaleidoscopeJIT>();
 	mainModule = llvm::make_unique<llvm::Module>(name, *mainContext);
 	mainModule->setDataLayout(mainJIT->getTargetMachine().createDataLayout()); //set module for tracking and execution
-	mainBuilder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*mainContext); //set builder for IR insertion
+	mainBuilder = llvm::make_unique<llvm::IRBuilder<>>(*mainContext); //set builder for IR insertion
 	mainVoidValue = llvm::ReturnInst::Create(*mainContext); 
 	lambdaVoidValue = llvm::ReturnInst::Create(*lambdaContext); 
 	mainFloatNullPointer = llvm::Constant::getNullValue(llvm::Type::getDoublePtrTy(*mainContext));
@@ -608,7 +608,7 @@ llvm::Value* CodeGenVisitor::visitBlock(Block* b) {
 				insideLambda = true;
 				lambdaModule = llvm::make_unique<llvm::Module>(identifier, *lambdaContext);
 				lambdaModule->setDataLayout(lambdaJIT->getTargetMachine().createDataLayout());
-				lambdaBuilder = llvm::make_unique<llvm::IRBuilder<true, llvm::NoFolder>>(*lambdaContext);
+				lambdaBuilder = llvm::make_unique<llvm::IRBuilder<>>(*lambdaContext);
 				auto envArg = new std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>();
 				envArg->push_back(new StructureDeclaration(new Identifier(envType), new Identifier(envName), true)); //add void* e0 env argument
 				FunctionDefinition* fd = new FunctionDefinition(new Keyword(lambdaKeyword), new Identifier(identifier), envArg, new Block(lambdaStatements), false);

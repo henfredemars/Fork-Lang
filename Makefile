@@ -10,7 +10,7 @@ parser: .gc_built_marker .llvm_built_marker parser.o lex.o node.o codeGenVisitor
 	g++ -Wl,-rpath=./llvm/build/Release+Asserts/lib -Wl,-rpath=./gc/.libs `$(LLVM_BIN) --cxxflags --ldflags` -Wl,-rpath=. -o parser parser.o lex.o node.o codeGenVisitor.o statementVisitor.o main.o -L./gc/.libs -lpthread -ltinfo `$(LLVM_BIN) --system-libs` -lLLVM-3.8svn -lgc -l :lib.so
 #`$(LLVM_BIN) --libfiles`
 
-parser.cpp: parser.y node.h
+parser.cpp: parser.y node.h yy_overrides.h
 	touch parser.cpp; bison -d -o parser.cpp parser.y
 
 parser.o: parser.cpp
