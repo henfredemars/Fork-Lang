@@ -84,21 +84,27 @@ private:
 		llvm::Value* visitNullLiteral(NullLiteral* n);
 	};
 	int lambdaNum; //lambda
+	bool insideLambda; //lambda
 	llvm::Value* currCid; //lambda
 	int currId; //lambda
 	bool executeCommit; //lambda
 	char* lambdaKeyword;
 	bool error;
 	bool justReturned;
-	llvm::LLVMContext* lambdaContext;
 	llvm::LLVMContext* mainContext;
-	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> builder;
+	llvm::LLVMContext* lambdaContext; //lambda
+	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> mainBuilder;
+	std::unique_ptr<llvm::IRBuilder<true, llvm::NoFolder>> lambdaBuilder; //lambda
 	std::unique_ptr<llvm::Module> theModule;
 	std::unique_ptr<llvm::Module> lambdaModule; //lambda
-	std::unique_ptr<llvm::orc::KaleidoscopeJIT> forkJIT;
-	llvm::Value* voidValue;
-	llvm::Constant* intNullPointer;
-	llvm::Constant* floatNullPointer;
+	std::unique_ptr<llvm::orc::KaleidoscopeJIT> mainJIT;
+	std::unique_ptr<llvm::orc::KaleidoscopeJIT> lambdaJIT; //lambda
+	llvm::Value* mainVoidValue;
+	llvm::Value* lambdaVoidValue; //lambda
+	llvm::Constant* mainIntNullPointer;
+	llvm::Constant* lambdaIntNullPointer; //lambda
+	llvm::Constant* mainFloatNullPointer;
+	llvm::Constant* lambdaFloatNullPointer; //lambda
 	std::unordered_map<std::string, llvm::AllocaInst*> namedValues;
 	std::unordered_map<std::string, std::tuple<llvm::StructType*, std::vector<std::string>>> structTypes;
 	std::unordered_map<std::string, Binops> switchMap;
@@ -117,13 +123,17 @@ private:
 	llvm::Constant* getNullPointer(std::string typeName);
 	llvm::LoadInst* getStructField(std::string typeString, std::string fieldName, llvm::Value* var);
 	llvm::Type* getTypeFromString(std::string typeName, bool isPointer, bool allowsVoid);
+	llvm::IRBuilder<true, llvm::NoFolder>* getBuilder(); //lambda
 	llvm::LLVMContext* getContext(); //lambda
 	llvm::Function* getModuleFunction(std::string fName); //lambda
+	llvm::Value* getVoidValue();
+	llvm::Constant* getIntNullPointer();
+	llvm::Constant* getFloatNullPointer(); 
 	llvm::Value* makeSched(llvm::Type* type); //lambda
 	llvm::Function* generateFunction(bool hasPointerType, std::string returnType, std::string name, std::vector<VariableDefinition*,gc_allocator<VariableDefinition*>>* arguments);
 	llvm::AllocaInst* createAlloca(llvm::Function* func, llvm::Type* type, const std::string &name);
 public:
-	bool insideLambda; //lambda
+	bool recon; //lambda
 	CodeGenVisitor(std::string name);
 	llvm::LLVMContext* getLLVMContext();
 	void executeMain();
