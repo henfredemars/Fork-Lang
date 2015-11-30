@@ -1,0 +1,13 @@
+
+//Demonstrate savings using parallel infrastructure
+
+extern void do_work_ms(int ms);
+
+void main() {
+	do_work_ms(2000);
+	do_work_ms(2000);
+	do_work_ms(2000);
+	return;
+}
+
+
