@@ -67,6 +67,10 @@ extern "C" void free_int(int64_t* i) {
   malloc_mutex.unlock();
 }
 
+extern "C" void do_work_ms(int64_t i) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(i));
+}
+
 //Hidden funcitons implement parallism
 //They are not intended to be called by user code
 

@@ -2,6 +2,8 @@
 
 //DO NOT USE GC HERE --- not compatible with C++11 <thread>
 
+#include <chrono>
+#include <thread>
 #include <cmath>
 #include <stdint.h>
 #include <stdio.h>
