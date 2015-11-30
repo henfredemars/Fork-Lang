@@ -181,7 +181,6 @@ llvm::Value* CodeGenVisitor::makeSched(llvm::Type* type) {
 	else {
 		return ErrorV("Not yet implemented closure assignment to pointer or struct types");
 	}
-	//store recon assignment TODO
 	return nullptr;
 }
 
@@ -319,6 +318,12 @@ llvm::Value* CodeGenVisitor::visitUnaryOperator(UnaryOperator* u) {
 	if(!expr) { //NULL applied to unary operator
 		expr = getIntNullPointer();
 	}
+	if(getValType(expr)->isIntegerTy() && getValType(expr) != getBuilder()->getInt64Ty()) {
+		expr = castBooleantoInt(expr);
+	}
+	if(getValType(expr)->isDoubleTy() && getValType(expr) != getBuilder()->getDoubleTy()) {
+		expr = getBuilder()->CreateZExtOrBitCast(expr, getBuilder()->getDoubleTy());
+	}
 	if(getValType(expr)->isVoidTy()) {
 		return ErrorV("Unary operator applied to void type");
 	}
@@ -378,11 +383,25 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 	else if(getValType(left)->isDoubleTy() && getValType(right)->isIntegerTy()) {
 		right = castIntToFloat(right);
 	}
+	if(getValType(left)->isIntegerTy() && getValType(left) != getBuilder()->getInt64Ty()) {
+		left = castBooleantoInt(left);
+	}
+	if(getValType(right)->isIntegerTy() && getValType(right) != getBuilder()->getInt64Ty()) {
+		right = castBooleantoInt(right);
+	}
+	if(getValType(left)->isDoubleTy() && getValType(left) != getBuilder()->getDoubleTy()) {
+		left = getBuilder()->CreateZExtOrBitCast(left, getBuilder()->getDoubleTy());
+	}
+	if(getValType(right)->isDoubleTy() && getValType(right) != getBuilder()->getDoubleTy()) {
+		right = getBuilder()->CreateZExtOrBitCast(right, getBuilder()->getDoubleTy());
+	}
 	if(getValType(left)->isPointerTy() || getValType(right)->isPointerTy()) { //at least one operand is a pointer
 		if(getValType(left)->isPointerTy()) {
+			std::cout << "i thought so..." << std::endl;
 			left = castPointerToInt(left);
 		}
 		if(getValType(right)->isPointerTy()) {
+			std::cout << "it was him!" << std::endl;
 			right = castPointerToInt(right);
 		}
 		if(getValType(left) != getValType(right)) { //if both operands are not now integers
@@ -418,7 +437,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return ErrorV("Invalid binary operator applied to pointer and integer or pointer type");
 		}
 	}
-	else if(getValType(left)->isDoubleTy()) { //both operands are floats
+	else if(getValType(left) == getBuilder()->getDoubleTy() && getValType(right) == getBuilder()->getDoubleTy()) { //both operands are floats
 		switch (switchMap.find(b->op)->second) {
 			case BOP_PLUS:
 			return getBuilder()->CreateFAdd(left, right);
@@ -448,7 +467,7 @@ llvm::Value* CodeGenVisitor::visitBinaryOperator(BinaryOperator* b) {
 			return ErrorV("Invalid binary operator applied to float types");
 		}
 	}
-	else if(getValType(left)->isIntegerTy()) { //both operands are ints
+	else if(getValType(left) == getBuilder()->getInt64Ty() && getValType(right) == getBuilder()->getInt64Ty()) { //both operands are ints
 		switch (switchMap.find(b->op)->second) {
 			case BOP_PLUS:
 			return getBuilder()->CreateAdd(left, right);
@@ -729,7 +748,13 @@ llvm::Value* CodeGenVisitor::visitFunctionCall(FunctionCall* f) {
 			if(getValType(argument)->isIntegerTy() && getValType(funcArgument)->isDoubleTy()) {
 				argument = castIntToFloat(argument);
 			}
-			else {
+			else if(getValType(argument)->isIntegerTy() && getValType(funcArgument)->isIntegerTy()) {
+				argument = getBuilder()->CreateZExtOrBitCast(argument, getValType(funcArgument));
+			}
+			else if(getValType(argument)->isDoubleTy() && getValType(funcArgument)->isDoubleTy()) {
+				argument = getBuilder()->CreateZExtOrBitCast(argument, getValType(funcArgument));
+			}
+			else { //if incorrect int or double size
 				return ErrorV("Invalid type as input for function args");
 			}
 		}
