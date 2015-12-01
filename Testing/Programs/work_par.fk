@@ -4,8 +4,6 @@
 extern void do_work_ms(int ms);
 
 void main() {
-	int a = 2000;
-	a + 4
 	do_work_ms(2000)
 	do_work_ms(2000)
 	do_work_ms(2000);
