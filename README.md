@@ -58,8 +58,6 @@ At this point, Fork programs can be parsed into an AST representation with the f
 
 	./fc.py program.fk
 
---CODE GENERATION TO BE IMPLEMENTED
-
 ###Additional Information
 
 A test binary tree program is available in ./Bench/C++ and ./Bench/Fork to provide examples for statement parallelism.
