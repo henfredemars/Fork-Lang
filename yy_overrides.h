@@ -47,6 +47,7 @@ void pprintf(const char* s, const int a) {
 }
 
 //Special injection of special externs
+//This is ugly, but I will allow it for now
 std::vector<Statement*,gc_allocator<Statement*>>* buildInjections() {
 	auto injections = new std::vector<Statement*,gc_allocator<Statement*>>();
 	char* cvoid = (char*)GC_MALLOC_ATOMIC(8);  //mutable strings
